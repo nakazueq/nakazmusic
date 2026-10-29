@@ -67,6 +67,9 @@
     <button class="nav" data-view="sc" title="SoundCloud">
       <i class="src-dot sc"></i><span class="lbl">SoundCloud</span><span class="cnt" id="cnt-sc"></span>
     </button>
+    <button class="nav" data-view="yt" title="YouTube Music">
+      <i class="src-dot yt"></i><span class="lbl">YouTube Music</span><span class="cnt" id="cnt-yt"></span>
+    </button>
     <button class="nav" data-view="local" title="С компа">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>
       <span class="lbl">С компа</span><span class="cnt" id="cnt-local"></span>
@@ -384,6 +387,21 @@
           <button id="sc-load" class="btn">Загрузить лайки</button>
         </div>
         <p class="hint">Ник это часть ссылки soundcloud.com/<b>ник</b>. Лайки должны быть открыты.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><i class="src-dot yt"></i><b>YouTube Music</b><span id="yt-state" class="state"></span></div>
+        <div id="yt-lists" class="folders"></div>
+        <div class="field-row">
+          <input id="yt-link" class="field" placeholder="Ссылка на плейлист YouTube / YouTube Music" autocomplete="off" spellcheck="false">
+          <button id="yt-add" class="btn">Добавить</button>
+        </div>
+        <div class="field-row yt-actions">
+          <button id="yt-likes" class="btn gray">Мои лайки (через Brave)</button>
+          <button id="yt-install" class="btn gray" hidden>Скачать yt-dlp</button>
+          <span id="yt-version" class="hint"></span>
+        </div>
+        <p class="hint">Плейлист должен быть открыт по ссылке: войти в аккаунт не нужно, Premium тоже. «Понравившиеся» закрыты от посторонних, поэтому для них плеер берёт вход из Brave: в нём должен быть выполнен вход на YouTube, а сам Brave лучше закрыть. Звук берётся через yt-dlp.</p>
       </div>
 
       <div class="card">

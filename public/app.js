@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 // Эти настройки дублируются в программу (%LOCALAPPDATA%\MyPlayer\store.json),
 // чтобы не вводить их заново после обновления или смены окна
-const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes']);
+const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists']);
 const storeQueue = {};
 let storeTimer = 0;
 function storeSync(k, v) {
@@ -209,7 +209,9 @@ async function domOfArt(url) {
   const c = document.createElement('canvas');
   c.width = c.height = 40;
   const g = c.getContext('2d', { willReadFrequently: true });
-  g.drawImage(bmp, 0, 0, 40, 40);
+  // берём центральный квадрат: у картинок 16:9 (YouTube) по бокам часто чёрные поля, в центре обложка
+  const side = Math.min(bmp.width, bmp.height);
+  g.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 40, 40);
   if (bmp.close) bmp.close();
   const dom = domColor(g.getImageData(0, 0, 40, 40).data);
   autoDoms.set(url, dom);
@@ -447,7 +449,7 @@ mq.addEventListener('change', () => { if (ui.mode === 'auto') applyUI(); });
 
 /* ===================== Состояние ===================== */
 const state = {
-  lib: { sp: LS.json('sp_lib', []), sc: [], local: [] },
+  lib: { sp: LS.json('sp_lib', []), sc: [], local: [], yt: [] },
   localFolders: [],
   statsRange: 'week',
   all: [],
@@ -458,7 +460,7 @@ const state = {
   recsError: '',
   radio: { seed: null, tracks: [], loading: false, more: false },
   queueKind: 'list',
-  loading: { sp: false, sc: false },
+  loading: { sp: false, sc: false, yt: false },
   view: 'all',
   query: '',
   list: [],
@@ -947,7 +949,9 @@ async function loadHls() {
   await loadScript('https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js');
   return window.Hls;
 }
-const isScAudio = () => state.cur && (state.cur.src === 'sc' || state.cur.src === 'local') && scMode === 'audio';
+// источники, которые играют через общий <audio>: SoundCloud, файлы с компа и YouTube Music
+const isAudioSrc = (s) => s === 'sc' || s === 'local' || s === 'yt';
+const isScAudio = () => state.cur && isAudioSrc(state.cur.src) && scMode === 'audio';
 const isScWidget = () => state.cur && state.cur.src === 'sc' && scMode === 'widget';
 
 async function scPlay(t, token) {
@@ -1004,6 +1008,7 @@ audio.addEventListener('error', () => {
   if (!isScAudio() || hls || !audio.getAttribute('src')) return;
   const token = state.token;
   if (state.cur.src === 'local') { playFailed(new Error('Не получилось открыть файл: формат не поддерживается или файл перемещён'), token); return; }
+  if (state.cur.src === 'yt') { playFailed(new Error('YouTube не отдал звук этого трека: он может быть недоступен в твоей стране или удалён'), token); return; }
   scWidgetPlay(state.cur, token).catch((e) => playFailed(e, token));
 });
 
@@ -1054,6 +1059,29 @@ async function scWidgetPlay(t, token) {
   });
 }
 
+// YouTube Music: сервер вынимает ссылку на звук через yt-dlp (3-5 секунд) и отдаёт его со своего адреса
+async function ytPlay(t, token) {
+  scMode = 'audio';
+  if (scw) { try { scw.pause(); } catch {} }
+  hlsCleanup();
+  audio.pause();
+  await api('/api/yt/stream?id=' + encodeURIComponent(t.id));
+  if (token !== state.token) return;
+  audio.src = '/api/yt/audio?id=' + encodeURIComponent(t.id);
+  audio.volume = gain();
+  try { await audio.play(); }
+  catch (e) {
+    if (e.name === 'NotAllowedError') { state.playing = false; updatePlayer(); return; }
+    if (e.name === 'AbortError') return;
+    throw e;
+  }
+}
+// у части роликов нет большой картинки hq720: откатываемся на маленькую, она есть всегда
+document.addEventListener('error', (e) => {
+  const i = e.target;
+  if (i && i.tagName === 'IMG' && /ytimg\.com\/vi\/[\w-]+\/hq720\.jpg/.test(i.src)) i.src = i.src.replace('hq720.jpg', 'mqdefault.jpg');
+}, true);
+
 /* ===================== Ядро плеера ===================== */
 const gain = () => (state.volume / 100) ** 2;
 function shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -1077,8 +1105,8 @@ function playFrom(list, idx, kind) {
   playTrack(state.queue[state.order[state.pos]]);
 }
 function stopOthers(src) {
-  if (src === 'local' && scw) { try { scw.pause(); } catch {} }
-  if (src !== 'sc' && src !== 'local') {
+  if ((src === 'local' || src === 'yt') && scw) { try { scw.pause(); } catch {} }
+  if (!isAudioSrc(src)) {
     audio.pause(); hlsCleanup();
     if (scw) { try { scw.pause(); } catch {} }
   }
@@ -1103,6 +1131,7 @@ async function playTrack(t) {
   try {
     if (t.src === 'sp') await spPlay(t, token);
     else if (t.src === 'local') await localPlay(t, token);
+    else if (t.src === 'yt') await ytPlay(t, token);
     else await scPlay(t, token);
     if (token === state.token) state.fails = 0;
   } catch (e) {
@@ -1264,7 +1293,7 @@ function publishState(force) {
   const t = state.cur;
   const s = {
     hasTrack: !!t, title: t ? t.title : '', artist: t ? t.artist : '', art: t ? bigArt(t) : '', src: t ? t.src : '',
-    album: t ? t.album || '' : '', url: t ? (t.src === 'sp' ? `https://open.spotify.com/track/${t.id}` : t.src === 'sc' ? t.url || '' : '') : '',
+    album: t ? t.album || '' : '', url: t ? (t.src === 'sp' ? `https://open.spotify.com/track/${t.id}` : t.src === 'sc' || t.src === 'yt' ? t.url || '' : '') : '',
     playing: !!state.playing, time: Math.round(lyNow()), dur: Math.round(state.dur || 0), at: Date.now(),
   };
   const key = [s.title, s.artist, s.playing, s.dur].join('|');
@@ -1346,7 +1375,7 @@ function updateProgress() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) updateProgress(); });
 
 /* ===================== Библиотека и виды ===================== */
-const VIEW_TITLES = { all: 'Вся музыка', sp: 'Spotify', sc: 'SoundCloud', local: 'С компа', recs: 'Для тебя', radio: 'Радио', stats: 'Статистика' };
+const VIEW_TITLES = { all: 'Вся музыка', sp: 'Spotify', sc: 'SoundCloud', yt: 'YouTube Music', local: 'С компа', recs: 'Для тебя', radio: 'Радио', stats: 'Статистика' };
 const curPl = () => (state.view.startsWith('pl:') ? plGet(state.view.slice(3)) : null);
 function viewTitle() {
   if (state.view.startsWith('pl:')) { const p = curPl(); return p ? p.name : 'Плейлист'; }
@@ -1354,12 +1383,13 @@ function viewTitle() {
   return VIEW_TITLES[state.view] || 'Sonara';
 }
 function rebuildAll() {
-  state.all = [...state.lib.sp, ...state.lib.sc, ...state.lib.local].sort((a, b) => (b.at || 0) - (a.at || 0));
+  state.all = [...state.lib.sp, ...state.lib.sc, ...state.lib.yt, ...state.lib.local].sort((a, b) => (b.at || 0) - (a.at || 0));
   render();
 }
 function viewSource() {
   if (state.view === 'sp') return state.lib.sp;
   if (state.view === 'sc') return state.lib.sc;
+  if (state.view === 'yt') return state.lib.yt;
   if (state.view === 'local') return state.lib.local;
   if (state.view === 'stats') return [];
   if (state.view === 'recs') return state.recs;
@@ -1382,7 +1412,8 @@ function render() {
   $('cnt-sp').textContent = nsp || '';
   $('cnt-sc').textContent = nsc || '';
   $('cnt-local').textContent = state.lib.local.length || '';
-  $('cnt-all').textContent = nsp + nsc + state.lib.local.length || '';
+  $('cnt-yt').textContent = state.lib.yt.length || '';
+  $('cnt-all').textContent = nsp + nsc + state.lib.yt.length + state.lib.local.length || '';
   state.list = filtered(viewSource());
   renderHead();
   renderEmpty();
@@ -1430,9 +1461,10 @@ function emptyCard(icon, title, text, buttons = '') {
 function renderEmpty() {
   const el = $('empty');
   if (state.list.length) { el.hidden = true; el.innerHTML = ''; return; }
-  const hasAny = state.lib.sp.length || state.lib.sc.length;
+  const hasAny = state.lib.sp.length || state.lib.sc.length || state.lib.yt.length;
   const btnSp = '<button class="pill accent" data-acc="sp">Подключить Spotify</button>';
   const btnSc = '<button class="pill" data-acc="sc">Подключить SoundCloud</button>';
+  const btnYt = '<button class="pill" data-acc="yt">Подключить YouTube Music</button>';
   let html;
   if (state.query) html = emptyCard(ICONS.search, 'Ничего не нашлось', `По запросу «${escapeHtml(state.query)}» в этом разделе пусто.`);
   else if (state.view.startsWith('pl:')) html = emptyCard(ICONS.note, 'Плейлист пустой', 'Добавляй треки через ⋯ справа у трека или правой кнопкой мыши. Можно мешать Spotify и SoundCloud.');
@@ -1443,12 +1475,13 @@ function renderEmpty() {
     if (state.recsLoading) html = '<div class="empty-card"><div class="loader"></div><p>Ищу похожие треки…</p></div>';
     else if (!hasAny) html = emptyCard(ICONS.sparkle, 'Подборка по твоим лайкам', 'Подключи Spotify или SoundCloud, и тут появятся похожие треки, которых у тебя ещё нет.', btnSp + btnSc);
     else html = emptyCard(ICONS.sparkle, 'Подборка по твоим лайкам', state.recsError || 'Нажми, и я найду похожие треки, которых у тебя ещё нет.', '<button class="pill accent" data-act="recs">Подобрать</button>');
-  } else if (state.loading.sp || state.loading.sc) html = '<div class="empty-card"><div class="loader"></div><p>Загружаю лайки…</p></div>';
+  } else if (state.loading.sp || state.loading.sc || state.loading.yt) html = '<div class="empty-card"><div class="loader"></div><p>Загружаю лайки…</p></div>';
   else if (state.view === 'sp') html = emptyCard(ICONS.note, 'Spotify', LS.get('sp_token') ? 'Лайкнутых треков пока нет.' : 'Подключи аккаунт, и тут появятся твои лайки.', LS.get('sp_token') ? '' : btnSp);
   else if (state.view === 'stats') { el.hidden = true; el.innerHTML = ''; return; }
   else if (state.view === 'local') html = emptyCard(ICONS.folder, 'Музыка с компа', 'Добавь папку с mp3, wav или flac, например со своими битами. Подпапки тоже читаются.', '<button class="pill accent" data-acc="local">Добавить папку</button>');
+  else if (state.view === 'yt') html = emptyCard(ICONS.note, 'YouTube Music', ytLists.length ? 'В подключённых плейлистах пусто или они недоступны.' : 'Вставь ссылку на свой плейлист, и он появится здесь. Для лайков понадобится вход через Brave.', btnYt.replace('class="pill"', 'class="pill accent"'));
   else if (state.view === 'sc') html = emptyCard(ICONS.note, 'SoundCloud', LS.get('sc_user') ? 'Лайков не нашлось. Проверь, что они открыты в профиле.' : 'Впиши свой ник, и тут появятся твои лайки.', btnSc.replace('class="pill"', 'class="pill accent"'));
-  else html = emptyCard(ICONS.note, 'Подключи музыку', 'Твои лайки из Spotify и SoundCloud соберутся в одном списке.', btnSp + btnSc);
+  else html = emptyCard(ICONS.note, 'Подключи музыку', 'Твои лайки из Spotify, SoundCloud и YouTube Music соберутся в одном списке.', btnSp + btnSc + btnYt);
   el.innerHTML = html;
   el.hidden = false;
 }
@@ -1456,7 +1489,7 @@ function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&a
 $('empty').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
-  if (b.dataset.acc) { openSettings('acc'); setTimeout(() => $(b.dataset.acc === 'sp' ? 'sp-client' : b.dataset.acc === 'local' ? 'lc-path' : 'sc-user').focus(), 50); }
+  if (b.dataset.acc) { openSettings('acc'); setTimeout(() => $(b.dataset.acc === 'sp' ? 'sp-client' : b.dataset.acc === 'local' ? 'lc-path' : b.dataset.acc === 'yt' ? 'yt-link' : 'sc-user').focus(), 50); }
   if (b.dataset.act === 'recs') loadRecs(true);
 });
 
@@ -1510,7 +1543,7 @@ function fillRow(el, t, i) {
     const cv = t.cover || NO_COVER;
     if (el._img.getAttribute('src') !== cv) el._img.src = cv;
     if (state.view === 'recs') el._c3.textContent = t.because ? t.because : '';
-    else el._c3.innerHTML = t.src === 'sp' ? '<span class="badge sp">Spotify</span>' : t.src === 'local' ? '<span class="badge lc">С компа</span>' : '<span class="badge sc">SoundCloud</span>';
+    else el._c3.innerHTML = t.src === 'sp' ? '<span class="badge sp">Spotify</span>' : t.src === 'local' ? '<span class="badge lc">С компа</span>' : t.src === 'yt' ? '<span class="badge yt">YouTube</span>' : '<span class="badge sc">SoundCloud</span>';
     el._d.textContent = t.duration ? fmt(t.duration) : '—';
   }
   const cur = isCur(t);
@@ -1589,6 +1622,102 @@ async function scLoadLikes(force) {
   }
   if (stale) scLoadLikes(true);
 }
+
+/* ===================== YouTube Music ===================== */
+// подключаются плейлисты по ссылке (без входа в аккаунт) и «Понравившиеся» (LM) через cookies Brave
+let ytLists = LS.json('yt_lists', []);
+if (!Array.isArray(ytLists)) ytLists = [];
+ytLists = ytLists.filter((l) => l && /^[\w-]{2,60}$/.test(l.id || '')).slice(0, 12)
+  .map((l) => ({ id: l.id, name: String(l.name || '').slice(0, 80), cookies: !!l.cookies, n: Number(l.n) || 0 }));
+let ytStatus = { installed: true, version: '', brave: false };
+const saveYtLists = () => { LS.set('yt_lists', JSON.stringify(ytLists)); renderYtLists(); };
+async function ytCheck() {
+  try { ytStatus = await api('/api/yt/status'); } catch {}
+  renderYtLists();
+}
+function renderYtLists() {
+  const box = $('yt-lists');
+  box.innerHTML = '';
+  for (const l of ytLists) {
+    const d = document.createElement('div');
+    d.className = 'folder';
+    d.innerHTML = `<span></span><button title="Убрать плейлист">${ICONS.x}</button>`;
+    d.querySelector('span').textContent = `${l.id === 'LM' ? 'Понравившиеся (Brave)' : l.name || l.id}${l.n ? ' · ' + l.n : ''}`;
+    d.querySelector('span').title = l.id;
+    d.querySelector('button').addEventListener('click', () => {
+      ytLists = ytLists.filter((x) => x.id !== l.id);
+      state.lib.yt = state.lib.yt.filter((t) => t._list !== l.id);
+      saveYtLists();
+      ytLoadAll(false);
+    });
+    box.appendChild(d);
+  }
+  $('yt-install').hidden = ytStatus.installed;
+  $('yt-install').textContent = 'Скачать yt-dlp';
+  $('yt-version').textContent = ytStatus.installed ? `yt-dlp ${ytStatus.version || ''}`.trim() : '';
+  $('yt-likes').title = ytStatus.brave ? 'Нужен вход в YouTube в Brave. Brave лучше закрыть' : 'Brave не найден';
+  $('yt-likes').disabled = !ytStatus.brave;
+}
+async function ytLoadAll(force) {
+  if (state.loading.yt) return;
+  if (!ytLists.length) { state.lib.yt = []; setAccState('yt', ''); rebuildAll(); return; }
+  state.loading.yt = true;
+  setAccState('yt', 'Загружаю плейлисты…');
+  renderHead(); renderEmpty();
+  let stale = false, errors = 0, lastError = '';
+  const out = [], seen = new Set();
+  for (const l of ytLists) {
+    try {
+      const r = await api(`/api/yt/playlist?list=${encodeURIComponent(l.id)}${l.cookies ? '&cookies=1' : ''}${force ? '&force=1' : ''}`);
+      l.name = r.name || l.name;
+      l.n = (r.tracks || []).length;
+      stale = stale || (!!r.cached && Date.now() - (r.at || 0) > 30 * 60 * 1000);
+      for (const t of r.tracks || []) if (!seen.has(t.id)) { seen.add(t.id); t._list = l.id; out.push(t); }
+    } catch (e) {
+      errors++; lastError = e.message;
+      if (e.status === 424) { ytStatus.installed = false; }
+    }
+  }
+  state.lib.yt = out;
+  LS.set('yt_lists', JSON.stringify(ytLists));
+  renderYtLists();
+  if (errors && !out.length) { setAccState('yt', lastError, 'err'); toast('YouTube Music: ' + lastError, 6000); }
+  else if (errors) { setAccState('yt', `${out.length} ${plural(out.length, TRACKS)}, часть плейлистов не загрузилась`, 'err'); toast('YouTube Music: ' + lastError, 6000); }
+  else setAccState('yt', `${out.length} ${plural(out.length, TRACKS)}`, 'ok');
+  state.loading.yt = false;
+  rebuildAll();
+  if (stale && !errors) ytLoadAll(true);
+}
+async function ytAdd(id, cookies) {
+  if (ytLists.some((l) => l.id === id)) { setAccState('yt', 'Этот плейлист уже подключён', 'err'); return; }
+  if (ytLists.length >= 12) { setAccState('yt', 'Можно подключить до 12 плейлистов', 'err'); return; }
+  ytLists.push({ id, name: '', cookies: !!cookies, n: 0 });
+  saveYtLists();
+  await ytLoadAll(true);
+  const l = ytLists.find((x) => x.id === id);
+  if (l && !l.n && accState.yt.cls === 'err') { ytLists = ytLists.filter((x) => x.id !== id); saveYtLists(); ytLoadAll(false); }
+}
+$('yt-add').addEventListener('click', async () => {
+  const v = $('yt-link').value.trim();
+  try {
+    const r = await api('/api/yt/parse?url=' + encodeURIComponent(v));
+    $('yt-link').value = '';
+    ytAdd(r.id, false);
+  } catch (e) { setAccState('yt', e.message, 'err'); }
+});
+$('yt-link').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('yt-add').click(); });
+$('yt-likes').addEventListener('click', () => ytAdd('LM', true));
+$('yt-install').addEventListener('click', async () => {
+  const b = $('yt-install');
+  b.disabled = true; b.textContent = 'Скачиваю…';
+  try {
+    const r = await api('/api/app/ytdlp/install', { method: 'POST', headers: { 'X-Player': '1' } });
+    toast('yt-dlp ' + r.version + ' установлен');
+    await ytCheck();
+    ytLoadAll(true);
+  } catch (e) { setAccState('yt', 'Не получилось скачать yt-dlp: ' + e.message, 'err'); }
+  b.disabled = false; renderYtLists();
+});
 
 /* ===================== Подбор треков ===================== */
 async function loadRecs(force) {
@@ -1844,7 +1973,7 @@ function openTrackMenu(t, idx, x, y, alignRight) {
   const pl = curPl();
   if (pl) { items.push({ sep: true }); add('Убрать из плейлиста', ICONS.minus, () => plRemove(pl, t), 'danger'); }
   const ext = t.src === 'sp' ? `https://open.spotify.com/track/${t.id}` : t.url;
-  if (ext && /^https?:/.test(ext)) { items.push({ sep: true }); add(t.src === 'sp' ? 'Открыть в Spotify' : 'Открыть на SoundCloud', ICONS.link, () => window.open(ext, '_blank')); }
+  if (ext && /^https?:/.test(ext)) { items.push({ sep: true }); add(t.src === 'sp' ? 'Открыть в Spotify' : t.src === 'yt' ? 'Открыть в YouTube Music' : 'Открыть на SoundCloud', ICONS.link, () => window.open(ext, '_blank')); }
 
   ctxEl.innerHTML = '';
   const head = document.createElement('div');
@@ -1995,8 +2124,8 @@ async function renderStats() {
     const label = i % step === 0 || i === st.chart.length - 1 ? `<small>${dd}.${mm}</small>` : '';
     return `<div class="st-bar${d.ms ? '' : ' zero'}" title="${dd}.${mm}: ${Math.round(d.ms / 60000)} мин"><i style="height:${Math.max(h, 2)}%"></i>${label}</div>`;
   }).join('');
-  const srcTotal = Math.max(1, st.sources.sp + st.sources.sc + st.sources.local);
-  const srcs = [['sp', 'Spotify', '#1ed760'], ['sc', 'SoundCloud', '#ff7700'], ['local', 'С компа', '#8e8e93']].filter(([k]) => st.sources[k] > 0);
+  const srcTotal = Math.max(1, st.sources.sp + st.sources.sc + st.sources.local + (st.sources.yt || 0));
+  const srcs = [['sp', 'Spotify', '#1ed760'], ['sc', 'SoundCloud', '#ff7700'], ['yt', 'YouTube Music', '#ff2d2d'], ['local', 'С компа', '#8e8e93']].filter(([k]) => st.sources[k] > 0);
   const maxArt = Math.max(1, ...st.topArtists.map((a) => a.count));
   box.innerHTML = seg + `
     <div class="st-cards">
@@ -2752,7 +2881,7 @@ function rgbToHex(s) {
 }
 
 /* ---------- аккаунты ---------- */
-const accState = { sp: { text: '', cls: '' }, sc: { text: '', cls: '' } };
+const accState = { sp: { text: '', cls: '' }, sc: { text: '', cls: '' }, yt: { text: '', cls: '' } };
 function setAccState(src, text, cls = '') { accState[src] = { text, cls }; syncAccounts(); }
 function syncAccounts() {
   const connected = !!LS.get('sp_token');
@@ -2766,6 +2895,9 @@ function syncAccounts() {
   const c = accState.sc;
   $('sc-state').textContent = c.text || (LS.get('sc_user') ? '' : 'Не подключён');
   $('sc-state').className = 'state ' + c.cls;
+  const y = accState.yt;
+  $('yt-state').textContent = y.text || (ytLists.length ? '' : 'Не подключён');
+  $('yt-state').className = 'state ' + y.cls;
 }
 $('sp-connect').addEventListener('click', spLogin);
 $('sp-logout').addEventListener('click', spLogout);
@@ -2803,6 +2935,7 @@ $('act-refresh').addEventListener('click', () => {
   if (state.view === 'recs') return loadRecs(true);
   if ((state.view === 'all' || state.view === 'sp') && LS.get('sp_token')) spLoadLikes();
   if ((state.view === 'all' || state.view === 'sc') && LS.get('sc_user')) scLoadLikes(true);
+  if ((state.view === 'all' || state.view === 'yt') && ytLists.length) ytLoadAll(true);
 });
 $('b-play').addEventListener('click', togglePlay);
 $('b-next').addEventListener('click', () => next(false));
@@ -3097,7 +3230,7 @@ function lyTrack() {
   if (big) { if (img.getAttribute('src') !== big) img.src = big; } else img.removeAttribute('src');
   $('ly-title').textContent = t ? t.title : '';
   $('ly-artist').textContent = t ? t.artist : '';
-  $('ly-src').innerHTML = t ? (t.src === 'sp' ? '<span class="badge sp">Spotify</span>' : '<span class="badge sc">SoundCloud</span>') : '';
+  $('ly-src').innerHTML = t ? (t.src === 'sp' ? '<span class="badge sp">Spotify</span>' : t.src === 'yt' ? '<span class="badge yt">YouTube</span>' : t.src === 'local' ? '<span class="badge lc">С компа</span>' : '<span class="badge sc">SoundCloud</span>') : '';
   if (t) lyLoad(t); else { lyr.key = null; lyRender(); }
 }
 function setLyrics(open) {
@@ -3160,6 +3293,9 @@ window.addEventListener('pagehide', () => { listenTick(); listenFlush(true); if 
     spMe().then(syncAccounts);
   }
   if (LS.get('sc_user')) scLoadLikes(false);
+  renderYtLists();
+  ytCheck();
+  if (ytLists.length) ytLoadAll(false);
   loadLocal(false);
   loadDiscord();
 })();

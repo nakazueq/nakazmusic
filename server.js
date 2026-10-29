@@ -5,6 +5,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { Readable } = require('stream');
 const { spawn, execFile } = require('child_process');
 const { Library, readPicture, MIME: AUDIO_MIME } = require('./local');
 const { DiscordPresence } = require('./discord');
@@ -32,7 +33,7 @@ try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
 const LOG_FILE = path.join(DATA_DIR, 'player.log');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
-const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes']);
+const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists']);
 // запуск с --safe-css (или SONARA_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
 const SAFE_CSS = process.argv.includes('--safe-css') || process.env.SONARA_SAFE_CSS === '1';
 const PLAYS_FILE = path.join(DATA_DIR, 'plays.jsonl');
@@ -88,7 +89,7 @@ function statsFor(range) {
   const since = range === 'week' ? Date.now() - 7 * 864e5 : range === 'month' ? Date.now() - 30 * 864e5 : 0;
   let lines = [];
   try { lines = fs.readFileSync(PLAYS_FILE, 'utf8').split('\n'); } catch {}
-  const tracks = new Map(), artists = new Map(), days = new Map(), sources = { sp: 0, sc: 0, local: 0 };
+  const tracks = new Map(), artists = new Map(), days = new Map(), sources = { sp: 0, sc: 0, local: 0, yt: 0 };
   let totalMs = 0, plays = 0, first = 0;
   for (const line of lines) {
     if (!line) continue;
@@ -499,8 +500,8 @@ async function scLikesDirect(user) {
   return out;
 }
 function scLikesYtdlp(user) {
-  const exe = path.join(BASE_DIR, 'yt-dlp.exe');
-  if (!exists(exe)) return Promise.reject(new Error('yt-dlp не найден'));
+  const exe = ytdlpExe();
+  if (!exe) return Promise.reject(new Error('yt-dlp не найден'));
   return new Promise((resolve, reject) => {
     execFile(exe, ['--flat-playlist', '-J', '--no-warnings', `https://soundcloud.com/${user}/likes`],
       { maxBuffer: 256 * 1024 * 1024, timeout: 5 * 60 * 1000, windowsHide: true },
@@ -895,10 +896,138 @@ function resetCustomLyrics(q) {
   if (cur && cur.custom) { try { fs.unlinkSync(file); } catch (e) { log('не смог удалить', file, e); } }
 }
 
+// ---------- YouTube Music (через yt-dlp) ----------
+// yt-dlp.exe лежит рядом с Sonara.exe (при запуске из исходников на уровень выше папки src)
+function ytdlpExe() {
+  const fromEnv = process.env.SONARA_YTDLP;
+  if (fromEnv && exists(fromEnv)) return fromEnv;
+  for (const d of [BASE_DIR, path.dirname(BASE_DIR)]) {
+    const f = path.join(d, 'yt-dlp.exe');
+    if (exists(f)) return f;
+  }
+  return null;
+}
+const YT_DIR = IS_EXE ? BASE_DIR : path.dirname(BASE_DIR);
+function ytFail(msg, status) { const e = new Error(msg); if (status) e.status = status; return e; }
+// переводим ответы yt-dlp на человеческий язык
+function ytError(raw) {
+  const text = String(raw || '');
+  const line = (text.split(/\r?\n/).reverse().find((l) => /ERROR/i.test(l)) || text.trim().split(/\r?\n/).pop() || 'yt-dlp завершился с ошибкой').replace(/^.*?ERROR:\s*(\[[^\]]*\]\s*)?/i, '');
+  if (/could not copy|database is locked|cookie/i.test(text)) return ytFail('Не получилось прочитать cookies Brave. Закрой Brave целиком и попробуй ещё раз (или добавь публичный плейлист по ссылке)', 502);
+  if (/sign in|log in|login|private|members-only|confirm you.re not a bot/i.test(text)) return ytFail('Плейлист приватный или нужен вход: для лайков включи cookies Brave, для своего плейлиста сделай его доступным по ссылке', 403);
+  if (/does not exist|not found|unavailable|404/i.test(text)) return ytFail('Плейлист не найден: проверь ссылку', 404);
+  return ytFail('YouTube: ' + line.slice(0, 220), 502);
+}
+function ytdlp(args, timeout = 120000) {
+  const exe = ytdlpExe();
+  if (!exe) return Promise.reject(ytFail('Нужен yt-dlp: нажми «Скачать yt-dlp» в настройках, в карточке YouTube Music', 424));
+  return new Promise((resolve, reject) => {
+    execFile(exe, args, { maxBuffer: 128 * 1024 * 1024, timeout, windowsHide: true }, (err, stdout, stderr) => {
+      if (err) return reject(err.killed ? ytFail('YouTube отвечает слишком долго', 504) : ytError(stderr || err.message));
+      resolve(stdout);
+    });
+  });
+}
+const ytCookieArgs = (on) => (on ? ['--cookies-from-browser', 'brave'] : []);
+// из ссылки на плейлист берём только id; LM это «Понравившиеся» (приватный, нужны cookies)
+function ytListId(raw) {
+  let u;
+  try { u = new URL(String(raw || '').trim()); } catch { return null; }
+  if (!/(^|\.)youtube\.com$/i.test(u.hostname) && u.hostname !== 'youtu.be') return null;
+  const id = u.searchParams.get('list');
+  return id && /^[\w-]{2,60}$/.test(id) ? id : null;
+}
+function ytMap(e, i, at) {
+  const artist = String(e.uploader || e.channel || '').replace(/\s+-\s+Topic$/i, '').trim();
+  let title = String(e.title || '').trim();
+  // «Артист - Название» и «Название - Артист» в заголовке: лишнее убираем, артист уже отдельно
+  const a = norm(artist);
+  const m = title.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+  if (m && a) {
+    if (norm(m[1]) === a) title = m[2];
+    else if (norm(m[2]).includes(a)) title = m[1];
+  }
+  return {
+    src: 'yt', id: e.id, title: title || 'Без названия', artist,
+    url: `https://music.youtube.com/watch?v=${e.id}`,
+    duration: e.duration ? Math.round(e.duration * 1000) : 0,
+    cover: `https://i.ytimg.com/vi/${e.id}/hq720.jpg`,   // нет у части роликов, страница сама откатится на mqdefault
+    art: `https://i.ytimg.com/vi/${e.id}/mqdefault.jpg`,
+    at: at - i * 1000,
+  };
+}
+async function ytPlaylist(id, force, cookies) {
+  const file = path.join(DATA_DIR, `yt-${id}.json`);
+  const cached = readJson(file, null);
+  if (!force && cached) return { ...cached, cached: true };
+  const out = await ytdlp(['--flat-playlist', '-J', '--no-warnings', '--ignore-errors', ...ytCookieArgs(cookies), `https://www.youtube.com/playlist?list=${id}`], 5 * 60 * 1000);
+  let data;
+  try { data = JSON.parse(out); } catch { throw ytFail('yt-dlp вернул что-то непонятное', 502); }
+  const at = Date.now();
+  const tracks = (data.entries || [])
+    .filter((e) => e && /^[\w-]{11}$/.test(e.id || '') && e.title && !/^\[(private|deleted) video\]$/i.test(e.title))
+    .map((e, i) => ytMap(e, i, at));
+  const res = { at, name: String(data.title || '').slice(0, 80), tracks };
+  writeJson(file, res);
+  return res;
+}
+const ytUrls = new Map();   // id -> { url, at }: ссылка на звук живёт часов шесть, держим меньше
+async function ytStreamUrl(id, fresh) {
+  const hit = ytUrls.get(id);
+  if (!fresh && hit && Date.now() - hit.at < 90 * 60 * 1000) return hit.url;
+  const out = await ytdlp(['-f', 'bestaudio[ext=m4a]/bestaudio', '-g', '--no-playlist', '--no-warnings', `https://www.youtube.com/watch?v=${id}`], 90000);
+  const url = out.trim().split(/\r?\n/)[0];
+  if (!/^https:\/\/[^/]+\.googlevideo\.com\//i.test(url)) throw ytFail('YouTube не отдал звук для этого трека', 502);
+  ytUrls.set(id, { url, at: Date.now() });
+  if (ytUrls.size > 60) ytUrls.delete(ytUrls.keys().next().value);
+  return url;
+}
+// звук отдаём со своего адреса: добавляем нужные заголовки и поддерживаем перемотку (Range)
+async function ytAudio(req, res, id) {
+  const ac = new AbortController();
+  res.on('close', () => ac.abort());
+  const go = async (fresh) => {
+    const headers = { 'User-Agent': UA };
+    if (req.headers.range) headers.Range = req.headers.range;
+    return fetch(await ytStreamUrl(id, fresh), { headers, signal: ac.signal });
+  };
+  let r = await go(false);
+  if (r.status === 403 || r.status === 410 || r.status === 404) r = await go(true);   // ссылка протухла
+  if (!r.ok && r.status !== 206) throw ytFail(`YouTube не отдал звук (${r.status})`, 502);
+  const h = { 'Content-Type': r.headers.get('content-type') || 'audio/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' };
+  for (const k of ['content-length', 'content-range']) if (r.headers.get(k)) h[k] = r.headers.get(k);
+  res.writeHead(r.status, h);
+  Readable.fromWeb(r.body).on('error', () => res.destroy()).pipe(res);
+}
+// скачивание yt-dlp.exe с официального релиза, с проверкой SHA-256 из файла сумм того же релиза
+async function ytdlpInstall() {
+  const gh = { headers: { 'User-Agent': 'Sonara', Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(30000) };
+  const rel = await (await fetch('https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest', gh)).json();
+  const assets = Array.isArray(rel.assets) ? rel.assets : [];
+  const exeAsset = assets.find((a) => a.name === 'yt-dlp.exe'), sumAsset = assets.find((a) => a.name === 'SHA2-256SUMS');
+  const okUrl = (a) => a && /^https:\/\/github\.com\/yt-dlp\/yt-dlp\/releases\/download\//.test(a.browser_download_url || '');
+  if (!okUrl(exeAsset) || !okUrl(sumAsset)) throw ytFail('В релизе yt-dlp нет нужных файлов', 502);
+  const sums = await (await fetch(sumAsset.browser_download_url, gh)).text();
+  let want = '';
+  for (const l of sums.split(/\r?\n/)) { const m = l.trim().match(/^([0-9a-f]{64})\s+\*?(\S+)$/i); if (m && m[2] === 'yt-dlp.exe') want = m[1].toLowerCase(); }
+  if (!want) throw ytFail('Не нашёл контрольную сумму yt-dlp.exe', 502);
+  const r = await fetch(exeAsset.browser_download_url, { headers: { 'User-Agent': 'Sonara' }, signal: AbortSignal.timeout(5 * 60 * 1000) });
+  if (!r.ok) throw ytFail(`GitHub ответил ${r.status}`, 502);
+  const buf = Buffer.from(await r.arrayBuffer());
+  if (buf.length < 1e6 || buf.length > 90e6) throw ytFail('Скачанный файл выглядит неправильно', 502);
+  if (crypto.createHash('sha256').update(buf).digest('hex') !== want) throw ytFail('Контрольная сумма не совпала, файл не сохранён', 502);
+  const dest = path.join(YT_DIR, 'yt-dlp.exe'), tmp = dest + '.part';
+  fs.writeFileSync(tmp, buf);
+  fs.renameSync(tmp, dest);
+  ytUrls.clear();
+  log('yt-dlp установлен', rel.tag_name);
+  return { version: String(rel.tag_name || ''), path: dest };
+}
+
 // ---------- обложки для подбора цветов ----------
 // Страница читает пиксели обложки через canvas, а картинки Spotify и SoundCloud чужие и без CORS,
 // поэтому отдаём их с нашего адреса. Только https и только хосты CDN обложек, остальное не качаем.
-const ART_HOST_RE = /(^|\.)(scdn\.co|spotifycdn\.com|sndcdn\.com)$/i;
+const ART_HOST_RE = /(^|\.)(scdn\.co|spotifycdn\.com|sndcdn\.com|ytimg\.com|ggpht\.com|googleusercontent\.com)$/i;
 const artCache = new Map();
 async function fetchArt(raw) {
   let u;
@@ -1067,6 +1196,7 @@ const server = http.createServer(async (req, res) => {
         if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', ['/select,' + file], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('проводник', e.message); } }
         return send(res, 200, { ok: true, path: file });
       }
+      if (p === '/api/app/ytdlp/install' && req.method === 'POST') return send(res, 200, await ytdlpInstall());
       if (p === '/api/app/art') {
         const a = await fetchArt(u.searchParams.get('u'));
         res.writeHead(200, { 'Content-Type': a.type, 'Cache-Control': 'private, max-age=86400' });
@@ -1111,6 +1241,29 @@ const server = http.createServer(async (req, res) => {
       const user = (u.searchParams.get('user') || '').trim();
       if (!SC_USER_RE.test(user)) return send(res, 400, { error: 'Некорректный ник SoundCloud' });
       return send(res, 200, await scLikes(user, u.searchParams.get('force') === '1'));
+    }
+    if (p === '/api/yt/status') {
+      const exe = ytdlpExe();
+      let version = '';
+      if (exe) { try { version = (await ytdlp(['--version'], 15000)).trim(); } catch {} }
+      return send(res, 200, { installed: !!exe, version, brave: !!(await findBrowser('brave')) });
+    }
+    if (p === '/api/yt/playlist') {
+      const id = ytListId('https://www.youtube.com/playlist?list=' + encodeURIComponent(u.searchParams.get('list') || ''));
+      if (!id) return send(res, 400, { error: 'Не похоже на ссылку на плейлист YouTube' });
+      return send(res, 200, await ytPlaylist(id, u.searchParams.get('force') === '1', u.searchParams.get('cookies') === '1'));
+    }
+    if (p === '/api/yt/parse') {
+      const id = ytListId(u.searchParams.get('url'));
+      if (!id) return send(res, 400, { error: 'Нужна ссылка на плейлист вида youtube.com/playlist?list=… (в ней должен быть list=)' });
+      return send(res, 200, { id });
+    }
+    if (p === '/api/yt/stream' || p === '/api/yt/audio') {
+      const id = u.searchParams.get('id') || '';
+      if (!/^[\w-]{11}$/.test(id)) return send(res, 400, { error: 'bad id' });
+      if (p === '/api/yt/audio') return await ytAudio(req, res, id);
+      await ytStreamUrl(id, false);
+      return send(res, 200, { ok: true });
     }
     if (p === '/api/sc/stream') {
       const id = u.searchParams.get('id') || '';
