@@ -1,6 +1,6 @@
 // Сборка Sonara.exe: иконка из SVG -> pkg с подменой иконки и версии в базовом бинарнике
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, writeFileSync, writeSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -76,6 +76,23 @@ console.log('2/3 иконка и версия %s в базовый бинарн�
 const patched = join(buildDir, 'node-base-win-x64.exe');
 patch(findBase(), ico, patched);
 
+// subsystem Windows GUI: у exe нет консоли, окно cmd не появляется (лог пишется в player.log)
+function setGuiSubsystem(file) {
+  const fd = openSync(file, 'r+');
+  try {
+    const head = Buffer.alloc(4);
+    readSync(fd, head, 0, 4, 0x3c);
+    const pe = head.readUInt32LE(0);
+    const sig = Buffer.alloc(4);
+    readSync(fd, sig, 0, 4, pe);
+    if (sig.toString('latin1') !== 'PE\0\0') throw new Error('не PE-файл: ' + file);
+    const sub = Buffer.alloc(2);
+    sub.writeUInt16LE(2);   // IMAGE_SUBSYSTEM_WINDOWS_GUI (было 3, консоль)
+    writeSync(fd, sub, 0, 2, pe + 24 + 68);
+  } finally { closeSync(fd); }
+}
+
 console.log('3/3 pkg -> %s', outExe);
 run(['.', '--targets', TARGET, '--output', outExe], { PKG_NODE_PATH: patched });
+setGuiSubsystem(outExe);
 console.log('\nГотово: %s v%s', outExe, pkgJson.version);
