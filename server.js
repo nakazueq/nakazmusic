@@ -915,7 +915,7 @@ function ytError(raw) {
   const line = (text.split(/\r?\n/).reverse().find((l) => /ERROR/i.test(l)) || text.trim().split(/\r?\n/).pop() || 'yt-dlp завершился с ошибкой').replace(/^.*?ERROR:\s*(\[[^\]]*\]\s*)?/i, '');
   if (/could not copy|database is locked|cookie/i.test(text)) return ytFail('Не получилось прочитать cookies Brave. Закрой Brave целиком и попробуй ещё раз (или добавь публичный плейлист по ссылке)', 502);
   if (/sign in|log in|login|private|members-only|confirm you.re not a bot/i.test(text)) return ytFail('Плейлист приватный или нужен вход: для лайков включи cookies Brave, для своего плейлиста сделай его доступным по ссылке', 403);
-  if (/does not exist|not found|unavailable|404/i.test(text)) return ytFail('Плейлист не найден: проверь ссылку', 404);
+  if (/does not exist|not found|unavailable|404|HTTP Error 400|Bad Request/i.test(text)) return ytFail('Плейлист не найден: проверь ссылку', 404);
   return ytFail('YouTube: ' + line.slice(0, 220), 502);
 }
 function ytdlp(args, timeout = 120000) {
