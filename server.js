@@ -951,15 +951,20 @@ function ytMap(e, i, at) {
     src: 'yt', id: e.id, title: title || 'Без названия', artist,
     url: `https://music.youtube.com/watch?v=${e.id}`,
     duration: e.duration ? Math.round(e.duration * 1000) : 0,
-    cover: `https://i.ytimg.com/vi/${e.id}/hq720.jpg`,   // нет у части роликов, страница сама откатится на mqdefault
-    art: `https://i.ytimg.com/vi/${e.id}/mqdefault.jpg`,
+    ...ytThumbs(e.id),
     at: at - i * 1000,
   };
+}
+// миниатюра есть у любого ролика по id, поэтому не зависим от того, что вернул yt-dlp:
+// mqdefault есть всегда (список, подбор цветов), hq720 бывает не у всех (только для большой обложки, страница откатывается сама)
+function ytThumbs(id) {
+  const mq = `https://i.ytimg.com/vi/${id}/mqdefault.jpg`;
+  return { cover: mq, art: mq, big: `https://i.ytimg.com/vi/${id}/hq720.jpg` };
 }
 async function ytPlaylist(id, force, cookies) {
   const file = path.join(DATA_DIR, `yt-${id}.json`);
   const cached = readJson(file, null);
-  if (!force && cached) return { ...cached, cached: true };
+  if (!force && cached) return { ...cached, tracks: (cached.tracks || []).map((t) => ({ ...t, ...ytThumbs(t.id) })), cached: true };   // в старом кэше обложки были другими
   const out = await ytdlp(['--flat-playlist', '-J', '--no-warnings', '--ignore-errors', ...ytCookieArgs(cookies), `https://www.youtube.com/playlist?list=${id}`], 5 * 60 * 1000);
   let data;
   try { data = JSON.parse(out); } catch { throw ytFail('yt-dlp вернул что-то непонятное', 502); }
@@ -1271,7 +1276,12 @@ const server = http.createServer(async (req, res) => {
       const q = String(u.searchParams.get('q') || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 120);
       if (src !== 'sc' && src !== 'yt') return send(res, 400, { error: 'Неизвестный источник' });
       if (!q) return send(res, 400, { error: 'Пустой запрос' });
-      return send(res, 200, { tracks: await searchTracks(src, q) });
+      const t0 = Date.now();
+      try {
+        const tracks = await searchTracks(src, q);
+        log(`поиск ${src} «${q}»: ${tracks.length} за ${Date.now() - t0} мс`);
+        return send(res, 200, { tracks });
+      } catch (e) { log(`поиск ${src} «${q}»: ошибка за ${Date.now() - t0} мс:`, e.message); throw e; }
     }
     if (p === '/api/yt/status') {
       const exe = ytdlpExe();

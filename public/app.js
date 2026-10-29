@@ -650,9 +650,21 @@ async function spLoadLikes() {
   renderHead(); renderEmpty();
   try {
     const out = [];
-    let url = '/me/tracks?limit=50';
-    while (url) {
-      const j = await spApi(url);
+    // если API отвечает «Invalid limit», уменьшаем страницу (50 → 20 → 10) и запоминаем рабочее значение
+    let limit = Number(LS.get('sp_likes_limit')) || 50;
+    let url = null;
+    const firstPage = async () => {
+      for (;;) {
+        try { return await spApi(`/me/tracks?limit=${limit}`); }
+        catch (e) {
+          if (!/limit/i.test(e.message) || limit <= 10) throw e;
+          limit = limit > 20 ? 20 : 10;
+          LS.set('sp_likes_limit', String(limit));
+        }
+      }
+    };
+    for (let first = true; first || url; first = false) {
+      const j = first ? await firstPage() : await spApi(url);
       for (const it of (j && j.items) || []) {
         const t = it.track;
         if (t && t.id && !t.is_local) out.push(spMap(t, it.added_at));
@@ -1575,7 +1587,7 @@ function fillRow(el, t, i) {
     el._tt.textContent = t.title;
     el._ar.textContent = t.artist;
     const cv = t.cover || NO_COVER;
-    if (el._img.getAttribute('src') !== cv) el._img.src = cv;
+    if (el._cv !== cv) { el._cv = cv; el._img.src = cv; }   // сравниваем со своим значением: запасная картинка не должна перезаписываться
     if (state.view === 'recs') el._c3.textContent = t.because ? t.because : '';
     else el._c3.innerHTML = srcBadges(t);
     el._d.textContent = t.duration ? fmt(t.duration) : '—';
@@ -1807,31 +1819,51 @@ async function runSearch() {
   searchRefresh();
   await Promise.allSettled(jobs);
 }
+// Spotify принимает в поиске не больше 10 результатов за запрос (иначе «Invalid limit»): берём страницами по 10 через offset.
+// Первая страница обязательна, остальные добираем, и если их не дали, остаёмся с тем, что есть.
+const SP_SEARCH_PAGE = 10, SP_SEARCH_PAGES = 2;
+async function spSearch(q, signal) {
+  const page = async (n) => {
+    const j = await spApi(`/search?type=track&limit=${SP_SEARCH_PAGE}&offset=${n * SP_SEARCH_PAGE}&q=${encodeURIComponent(q)}`, { signal });
+    return ((j && j.tracks && j.tracks.items) || []).filter((t) => t && t.id && !t.is_local).map((t) => spMap(t));
+  };
+  const first = await page(0);
+  if (first.length < SP_SEARCH_PAGE) return first;
+  const rest = await Promise.allSettled(Array.from({ length: SP_SEARCH_PAGES - 1 }, (_, i) => page(i + 1)));
+  const seen = new Set(first.map((t) => t.id));
+  for (const r of rest) if (r.status === 'fulfilled') for (const t of r.value) if (!seen.has(t.id)) { seen.add(t.id); first.push(t); }
+  return first;
+}
 async function searchOne(id, q, token) {
   const ctl = new AbortController();
   const ms = SEARCH_TIMEOUT[id];
   const timer = setTimeout(() => ctl.abort(), ms);
+  const t0 = Date.now();
   try {
     let tracks;
-    if (id === 'sp') {
-      const j = await spApi('/search?type=track&limit=20&q=' + encodeURIComponent(q), { signal: ctl.signal });
-      tracks = ((j && j.tracks && j.tracks.items) || []).filter((t) => t && t.id && !t.is_local).map((t) => spMap(t));
-    } else {
+    if (id === 'sp') tracks = await spSearch(q, ctl.signal);
+    else {
       tracks = (await api(`/api/search?src=${id}&q=${encodeURIComponent(q)}`, { signal: ctl.signal })).tracks || [];
     }
     if (token !== searchSt.token) return;
     searchSt.remote[id] = tracks;
-    searchSt.per[id] = { st: 'ok', n: tracks.length };
+    searchSt.per[id] = { st: 'ok', n: tracks.length, ms: Date.now() - t0 };
   } catch (e) {
     if (token !== searchSt.token) return;
     searchSt.remote[id] = [];
-    searchSt.per[id] = { st: 'err', msg: ctl.signal.aborted || e.name === 'AbortError' ? `не ответил за ${Math.round(ms / 1000)} с` : e.message };
+    searchSt.per[id] = { st: 'err', msg: ctl.signal.aborted || e.name === 'AbortError' ? `не ответил за ${Math.round(ms / 1000)} с` : e.message, ms: Date.now() - t0 };
+    console.warn('поиск', id, searchSt.per[id].msg);
   } finally { clearTimeout(timer); }
   searchRefresh();
 }
 function searchRefresh() {
-  searchMergeNow();
-  renderSearchChips();
+  renderSearchChips();   // счётчики не зависят от слияния, поэтому рисуем их первыми
+  try { searchMergeNow(); }
+  catch (e) {
+    // если слияние сломалось на чьих-то данных, показываем результаты как есть, без объединения дублей
+    console.error('поиск: не получилось объединить результаты', e);
+    searchSt.items = SEARCH_SRCS.flatMap(([id]) => (searchUsable(id) ? searchSt.remote[id] || [] : []));
+  }
   if (searchActive()) render();
 }
 function renderSearchChips() {
@@ -1844,7 +1876,9 @@ function renderSearchChips() {
       else if (per.st === 'ok') tag = `<b>${per.n}</b>`;
       else if (per.st === 'err') tag = '<b class="bad">!</b>';
     }
-    const title = !avail ? (id === 'sp' ? 'Spotify не подключён' : 'Нужен yt-dlp') : on ? 'Искать здесь: включено' : 'Искать здесь: выключено';
+    let title = !avail ? (id === 'sp' ? 'Spotify не подключён' : 'Нужен yt-dlp') : on ? 'Искать здесь: включено' : 'Искать здесь: выключено';
+    if (on && active && per.st === 'ok') title = `Найдено: ${per.n} за ${(per.ms / 1000).toFixed(1)} с`;
+    else if (on && active && per.st === 'err') title = `Ошибка: ${per.msg}`;
     return `<button type="button" class="gs-chip ${id}${on ? ' on' : ''}${avail ? '' : ' na'}" data-src="${id}" aria-pressed="${on}" title="${title}"><span>${name}</span>${tag}</button>`;
   }).join('');
   const notes = [];
@@ -1910,10 +1944,12 @@ function searchMergeNow() {
   searchSt.items = groups.sort((a, b) => b.score - a.score).map((g) => {
     const mem = g.members.slice().sort((a, b) => playRank(a) - playRank(b));
     const p = mem[0];
-    const meta = g.members.slice().sort((a, b) => META_RANK[a.src] - META_RANK[b.src])[0];
+    const metas = g.members.slice().sort((a, b) => META_RANK[a.src] - META_RANK[b.src]);
+    const meta = metas[0];
+    const pickImg = (k) => (metas.find((m) => m[k]) || {})[k] || '';   // обложка из любого источника, где она есть
     return Object.assign({}, p, {
       title: meta.title, artist: meta.artist, album: meta.album || p.album,
-      cover: meta.cover || p.cover, art: meta.art || p.art, big: meta.big || p.big,
+      cover: pickImg('cover'), art: pickImg('art'), big: pickImg('big'),
       alts: mem.slice(1).filter(searchPlayable),
       _srcs: mem.map((m) => m.src),
       _dim: mem.filter((m) => !searchPlayable(m)).map((m) => m.src),
