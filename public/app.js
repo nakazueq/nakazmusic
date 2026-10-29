@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 // Эти настройки дублируются в программу (%LOCALAPPDATA%\MyPlayer\store.json),
 // чтобы не вводить их заново после обновления или смены окна
-const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src']);
+const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb']);
 const storeQueue = {};
 let storeTimer = 0;
 function storeSync(k, v) {
@@ -1086,9 +1086,10 @@ async function ytPlay(t, token) {
   if (scw) { try { scw.pause(); } catch {} }
   hlsCleanup();
   audio.pause();
-  await api('/api/yt/stream?id=' + encodeURIComponent(t.id));
+  const cq = ytCookieFb() ? '&cookies=1' : '';
+  await api('/api/yt/stream?id=' + encodeURIComponent(t.id) + cq);
   if (token !== state.token) return;
-  audio.src = '/api/yt/audio?id=' + encodeURIComponent(t.id);
+  audio.src = '/api/yt/audio?id=' + encodeURIComponent(t.id) + cq;
   audio.volume = gain();
   try { await audio.play(); }
   catch (e) {
@@ -1165,8 +1166,31 @@ async function playTrack(t) {
       toast(`Играю из другого источника: ${SRC_NAMES[alt.src] || alt.src}`);
       return playTrack(nxt);
     }
+    // трек из YouTube не заиграл: ищем тот же на SoundCloud
+    if (token === state.token && t.src === 'yt' && !t._altTried) {
+      t._altTried = true;
+      const alt = await findAltSource(t);
+      if (token === state.token && alt) {
+        const nxt = { ...t, src: alt.src, id: alt.id, uri: undefined, url: alt.url, duration: alt.duration || t.duration, alts: [], _altTried: true };
+        const qi = state.order[state.pos];
+        if (state.queue[qi] === t) state.queue[qi] = nxt;
+        toast('YouTube не отдал звук, играю из SoundCloud');
+        return playTrack(nxt);
+      }
+    }
     playFailed(e, token);
   }
+}
+// тот же трек в другом источнике: для упавшего YouTube ищем на SoundCloud и принимаем только точное совпадение названия
+async function findAltSource(t) {
+  const ctl = new AbortController();
+  const to = setTimeout(() => ctl.abort(), 10000);
+  try {
+    const q = `${String(t.artist || '').split(',')[0]} ${t.title}`.trim();
+    const j = await api('/api/search?src=sc&q=' + encodeURIComponent(q), { signal: ctl.signal });
+    const [title, artist] = dupParts(t);
+    return (j.tracks || []).find((x) => { const [xt, xa] = dupParts(x); return title && xt === title && artistsOverlap(artist, xa) && durOk(t.duration, x.duration); }) || null;
+  } catch { return null; } finally { clearTimeout(to); }
 }
 const SRC_NAMES = { sp: 'Spotify', sc: 'SoundCloud', yt: 'YouTube Music', local: 'С компа' };
 function playFailed(e, token) {
@@ -1174,9 +1198,12 @@ function playFailed(e, token) {
   console.warn(e);
   state.playing = false;
   updatePlayer();
-  toast(e && e.message ? e.message : 'Не получилось включить трек', e && e.fatal ? 7000 : 3800);
+  const skip = !(e && e.fatal) && state.queue.length > 1 && state.fails < Math.min(8, state.queue.length);
+  // если пропускаем, уведомление короткое: подробности в консоли и player.log
+  const name = state.cur && state.cur.title ? `«${state.cur.title.slice(0, 40)}»` : 'трек';
+  toast(skip ? `Не получилось включить ${name}, пропускаю` : e && e.message ? e.message : 'Не получилось включить трек', e && e.fatal ? 7000 : 3800);
   if (e && e.fatal) return;
-  if (++state.fails <= 4 && state.queue.length > 1) setTimeout(() => { if (token === state.token) next('fail'); }, 1200);
+  if (++state.fails <= Math.min(8, state.queue.length) && state.queue.length > 1) setTimeout(() => { if (token === state.token) next('fail'); }, 900);
 }
 function next(auto = false) {
   if (!state.queue.length) return;
@@ -1675,7 +1702,9 @@ let ytLists = LS.json('yt_lists', []);
 if (!Array.isArray(ytLists)) ytLists = [];
 ytLists = ytLists.filter((l) => l && /^[\w-]{2,60}$/.test(l.id || '')).slice(0, 12)
   .map((l) => ({ id: l.id, name: String(l.name || '').slice(0, 80), cookies: !!l.cookies, n: Number(l.n) || 0 }));
-let ytStatus = { installed: true, version: '', brave: false };
+let ytStatus = { installed: true, version: '', brave: false, js: null };
+// если ролик не играет ни одним способом без входа, можно пробовать cookies Brave (по умолчанию выключено)
+const ytCookieFb = () => LS.get('yt_cookie_fb') === '1';
 const saveYtLists = () => { LS.set('yt_lists', JSON.stringify(ytLists)); renderYtLists(); };
 async function ytCheck() {
   try { ytStatus = await api('/api/yt/status'); } catch {}
@@ -1699,9 +1728,10 @@ function renderYtLists() {
     });
     box.appendChild(d);
   }
-  $('yt-install').hidden = ytStatus.installed;
-  $('yt-install').textContent = 'Скачать yt-dlp';
-  $('yt-version').textContent = ytStatus.installed ? `yt-dlp ${ytStatus.version || ''}`.trim() : '';
+  const ib = $('yt-install');
+  if (!ib.disabled) ib.textContent = ytStatus.installed ? 'Обновить yt-dlp' : 'Скачать yt-dlp';
+  $('yt-version').textContent = !ytStatus.installed ? '' : `yt-dlp ${ytStatus.version || ''} · ${ytStatus.js ? 'JS-рантайм: ' + ytStatus.js : 'нет JS-рантайма (Node, Deno), часть роликов может не играть'}`.trim();
+  $('yt-cookie-fb').checked = ytCookieFb();
   $('yt-likes').title = ytStatus.brave ? 'Нужен вход в YouTube в Brave. Brave лучше закрыть' : 'Brave не найден';
   $('yt-likes').disabled = !ytStatus.brave;
 }
@@ -1759,12 +1789,13 @@ $('yt-install').addEventListener('click', async () => {
   b.disabled = true; b.textContent = 'Скачиваю…';
   try {
     const r = await api('/api/app/ytdlp/install', { method: 'POST', headers: { 'X-Player': '1' } });
-    toast('yt-dlp ' + r.version + ' установлен');
+    toast(r.updated ? `yt-dlp обновлён до ${r.version}` : `Уже стоит последняя версия yt-dlp (${r.version})`);
     await ytCheck();
-    ytLoadAll(true);
-  } catch (e) { setAccState('yt', 'Не получилось скачать yt-dlp: ' + e.message, 'err'); }
+    if (r.updated) ytLoadAll(true);
+  } catch (e) { setAccState('yt', 'Не получилось обновить yt-dlp: ' + e.message, 'err'); }
   b.disabled = false; renderYtLists();
 });
+$('yt-cookie-fb').addEventListener('change', (e) => { LS.set('yt_cookie_fb', e.target.checked ? '1' : '0'); });
 
 /* ===================== Глобальный поиск ===================== */
 // Поиск идёт параллельно по включённым источникам, у каждого свой таймаут. Результаты приходят по мере готовности:

@@ -33,7 +33,7 @@ try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
 const LOG_FILE = path.join(DATA_DIR, 'player.log');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
-const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src']);
+const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb']);
 // запуск с --safe-css (или SONARA_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
 const SAFE_CSS = process.argv.includes('--safe-css') || process.env.SONARA_SAFE_CSS === '1';
 const PLAYS_FILE = path.join(DATA_DIR, 'plays.jsonl');
@@ -977,24 +977,78 @@ async function ytPlaylist(id, force, cookies) {
   return res;
 }
 const ytUrls = new Map();   // id -> { url, at }: ссылка на звук живёт часов шесть, держим меньше
-async function ytStreamUrl(id, fresh) {
-  const hit = ytUrls.get(id);
-  if (!fresh && hit && Date.now() - hit.at < 90 * 60 * 1000) return hit.url;
-  const out = await ytdlp(['-f', 'bestaudio[ext=m4a]/bestaudio', '-g', '--no-playlist', '--no-warnings', `https://www.youtube.com/watch?v=${id}`], 90000);
-  const url = out.trim().split(/\r?\n/)[0];
-  if (!/^https:\/\/[^/]+\.googlevideo\.com\//i.test(url)) throw ytFail('YouTube не отдал звук для этого трека', 502);
-  ytUrls.set(id, { url, at: Date.now() });
-  if (ytUrls.size > 60) ytUrls.delete(ytUrls.keys().next().value);
-  return url;
+// Свежему yt-dlp для YouTube нужен JS-рантайм (deno, node или bun): без него клиент по умолчанию получает от YouTube
+// «This video is not available» на многих роликах. Ищем рантайм на компьютере и отдаём его yt-dlp.
+let jsRuntimeCache = { at: 0, val: null };
+function findJsRuntime() {
+  if (Date.now() - jsRuntimeCache.at < 60000) return jsRuntimeCache.val;
+  const names = [['deno', 'deno.exe'], ['node', 'node.exe'], ['bun', 'bun.exe']];
+  const dirs = String(process.env.PATH || '').split(path.delimiter).filter(Boolean);
+  const pf = process.env.ProgramFiles, home = process.env.USERPROFILE;
+  if (pf) dirs.push(path.join(pf, 'nodejs'));
+  if (home) dirs.push(path.join(home, '.deno', 'bin'), path.join(home, '.bun', 'bin'));
+  let val = null;
+  for (const [name, file] of names) {
+    for (const d of dirs) { const f = path.join(d, file); if (exists(f) && f !== process.execPath) { val = { name, path: f }; break; } }
+    if (val) break;
+  }
+  jsRuntimeCache = { at: Date.now(), val };
+  return val;
 }
-// звук отдаём со своего адреса: добавляем нужные заголовки и поддерживаем перемотку (Range)
-async function ytAudio(req, res, id) {
+// Способы получить ссылку на звук, от самого надёжного. Клиент android отдаёт только готовый mp4 с картинкой и звуком (360p),
+// зато работает без JS-рантайма; остальные клиенты нужны с рантаймом. Cookies Brave берём в последнюю очередь и только если разрешено.
+let ytLastGood = '';
+function ytPlan(useCookies) {
+  const js = findJsRuntime();
+  const jsArgs = js ? ['--js-runtimes', `${js.name}:${js.path}`] : [];
+  const client = (c) => ['--extractor-args', `youtube:player_client=${c}`];
+  const plan = [{ name: 'default', args: jsArgs, js: false }, { name: 'android', args: client('android') }, { name: 'mweb', args: [...jsArgs, ...client('mweb')], js: true },
+    { name: 'tv_simply', args: [...jsArgs, ...client('tv_simply')], js: true }, { name: 'android_vr', args: [...jsArgs, ...client('android_vr')] }]
+    .filter((p) => js || !p.js);
+  const good = plan.findIndex((p) => p.name === ytLastGood);
+  if (good > 0) plan.unshift(plan.splice(good, 1)[0]);   // сначала то, что сработало в прошлый раз
+  if (useCookies) {
+    plan.push({ name: 'cookies', args: [...ytCookieArgs(true), ...jsArgs] }, { name: 'cookies+mweb', args: [...ytCookieArgs(true), ...jsArgs, ...client('mweb')] });
+  }
+  return plan;
+}
+const ytInflight = new Map();
+function ytStreamUrl(id, fresh, useCookies) {
+  const hit = ytUrls.get(id);
+  if (!fresh && hit && Date.now() - hit.at < 90 * 60 * 1000) return Promise.resolve(hit.url);
+  const key = id + (useCookies ? ':c' : '');
+  if (ytInflight.has(key)) return ytInflight.get(key);
+  const job = (async () => {
+    const failed = [];
+    for (const step of ytPlan(useCookies)) {
+      try {
+        const out = await ytdlp([...step.args, '-f', 'bestaudio[ext=m4a]/bestaudio/best', '-g', '--no-playlist', '--no-warnings', `https://www.youtube.com/watch?v=${id}`], 45000);
+        const url = out.trim().split(/\r?\n/)[0];
+        if (!/^https:\/\/[^/]+\.googlevideo\.com\//i.test(url)) throw new Error('нет ссылки на звук');
+        if (ytLastGood !== step.name) log(`YouTube ${id}: сработал способ «${step.name}»`);
+        ytLastGood = step.name;
+        ytUrls.set(id, { url, at: Date.now() });
+        if (ytUrls.size > 60) ytUrls.delete(ytUrls.keys().next().value);
+        return url;
+      } catch (e) {
+        if (e.status === 424) throw e;   // нет yt-dlp: перебирать нечего
+        failed.push(step.name);
+        log(`YouTube ${id}: способ «${step.name}» не вышел: ${e.message}`);
+      }
+    }
+    throw ytFail(`YouTube не отдал звук ни одним способом (${failed.join(', ')})`, 502);
+  })();
+  ytInflight.set(key, job);
+  job.then(() => ytInflight.delete(key), () => ytInflight.delete(key));
+  return job;
+}// звук отдаём со своего адреса: добавляем нужные заголовки и поддерживаем перемотку (Range)
+async function ytAudio(req, res, id, useCookies) {
   const ac = new AbortController();
   res.on('close', () => ac.abort());
   const go = async (fresh) => {
     const headers = { 'User-Agent': UA };
     if (req.headers.range) headers.Range = req.headers.range;
-    return fetch(await ytStreamUrl(id, fresh), { headers, signal: ac.signal });
+    return fetch(await ytStreamUrl(id, fresh, useCookies), { headers, signal: ac.signal });
   };
   let r = await go(false);
   if (r.status === 403 || r.status === 410 || r.status === 404) r = await go(true);   // ссылка протухла
@@ -1012,6 +1066,8 @@ async function ytdlpInstall() {
   const exeAsset = assets.find((a) => a.name === 'yt-dlp.exe'), sumAsset = assets.find((a) => a.name === 'SHA2-256SUMS');
   const okUrl = (a) => a && /^https:\/\/github\.com\/yt-dlp\/yt-dlp\/releases\/download\//.test(a.browser_download_url || '');
   if (!okUrl(exeAsset) || !okUrl(sumAsset)) throw ytFail('В релизе yt-dlp нет нужных файлов', 502);
+  // уже стоит последняя версия: ничего не качаем
+  if (ytdlpExe()) { let cur = ''; try { cur = (await ytdlp(['--version'], 15000)).trim(); } catch {} if (cur && cur === String(rel.tag_name || '')) return { version: cur, path: ytdlpExe(), updated: false }; }
   const sums = await (await fetch(sumAsset.browser_download_url, gh)).text();
   let want = '';
   for (const l of sums.split(/\r?\n/)) { const m = l.trim().match(/^([0-9a-f]{64})\s+\*?(\S+)$/i); if (m && m[2] === 'yt-dlp.exe') want = m[1].toLowerCase(); }
@@ -1026,7 +1082,7 @@ async function ytdlpInstall() {
   fs.renameSync(tmp, dest);
   ytUrls.clear();
   log('yt-dlp установлен', rel.tag_name);
-  return { version: String(rel.tag_name || ''), path: dest };
+  return { version: String(rel.tag_name || ''), path: dest, updated: true };
 }
 
 // ---------- глобальный поиск по SoundCloud и YouTube Music ----------
@@ -1287,7 +1343,8 @@ const server = http.createServer(async (req, res) => {
       const exe = ytdlpExe();
       let version = '';
       if (exe) { try { version = (await ytdlp(['--version'], 15000)).trim(); } catch {} }
-      return send(res, 200, { installed: !!exe, version, brave: !!(await findBrowser('brave')) });
+      const js = findJsRuntime();
+      return send(res, 200, { installed: !!exe, version, brave: !!(await findBrowser('brave')), js: js ? js.name : null });
     }
     if (p === '/api/yt/playlist') {
       const id = ytListId('https://www.youtube.com/playlist?list=' + encodeURIComponent(u.searchParams.get('list') || ''));
@@ -1302,8 +1359,8 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/yt/stream' || p === '/api/yt/audio') {
       const id = u.searchParams.get('id') || '';
       if (!/^[\w-]{11}$/.test(id)) return send(res, 400, { error: 'bad id' });
-      if (p === '/api/yt/audio') return await ytAudio(req, res, id);
-      await ytStreamUrl(id, false);
+      if (p === '/api/yt/audio') return await ytAudio(req, res, id, u.searchParams.get('cookies') === '1');
+      await ytStreamUrl(id, false, u.searchParams.get('cookies') === '1');
       return send(res, 200, { ok: true });
     }
     if (p === '/api/sc/stream') {
