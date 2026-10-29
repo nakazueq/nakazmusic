@@ -254,7 +254,12 @@
     </div>
 
     <h3>Цвета</h3>
-    <div class="lk-colors">
+    <div class="setrow lk-autorow">
+      <label for="lk-auto">Подбирать по обложке<small>Акцент, фон и текст подстраиваются под обложку трека. Ручные цвета на это время не действуют.</small></label>
+      <label class="switch"><input id="lk-auto" type="checkbox"><span></span></label>
+    </div>
+    <div class="lk-note" id="lk-auto-info" hidden></div>
+    <div class="lk-colors" id="lk-colors">
       <div class="lk-color"><label for="lk-bg">Фон</label><input type="color" id="lk-bg"><button class="lk-x" id="lk-bg-x" title="Вернуть цвет темы" hidden>Сброс</button></div>
       <div class="lk-color"><label for="lk-accent">Акцент</label><input type="color" id="lk-accent"><button class="lk-x" id="lk-accent-x" title="Вернуть цвет по умолчанию" hidden>Сброс</button></div>
       <div class="lk-color"><label for="lk-text">Текст</label><input type="color" id="lk-text"><button class="lk-x" id="lk-text-x" title="Вернуть цвет темы" hidden>Сброс</button></div>

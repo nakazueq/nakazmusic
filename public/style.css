@@ -959,3 +959,6 @@ body.ly-mode .player { left: 14px; }
 .lk-bn { flex: 1; min-width: 0; font-weight: 600; }
 .lk-bn small { display: block; margin-top: 1px; font-size: 11.5px; font-weight: 400; color: var(--muted); }
 .lk-note { margin: 8px 0 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+/* цвета по обложке */
+.lk-autorow { border-top: 0; padding-top: 4px; }
+.lk-colors.dim { opacity: .45; pointer-events: none; }

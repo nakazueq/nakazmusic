@@ -86,7 +86,7 @@ const ACCENTS = [
   ['Оранжевый', '#FF9500'], ['Жёлтый', '#FFCC00'], ['Зелёный', '#34C759'], ['Бирюзовый', '#30B0C7'], ['Графит', '#8E8E93'],
 ];
 // тонкая настройка вида (окно «Оформление»): всё хранится внутри ui и уезжает в store.json
-const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prevWall: null };
+const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prevWall: null, auto: false };
 const DEFAULT_UI = { preset: 'glass', mode: 'light', accent: '#007AFF', wall: 'mist', alpha: 45, blur: 40, lite: false, compact: false, tray: true };
 const ui = { ...DEFAULT_UI, ...LS.json('ui', {}) };
 ui.look = { ...DEFAULT_LOOK, ...(ui.look || {}) };
@@ -129,9 +129,10 @@ function isLightColor(hex) {
 }
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 // свой цвет фона сам решает, светлая тема или тёмная: иначе текст может слиться с фоном
+const baseMode = () => (ui.mode === 'auto' ? (mq.matches ? 'dark' : 'light') : ui.mode);
 function currentMode() {
-  if (HEX_RE.test(ui.look.bg || '')) return isLightColor(ui.look.bg) ? 'light' : 'dark';
-  return ui.mode === 'auto' ? (mq.matches ? 'dark' : 'light') : ui.mode;
+  if (!(ui.look.auto && autoNow) && HEX_RE.test(ui.look.bg || '')) return isLightColor(ui.look.bg) ? 'light' : 'dark';
+  return baseMode();   // цвета по обложке подстраиваются под выбранную светлую или тёмную тему, а не меняют её
 }
 const rgbOf = (hex) => `${parseInt(hex.slice(1, 3), 16)} ${parseInt(hex.slice(3, 5), 16)} ${parseInt(hex.slice(5, 7), 16)}`;
 function mixHex(a, b, t) {
@@ -151,20 +152,158 @@ const FONTS = [
   ['"Comic Sans MS"', 'Comic Sans'],
 ];
 const fontStack = (f) => (f ? `${f}, system-ui, sans-serif` : '');
+
+/* ---------- цвета по обложке ---------- */
+let autoNow = null;            // палитра, которая применена сейчас (во время плавного перехода промежуточная)
+let autoRaf = 0, autoToken = 0;
+const autoDoms = new Map();    // url обложки -> доминирующий цвет
+const lumOf = (hex) => {
+  const lin = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  const n = parseInt(hex.slice(1), 16);
+  return 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
+};
+function contrastOf(a, b) {
+  const la = lumOf(a), lb = lumOf(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+function hexToHsl(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  let h = 0;
+  if (d) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [((h * 60) + 360) % 360, d ? d / (1 - Math.abs(2 * l - 1)) : 0, l];
+}
+function hslToHex(h, s, l) {
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return '#' + [r, g, b].map((v) => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
+}
+const clampN = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+// доминирующий цвет: гистограмма 16x16x16, насыщенные цвета весят больше, почти чёрное и почти белое меньше
+function domColor(px) {
+  const buckets = new Map();
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 128) continue;
+    const r = px[i], g = px[i + 1], b = px[i + 2];
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), v = mx / 255, s = mx ? (mx - mn) / mx : 0;
+    let w = 0.2 + s;
+    if (v < 0.12 || (v > 0.94 && s < 0.12)) w *= 0.15;
+    const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+    const a = buckets.get(key) || [0, 0, 0, 0];
+    a[0] += r * w; a[1] += g * w; a[2] += b * w; a[3] += w;
+    buckets.set(key, a);
+  }
+  let best = null;
+  for (const a of buckets.values()) if (!best || a[3] > best[3]) best = a;
+  if (!best || !best[3]) return null;
+  return '#' + [0, 1, 2].map((k) => Math.round(best[k] / best[3]).toString(16).padStart(2, '0')).join('');
+}
+async function domOfArt(url) {
+  if (autoDoms.has(url)) return autoDoms.get(url);
+  // чужие картинки читаем через сервер плеера (там нет CORS), свои и локальные напрямую
+  const remote = /^https?:/i.test(url) && new URL(url).origin !== location.origin;
+  const r = await fetch(remote ? '/api/app/art?u=' + encodeURIComponent(url) : url, { headers: { 'X-Player': '1' } });
+  if (!r.ok) throw new Error('обложка ' + r.status);
+  const bmp = await createImageBitmap(await r.blob());
+  const c = document.createElement('canvas');
+  c.width = c.height = 40;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(bmp, 0, 0, 40, 40);
+  if (bmp.close) bmp.close();
+  const dom = domColor(g.getImageData(0, 0, 40, 40).data);
+  autoDoms.set(url, dom);
+  if (autoDoms.size > 60) autoDoms.delete(autoDoms.keys().next().value);
+  return dom;
+}
+// палитра под тему: фон 13% или 93% яркости, текст >= 7:1, подписи >= 4.5:1, кнопки >= 4.5:1 и заметны на фоне (>= 3:1)
+function derivePalette(domHex, mode) {
+  const [h, s0] = hexToHsl(domHex);
+  const dark = mode === 'dark', grey = s0 < 0.12;
+  const bg = hslToHex(h, grey ? s0 : clampN(s0 * (dark ? 0.55 : 0.6), dark ? 0.14 : 0.16, dark ? 0.42 : 0.5), dark ? 0.13 : 0.93);
+  let acc = grey ? hexToHsl(HEX_RE.test(ui.accent) ? ui.accent : '#007aff') : [h, clampN(s0, 0.5, 0.95), dark ? 0.6 : 0.45];
+  let [ah, as, al] = acc, accent = '#000000', on = '#ffffff';
+  for (let i = 0; i < 40; i++) {
+    accent = hslToHex(ah, as, al);
+    const wc = contrastOf('#ffffff', accent), bc = contrastOf('#111111', accent);
+    on = wc >= bc ? '#ffffff' : '#111111';
+    if (Math.max(wc, bc) >= 4.5 && contrastOf(accent, bg) >= 3) break;
+    if (Math.max(wc, bc) < 4.5) al += on === '#ffffff' ? -0.03 : 0.03;
+    else al += dark ? 0.03 : -0.03;
+    al = clampN(al, 0.06, 0.94);
+  }
+  let text = hslToHex(h, grey ? 0 : dark ? 0.25 : 0.3, dark ? 0.96 : 0.1);
+  if (contrastOf(text, bg) < 7) text = dark ? '#ffffff' : '#000000';
+  let t = 0.68, muted = mixHex(bg, text, t);
+  while (contrastOf(muted, bg) < 4.5 && t < 0.98) { t += 0.04; muted = mixHex(bg, text, t); }
+  t = 0.5; let faint = mixHex(bg, text, t);
+  while (contrastOf(faint, bg) < 3 && t < 0.98) { t += 0.04; faint = mixHex(bg, text, t); }
+  return { bg, accent, on, text, muted, faint, mode, dom: domHex, ratios: { text: contrastOf(text, bg), button: contrastOf(on, accent), muted: contrastOf(muted, bg) } };
+}
+function blendPal(a, b, k) {
+  const m = {};
+  for (const f of ['bg', 'accent', 'text', 'muted', 'faint']) m[f] = mixHex(a[f], b[f], k);
+  return { ...b, ...m, on: k < 0.5 ? a.on : b.on };
+}
+let autoFinal = 0;
+function autoClear() {
+  cancelAnimationFrame(autoRaf);
+  clearTimeout(autoFinal);
+  const had = !!autoNow;
+  autoNow = null;
+  if (had) applyUI();
+  else syncLookUI();
+}
+function autoApply(pal) {
+  cancelAnimationFrame(autoRaf);
+  clearTimeout(autoFinal);
+  const from = autoNow;
+  if (!from || ui.lite || document.hidden) { autoNow = pal; applyUI(); return; }
+  const t0 = performance.now(), D = 700;
+  // если кадры анимации встали (окно свёрнуто или перекрыто), всё равно приходим к нужным цветам
+  autoFinal = setTimeout(() => { cancelAnimationFrame(autoRaf); autoNow = pal; applyLook(); syncLookUI(); }, D + 150);
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / D), e = k < 0.5 ? 2 * k * k : 1 - ((-2 * k + 2) ** 2) / 2;
+    autoNow = k < 1 ? blendPal(from, pal, e) : pal;
+    applyLook();
+    if (k < 1) autoRaf = requestAnimationFrame(step); else syncLookUI();
+  };
+  autoRaf = requestAnimationFrame(step);
+}
+// вызывается при смене трека и при включении переключателя
+async function autoCover() {
+  const tok = ++autoToken;
+  const t = state.cur, art = t && (t.art || t.cover);
+  if (!ui.look.auto || !art) { autoClear(); return; }
+  let dom = null;
+  try { dom = await domOfArt(art); } catch (e) { console.warn(e); }
+  if (tok !== autoToken) return;
+  if (!dom) { autoClear(); return; }
+  autoApply(derivePalette(dom, baseMode()));
+}
+
 function applyLook() {
   const r = document.documentElement, L = ui.look;
+  const A = L.auto ? autoNow : null;
   const set = (k, v) => (v == null || v === '' ? r.style.removeProperty(k) : r.style.setProperty(k, v));
-  if (HEX_RE.test(L.bg || '')) {
-    const light = isLightColor(L.bg);
-    set('--plain', L.bg);
-    set('--main-rgb', rgbOf(L.bg));
-    set('--side-rgb', rgbOf(mixHex(L.bg, '#000000', light ? 0.05 : 0.18)));
-    set('--bar-rgb', rgbOf(mixHex(L.bg, '#ffffff', light ? 0.5 : 0.07)));
-    set('--solid', mixHex(L.bg, '#ffffff', light ? 0.6 : 0.1));
+  set('--accent', A ? A.accent : ui.accent);
+  set('--on-accent', A ? A.on : (isLightColor(ui.accent) ? '#1d1d1f' : '#ffffff'));
+  const bg = A ? A.bg : L.bg;
+  if (HEX_RE.test(bg || '')) {
+    const light = isLightColor(bg);
+    set('--plain', bg);
+    set('--main-rgb', rgbOf(bg));
+    set('--side-rgb', rgbOf(mixHex(bg, '#000000', light ? 0.05 : 0.18)));
+    set('--bar-rgb', rgbOf(mixHex(bg, '#ffffff', light ? 0.5 : 0.07)));
+    set('--solid', mixHex(bg, '#ffffff', light ? 0.6 : 0.1));
   } else {
     for (const k of ['--plain', '--main-rgb', '--side-rgb', '--bar-rgb', '--solid']) set(k, null);
   }
-  if (HEX_RE.test(L.text || '')) {
+  if (A) {
+    set('--text', A.text);
+    set('--muted', A.muted);
+    set('--faint', A.faint);
+  } else if (HEX_RE.test(L.text || '')) {
     set('--text', L.text);
     set('--muted', `color-mix(in srgb, ${L.text} 62%, transparent)`);
     set('--faint', `color-mix(in srgb, ${L.text} 45%, transparent)`);
@@ -195,6 +334,8 @@ function applyUI() {
   r.style.setProperty('--on-accent', isLightColor(ui.accent) ? '#1d1d1f' : '#ffffff');
   r.style.setProperty('--op', (0.96 - (ui.alpha / 100) * 0.76).toFixed(3));
   r.style.setProperty('--blur', ui.blur + 'px');
+  // сменили светлую/тёмную тему: палитру по обложке нужно собрать заново
+  if (ui.look.auto && autoNow && autoNow.mode !== baseMode()) autoCover();
   applyLook();
   applyBlocks();
   if (ui.layout.mode !== 'full') r.classList.remove('peek');
@@ -1014,6 +1155,7 @@ function onTrackChanged() {
   updatePlayer();
   refreshCurrentRows();
   if (ui.wall === 'cover') applyWall();
+  if (ui.look.auto) autoCover();
   const big = bigArt(state.cur);
   const sc = $('side-cover');
   if (big) { const img = $('side-cover-img'); if (img.getAttribute('src') !== big) img.src = big; sc.hidden = false; }
@@ -2031,6 +2173,7 @@ function buildLook() {
   range('lk-cover', () => ui.look.cover, (v) => { ui.look.cover = v; });
 
   buildBlocksDnD();
+  $('lk-auto').addEventListener('change', (e) => { ui.look.auto = e.target.checked; ui.preset = null; saveUI(); if (ui.look.auto) autoCover(); else autoClear(); });
   $('lk-side').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayout({ side: b.dataset.side }); });
   $('lk-mode').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayoutMode(b.dataset.mode); });
   $('lk-mini').addEventListener('click', openMiniPlayer);
@@ -2040,6 +2183,7 @@ function buildLook() {
     Object.assign(ui.look, DEFAULT_LOOK);
     Object.assign(ui.layout, DEFAULT_LAYOUT);
     ui.blocks = normalizeBlocks(null);
+    autoToken++; cancelAnimationFrame(autoRaf); autoNow = null;
     if (wall && ui.wall === 'plain') ui.wall = wall;
     ui.blur = DEFAULT_UI.blur; ui.alpha = DEFAULT_UI.alpha; ui.accent = DEFAULT_UI.accent;
     lookSave();
@@ -2261,6 +2405,16 @@ function syncLookUI() {
   if ($('look').hidden) return;
   const L = ui.look;
   syncBlocksUI();
+  $('lk-auto').checked = !!L.auto;
+  $('lk-colors').classList.toggle('dim', !!L.auto);
+  const info = $('lk-auto-info');
+  info.hidden = !L.auto;
+  if (L.auto) {
+    const A = autoNow;
+    info.textContent = A
+      ? `Контраст: текст ${A.ratios.text.toFixed(1)}:1, подписи ${A.ratios.muted.toFixed(1)}:1, кнопки ${A.ratios.button.toFixed(1)}:1`
+      : state.cur ? 'У трека нет обложки, остаются цвета темы' : 'Включи трек: цвета подберутся по его обложке';
+  }
   document.querySelectorAll('#lk-side button').forEach((b) => b.classList.toggle('on', b.dataset.side === ui.layout.side));
   document.querySelectorAll('#lk-mode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === ui.layout.mode));
   const cur = (v, fallback) => (HEX_RE.test(v || '') ? v.toLowerCase() : fallback);

@@ -893,6 +893,29 @@ function resetCustomLyrics(q) {
   if (cur && cur.custom) { try { fs.unlinkSync(file); } catch (e) { log('не смог удалить', file, e); } }
 }
 
+// ---------- обложки для подбора цветов ----------
+// Страница читает пиксели обложки через canvas, а картинки Spotify и SoundCloud чужие и без CORS,
+// поэтому отдаём их с нашего адреса. Только https и только хосты CDN обложек, остальное не качаем.
+const ART_HOST_RE = /(^|\.)(scdn\.co|spotifycdn\.com|sndcdn\.com)$/i;
+const artCache = new Map();
+async function fetchArt(raw) {
+  let u;
+  try { u = new URL(String(raw || '')); } catch { const e = new Error('bad url'); e.status = 400; throw e; }
+  if (u.protocol !== 'https:' || u.port || !ART_HOST_RE.test(u.hostname)) { const e = new Error('host not allowed'); e.status = 403; throw e; }
+  const hit = artCache.get(u.href);
+  if (hit) return hit;
+  const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(10000), redirect: 'error' });
+  if (!r.ok) { const e = new Error(`обложка: ${r.status}`); e.status = 502; throw e; }
+  const type = String(r.headers.get('content-type') || '');
+  if (!/^image\//i.test(type)) { const e = new Error('not an image'); e.status = 415; throw e; }
+  const buf = Buffer.from(await r.arrayBuffer());
+  if (buf.length > 6 * 1024 * 1024) { const e = new Error('too large'); e.status = 413; throw e; }
+  const art = { type, buf };
+  artCache.set(u.href, art);
+  if (artCache.size > 40) artCache.delete(artCache.keys().next().value);
+  return art;
+}
+
 // ---------- HTTP ----------
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -1025,6 +1048,11 @@ const server = http.createServer(async (req, res) => {
         else if (b.cmd === 'mini-hide') { if (mini) { try { mini.win.setMinimized(true); } catch {} } }
         else sseSend('main', 'cmd', { cmd: String(b.cmd || ''), value: b.value });
         return send(res, 200, { ok: true });
+      }
+      if (p === '/api/app/art') {
+        const a = await fetchArt(u.searchParams.get('u'));
+        res.writeHead(200, { 'Content-Type': a.type, 'Cache-Control': 'private, max-age=86400' });
+        return res.end(a.buf);
       }
       if (p === '/api/app/fullscreen' && req.method === 'POST') {
         const b = JSON.parse((await readBody(req)) || '{}');
