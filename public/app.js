@@ -94,6 +94,28 @@ ui.look = { ...DEFAULT_LOOK, ...(ui.look || {}) };
 const DEFAULT_LAYOUT = { mode: 'normal', side: 'left', prev: 'normal' };
 ui.layout = { ...DEFAULT_LAYOUT, ...(ui.layout || {}) };
 const denseUI = () => !!ui.compact || ui.layout.mode === 'compact';
+// блоки интерфейса: порядок сайдбара и список выключенных. Навигация всегда включена, «Список треков» живёт в основной области
+const BLOCKS = {
+  search: { name: 'Поиск', desc: 'Строка поиска по библиотеке', side: true, sel: '.search' },
+  nav: { name: 'Навигация', desc: 'Библиотека и плейлисты, всегда включена', side: true, sel: '#side-nav', locked: true },
+  cover: { name: 'Обложка', desc: 'Большая обложка текущего трека', side: true, sel: '#side-cover' },
+  queue: { name: 'Очередь', desc: 'Что будет играть дальше', side: true, sel: '#blk-queue' },
+  lyrics: { name: 'Текст песни', desc: 'Текущая строка текста в сайдбаре', side: true, sel: '#blk-lyrics' },
+  list: { name: 'Список треков', desc: 'Список в основной области окна', side: false },
+};
+const DEFAULT_BLOCKS = { order: ['search', 'nav', 'cover', 'queue', 'lyrics'], off: ['queue', 'lyrics'] };
+function normalizeBlocks(b) {
+  const sideIds = Object.keys(BLOCKS).filter((id) => BLOCKS[id].side);
+  const src = b && Array.isArray(b.order) ? b : DEFAULT_BLOCKS;
+  const order = src.order.filter((id, i, a) => sideIds.includes(id) && a.indexOf(id) === i);
+  for (const id of DEFAULT_BLOCKS.order) if (!order.includes(id)) order.push(id);
+  const off = (Array.isArray(src.off) ? src.off : []).filter((id, i, a) => BLOCKS[id] && !BLOCKS[id].locked && a.indexOf(id) === i);
+  return { order, off };
+}
+ui.blocks = normalizeBlocks(ui.blocks);
+let qSig = '';
+let lycTimer = 0;
+let lycSig = '';
 const saveUI = () => LS.set('ui', JSON.stringify(ui));
 const mq = matchMedia('(prefers-color-scheme: dark)');
 
@@ -174,6 +196,8 @@ function applyUI() {
   r.style.setProperty('--op', (0.96 - (ui.alpha / 100) * 0.76).toFixed(3));
   r.style.setProperty('--blur', ui.blur + 'px');
   applyLook();
+  applyBlocks();
+  if (ui.layout.mode !== 'full') r.classList.remove('peek');
   r.dataset.theme = currentMode();
   applyWall();
   const old = rowH;
@@ -1023,6 +1047,7 @@ function updatePlayer() {
   if (ms) { try { ms.playbackState = t ? (state.playing ? 'playing' : 'paused') : 'none'; } catch {} }
   updateProgress();
   publishState();
+  renderQueue();
 }
 
 /* ---------- состояние для мини-плеера и трея ---------- */
@@ -1604,6 +1629,7 @@ function openTrackMenu(t, idx, x, y, alignRight) {
     state.queue.push(t);
     state.order.splice(state.pos + 1, 0, state.queue.length - 1);
     toast('Будет играть следующим');
+    renderQueue();
   });
   items.push({ sep: true }, { head: 'Добавить в плейлист' });
   for (const p of playlists) add(p.name, ICONS.list, () => plAdd(p, t));
@@ -2004,6 +2030,7 @@ function buildLook() {
   range('lk-alpha', () => ui.alpha, (v) => { ui.alpha = v; });
   range('lk-cover', () => ui.look.cover, (v) => { ui.look.cover = v; });
 
+  buildBlocksDnD();
   $('lk-side').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayout({ side: b.dataset.side }); });
   $('lk-mode').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayoutMode(b.dataset.mode); });
   $('lk-mini').addEventListener('click', openMiniPlayer);
@@ -2012,6 +2039,7 @@ function buildLook() {
     const wall = ui.look.prevWall;
     Object.assign(ui.look, DEFAULT_LOOK);
     Object.assign(ui.layout, DEFAULT_LAYOUT);
+    ui.blocks = normalizeBlocks(null);
     if (wall && ui.wall === 'plain') ui.wall = wall;
     ui.blur = DEFAULT_UI.blur; ui.alpha = DEFAULT_UI.alpha; ui.accent = DEFAULT_UI.accent;
     lookSave();
@@ -2021,6 +2049,173 @@ function buildLook() {
   $('close-look').addEventListener('click', closeLook);
   $('look').addEventListener('mousedown', (e) => { if (e.target === $('look')) closeLook(); });
 }
+/* ---------- блоки ---------- */
+const blockOn = (id) => !ui.blocks.off.includes(id);
+function applyBlocks() {
+  const r = document.documentElement, B = ui.blocks;
+  for (const id of Object.keys(BLOCKS)) r.setAttribute('data-b-' + id, blockOn(id) ? '1' : '0');
+  // порядок: блоки сайдбара идут по списку, бренд первый, настройки последние;
+  // распорка стоит перед последним включённым блоком, поэтому он прижат к низу
+  const setOrder = (el, n) => { if (el) el.style.order = n; };
+  setOrder(document.querySelector('.sidebar .brand'), 0);
+  setOrder($('open-settings'), 1000);
+  let last = -1;
+  B.order.forEach((id, i) => { if (blockOn(id)) last = i; });
+  B.order.forEach((id, i) => {
+    setOrder(document.querySelector(BLOCKS[id].sel), (i + 1) * 10);
+    setOrder(document.querySelector('.lk-b-' + id), (i + 1) * 10);
+  });
+  setOrder($('side-spacer'), (last + 1) * 10 - 5);
+  setOrder(document.querySelector('.lk-spacer'), (last + 1) * 10 - 5);
+  qSig = ''; lycSig = '';
+  renderQueue();
+  lycKick();
+}
+// очередь: следующие треки из state.order, клик по строке запускает трек
+function renderQueue() {
+  const box = $('queue-list');
+  if (!box || !blockOn('queue')) return;
+  const items = [];
+  for (let i = state.pos + 1; i < state.order.length && items.length < 12; i++) {
+    const t = state.queue[state.order[i]];
+    if (t) items.push([i, t]);
+  }
+  const sig = state.pos + '|' + state.queue.length + '|' + items.map(([i, t]) => i + ':' + t.src + t.id).join();
+  if (sig === qSig) return;
+  qSig = sig;
+  box.innerHTML = items.length ? items.map(([i, t]) => {
+    const art = t.art || t.cover || '';
+    return `<button class="q-row" data-i="${i}" title="${escapeHtml(t.title)}">${art ? `<img class="q-cv" alt="" loading="lazy" src="${escapeHtml(art)}">` : '<span class="q-cv"></span>'}<span class="q-tx"><b>${escapeHtml(t.title)}</b><small>${escapeHtml(t.artist || '')}</small></span></button>`;
+  }).join('') : `<div class="q-empty">${state.cur ? 'Дальше ничего нет' : 'Очередь пуста'}</div>`;
+}
+$('queue-list').addEventListener('click', (e) => {
+  const b = e.target.closest('.q-row');
+  if (!b) return;
+  const i = Number(b.dataset.i);
+  if (i > state.pos && i < state.order.length) { state.pos = i; playTrack(state.queue[state.order[i]]); }
+});
+// текст в сайдбаре: предыдущая, текущая и следующая строки; сам текст грузит та же логика, что и у большого окна
+function lycRender() {
+  const t = state.cur;
+  let p = '', c = '', n = '';
+  if (!t) c = 'Включи трек, и здесь появится текст';
+  else if (lyr.key !== lyKeyOf(t) || lyr.status === 'loading' || lyr.status === 'idle') c = 'Ищу текст…';
+  else if (lyr.status === 'synced') {
+    const L = lyr.lines, now = lyNow() + 200;
+    let lo = 0, hi = L.length - 1, idx = -1;
+    while (lo <= hi) { const m = (lo + hi) >> 1; if (L[m].t <= now) { idx = m; lo = m + 1; } else hi = m - 1; }
+    p = idx > 0 ? L[idx - 1].text : '';
+    c = idx >= 0 ? L[idx].text || '• • •' : '♪';
+    n = L[idx + 1] ? L[idx + 1].text : '';
+  } else if (lyr.status === 'plain') {
+    const lines = lyr.plain.split(/\r?\n/).filter((s) => s.trim() && !/^\s*\[.+\]\s*$/.test(s));
+    c = lines[0] || ''; n = lines[1] || '';
+  } else c = lyr.status === 'instrumental' ? 'Инструментал' : 'Текста не нашлось';
+  const sig = p + '\n' + c + '\n' + n;
+  if (sig === lycSig) return;
+  lycSig = sig;
+  $('lyc-p').textContent = p; $('lyc-c').textContent = c; $('lyc-n').textContent = n;
+}
+function lycTick() {
+  lycTimer = 0;
+  if (!blockOn('lyrics')) return;
+  if ($('blk-lyrics').offsetParent && !document.hidden) {
+    const t = state.cur;
+    if (t && !lyOpen && lyr.key !== lyKeyOf(t)) lyLoad(t);
+    lycRender();
+  }
+  lycTimer = setTimeout(lycTick, 400);
+}
+function lycKick() {
+  clearTimeout(lycTimer);
+  lycTimer = 0;
+  if (blockOn('lyrics')) lycTimer = setTimeout(lycTick, 0);
+}
+$('blk-lyrics').addEventListener('click', () => setLyrics(true));
+
+// окно: список блоков с переключателями и перетаскиванием
+function blockRow(id) {
+  const def = BLOCKS[id];
+  const d = document.createElement('div');
+  d.className = 'lk-blk';
+  d.dataset.id = id;
+  d.innerHTML = `<span class="lk-grip" title="${def.side ? 'Перетащить' : ''}">${def.side ? '⋮⋮' : ''}</span><span class="lk-bn">${def.name}<small>${def.desc}</small></span><label class="switch"><input type="checkbox" aria-label="${def.name}"><span></span></label>`;
+  const cb = d.querySelector('input');
+  cb.checked = blockOn(id);
+  cb.disabled = !!def.locked;
+  cb.addEventListener('change', () => {
+    const off = ui.blocks.off.filter((x) => x !== id);
+    if (!cb.checked) off.push(id);
+    ui.blocks.off = off;
+    saveUI(); applyUI();
+  });
+  if (def.side) {
+    d.draggable = true;
+    d.tabIndex = 0;
+    d.addEventListener('keydown', (e) => {
+      if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+      e.preventDefault();
+      const o = ui.blocks.order.slice(), i = o.indexOf(id), j = i + (e.key === 'ArrowUp' ? -1 : 1);
+      if (j < 0 || j >= o.length) return;
+      [o[i], o[j]] = [o[j], o[i]];
+      ui.blocks.order = o;
+      saveUI(); applyUI();
+      const again = $('lk-blocks').querySelector(`[data-id="${id}"]`);
+      if (again) again.focus();
+    });
+  }
+  return d;
+}
+function syncBlocksUI() {
+  const box = $('lk-blocks'), main = $('lk-blocks-main'), B = ui.blocks;
+  const sig = B.order.join() + '|' + B.off.join();
+  if (box.dataset.sig === sig) return;
+  box.dataset.sig = sig;
+  box.replaceChildren(...B.order.map(blockRow));
+  main.replaceChildren(blockRow('list'));
+}
+let dragId = null;
+function clearDropMarks() { $('lk-blocks').querySelectorAll('.over-top, .over-bottom, .drag').forEach((el) => el.classList.remove('over-top', 'over-bottom', 'drag')); }
+function dropTarget(e) {
+  const row = e.target.closest && e.target.closest('.lk-blk');
+  if (!row || row.dataset.id === dragId) return null;
+  const b = row.getBoundingClientRect();
+  return { id: row.dataset.id, row, after: e.clientY > b.top + b.height / 2 };
+}
+function buildBlocksDnD() {
+  const box = $('lk-blocks');
+  box.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('.lk-blk');
+    if (!row) return;
+    dragId = row.dataset.id;
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', dragId); } catch {}
+    row.classList.add('drag');
+  });
+  box.addEventListener('dragover', (e) => {
+    if (!dragId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    box.querySelectorAll('.over-top, .over-bottom').forEach((el) => el.classList.remove('over-top', 'over-bottom'));
+    const t = dropTarget(e);
+    if (t) t.row.classList.add(t.after ? 'over-bottom' : 'over-top');
+  });
+  box.addEventListener('drop', (e) => {
+    if (!dragId) return;
+    e.preventDefault();
+    const t = dropTarget(e);
+    if (t) {
+      const o = ui.blocks.order.filter((x) => x !== dragId);
+      o.splice(o.indexOf(t.id) + (t.after ? 1 : 0), 0, dragId);
+      ui.blocks.order = o;
+      saveUI(); applyUI();
+    }
+    dragId = null;
+    clearDropMarks();
+  });
+  box.addEventListener('dragend', () => { dragId = null; clearDropMarks(); });
+}
+
 /* ---------- раскладки ---------- */
 let fsWanted = false;
 function syncFullscreen() {
@@ -2044,6 +2239,17 @@ async function openMiniPlayer() {
   try { j = r && await r.json(); } catch {}
   if (!j || !j.native) window.open('/mini', 'sonara-mini', 'popup,width=380,height=150');   // без родного окна открываем мини в отдельном окне браузера
 }
+// в полном экране сайдбар прячется за краем окна и выезжает при наведении на край или по Ctrl+F
+let peekTimer = 0;
+function peekSide(on) {
+  clearTimeout(peekTimer);
+  if (on && ui.layout.mode !== 'full') return;
+  document.documentElement.classList.toggle('peek', on);
+}
+$('edge').addEventListener('mouseenter', () => peekSide(true));
+$('sidebar').addEventListener('mouseenter', () => clearTimeout(peekTimer));
+$('sidebar').addEventListener('mouseleave', () => { peekTimer = setTimeout(() => peekSide(false), 250); });
+$('sidebar').addEventListener('click', (e) => { if (e.target.closest('.nav')) peekTimer = setTimeout(() => peekSide(false), 150); });
 // Esc в обычном браузере выходит из полного экрана сам: возвращаем раскладку
 document.addEventListener('fullscreenchange', () => {
   if (appInfo.native || !fsWanted || document.fullscreenElement) return;
@@ -2054,6 +2260,7 @@ document.addEventListener('fullscreenchange', () => {
 function syncLookUI() {
   if ($('look').hidden) return;
   const L = ui.look;
+  syncBlocksUI();
   document.querySelectorAll('#lk-side button').forEach((b) => b.classList.toggle('on', b.dataset.side === ui.layout.side));
   document.querySelectorAll('#lk-mode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === ui.layout.mode));
   const cur = (v, fallback) => (HEX_RE.test(v || '') ? v.toLowerCase() : fallback);
@@ -2165,7 +2372,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && lyOpen) { setLyrics(false); return; }
   if (e.key === 'F11') { e.preventDefault(); toggleFull(); return; }
   if (e.key === 'Escape' && ui.layout.mode === 'full' && !typing) { toggleFull(); return; }
-  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') { e.preventDefault(); setLyrics(false); $('search').focus(); $('search').select(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') { e.preventDefault(); setLyrics(false); peekSide(true); $('search').focus(); $('search').select(); return; }
   if (typing) return;
   if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
   else if (e.code === 'KeyL' && !e.ctrlKey && !e.altKey && !e.metaKey) { e.preventDefault(); toggleLyrics(); }

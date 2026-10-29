@@ -54,6 +54,7 @@
       <input id="search" type="search" placeholder="Поиск" autocomplete="off" spellcheck="false">
     </label>
 
+    <div class="side-nav" id="side-nav">
     <div class="side-section lbl">Библиотека</div>
     <button class="nav active" data-view="all" title="Вся музыка">
       <svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.5" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.5" fill="currentColor"/></svg>
@@ -90,11 +91,19 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
       <span class="lbl">Новый плейлист</span>
     </button>
+    </div>
 
-    <div class="side-spacer"></div>
+    <div class="side-spacer" id="side-spacer"></div>
     <button id="side-cover" class="side-cover" hidden title="Текст песни">
       <img id="side-cover-img" alt="">
       <span class="sc-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 17h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke-linecap="round"/></svg>Текст</span>
+    </button>
+    <section id="blk-queue" class="side-card" aria-label="Очередь">
+      <div class="side-section lbl">Дальше</div>
+      <div id="queue-list" class="q-list"></div>
+    </section>
+    <button id="blk-lyrics" class="side-card lyc" type="button" title="Открыть текст песни">
+      <span class="lyc-l p" id="lyc-p"></span><span class="lyc-l c" id="lyc-c"></span><span class="lyc-l n" id="lyc-n"></span>
     </button>
     <button class="nav" id="open-settings" title="Настройки">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h8M16 7h4M4 12h2M10 12h10M4 17h10M18 17h2"/><circle cx="14" cy="7" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>
@@ -123,9 +132,11 @@
       <div id="list" class="list"></div>
       <section id="stats" class="stats" hidden></section>
       <div id="empty" class="empty" hidden></div>
+      <div class="list-off">Блок «Список треков» выключен. Включить его можно в Оформление → Блоки.</div>
     </div>
   </main>
 </div>
+<div id="edge" class="edge" aria-hidden="true"></div>
 
 <!-- Текст песни на весь экран -->
 <div id="lyrics" class="ly" hidden>
@@ -211,18 +222,29 @@
     <div class="lk-pv" aria-hidden="true">
       <div class="lk-side">
         <div class="lk-brand"><i></i>Sonara</div>
-        <div class="lk-nav on">Вся музыка</div>
-        <div class="lk-nav">Spotify</div>
-        <div class="lk-nav">SoundCloud</div>
+        <div class="lk-b lk-b-search"><span class="lk-sbar"></span></div>
+        <div class="lk-b lk-b-nav"><div class="lk-nav on">Вся музыка</div><div class="lk-nav">Spotify</div></div>
+        <div class="lk-b lk-b-cover"><span class="lk-sq"></span></div>
+        <div class="lk-b lk-b-queue"><span class="lk-ln"></span><span class="lk-ln"></span></div>
+        <div class="lk-b lk-b-lyrics"><span class="lk-ln acc"></span><span class="lk-ln"></span></div>
+        <i class="lk-spacer"></i>
       </div>
       <div class="lk-main">
         <div class="lk-title">Вся музыка</div>
-        <div class="lk-row on"><span class="lk-cv"></span><span class="lk-tx"><b>Название трека</b><small>Исполнитель</small></span><em>3:42</em></div>
-        <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b>Другая песня</b><small>Другой артист</small></span><em>2:58</em></div>
-        <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b>Третий трек</b><small>Ещё исполнитель</small></span><em>4:11</em></div>
+        <div class="lk-rows">
+          <div class="lk-row on"><span class="lk-cv"></span><span class="lk-tx"><b>Название трека</b><small>Исполнитель</small></span><em>3:42</em></div>
+          <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b>Другая песня</b><small>Другой артист</small></span><em>2:58</em></div>
+          <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b>Третий трек</b><small>Ещё исполнитель</small></span><em>4:11</em></div>
+        </div>
+        <div class="lk-off">Список треков скрыт</div>
       </div>
       <div class="lk-bar"><span class="lk-np"></span><span class="lk-play"></span><span class="lk-prog"><i></i></span></div>
     </div>
+
+    <h3>Блоки</h3>
+    <div class="lk-blocks" id="lk-blocks"></div>
+    <div class="lk-blocks lk-blocks-main" id="lk-blocks-main"></div>
+    <p class="lk-note">Блоки сайдбара можно перетаскивать за ручку (или Alt+↑ / Alt+↓). Последний блок в списке прижат к низу.</p>
 
     <h3>Раскладка</h3>
     <div class="lk-layout">

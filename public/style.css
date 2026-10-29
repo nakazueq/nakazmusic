@@ -875,7 +875,20 @@ body.ly-mode .player { left: 14px; }
 [data-layout="compact"] .nav { justify-content: center; padding: 0; }
 [data-layout="full"] { --side-w: 0px; }
 [data-layout="full"] .app { grid-template-columns: minmax(0, 1fr); }
-[data-layout="full"] .sidebar { display: none; }
+/* полный экран: сайдбар выезжает у края окна (мышь у края или Ctrl+F), поэтому поиск и навигация остаются доступны */
+[data-layout="full"] .sidebar {
+  position: fixed; top: 0; bottom: 0; left: 0; width: 232px; z-index: 9;
+  background: rgb(var(--side-rgb) / .94);
+  -webkit-backdrop-filter: blur(calc(30px * var(--gs))); backdrop-filter: blur(calc(30px * var(--gs)));
+  transform: translateX(-104%); transition: transform .18s ease-out;
+  box-shadow: 8px 0 30px rgba(0, 0, 0, .18);
+}
+[data-layout="full"][data-side="right"] .sidebar { left: auto; right: 0; transform: translateX(104%); border-left: 1px solid var(--sep); box-shadow: -8px 0 30px rgba(0, 0, 0, .18); }
+[data-layout="full"].peek .sidebar { transform: none; }
+.edge { display: none; }
+[data-layout="full"] .edge { display: block; position: fixed; top: 0; bottom: 0; left: 0; width: 10px; z-index: 8; }
+[data-layout="full"][data-side="right"] .edge { left: auto; right: 0; }
+[data-lite="1"] [data-layout="full"] .sidebar, [data-lite="1"][data-layout="full"] .sidebar { transition: none; }
 [data-layout="full"] .player { left: 14px; right: 14px; }
 
 .lk-layout .setrow { flex-wrap: wrap; }
@@ -891,3 +904,58 @@ body.ly-mode .player { left: 14px; }
 [data-layout="full"] .lk-pv, [data-side="right"][data-layout="full"] .lk-pv { grid-template-columns: minmax(0, 1fr); }
 [data-layout="full"] .lk-side { display: none; }
 [data-layout="full"] .lk-main, [data-side="right"][data-layout="full"] .lk-main { grid-column: 1; }
+/* ---------- блоки интерфейса ---------- */
+.side-nav { display: flex; flex-direction: column; gap: 1px; flex: none; }
+.side-card { flex: none; margin: 6px 0; }
+#blk-queue, #blk-lyrics { display: none; }
+[data-b-queue="1"] #blk-queue { display: block; }
+[data-b-lyrics="1"] #blk-lyrics { display: flex; }
+[data-b-search="0"] .search, [data-b-cover="0"] .side-cover, [data-b-list="0"] .list, [data-b-list="0"] .cols { display: none !important; }
+[data-layout="compact"] #blk-queue, [data-layout="compact"] #blk-lyrics { display: none !important; }
+.list-off { display: none; margin: 40px 24px; padding: 18px; border-radius: calc(14px * var(--rs)); background: var(--field); color: var(--muted); text-align: center; }
+[data-b-list="0"] .list-off { display: block; }
+#stats:not([hidden]) ~ .list-off, #empty:not([hidden]) ~ .list-off { display: none !important; }
+.q-list { display: flex; flex-direction: column; gap: 2px; max-height: 250px; overflow-y: auto; }
+.q-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 4px 6px; border: 0; border-radius: calc(8px * var(--rs)); background: none; text-align: left; }
+.q-row:hover { background: var(--hover); }
+.q-cv { flex: none; width: 30px; height: 30px; border-radius: calc(5px * var(--rs)); object-fit: cover; background: var(--field); }
+.q-tx { display: flex; flex-direction: column; min-width: 0; }
+.q-tx b { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-tx small { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.q-empty { padding: 4px 10px; font-size: 12px; color: var(--faint); }
+.lyc { flex-direction: column; gap: 3px; width: 100%; padding: 10px 12px; border: 0; border-radius: calc(12px * var(--rs)); background: var(--field); text-align: left; cursor: pointer; }
+.lyc:hover { background: var(--press); }
+.lyc-l { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.lyc-l:empty { display: none; }
+.lyc-l.c { font-size: 14px; font-weight: 700; color: var(--text); }
+
+/* предпросмотр блоков и список в окне */
+.lk-side { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+.lk-brand { order: 0; }
+.lk-spacer { flex: 1; min-height: 0; }
+.lk-b { flex: none; }
+.lk-b-queue, .lk-b-lyrics { display: none; }
+[data-b-queue="1"] .lk-b-queue, [data-b-lyrics="1"] .lk-b-lyrics { display: block; }
+[data-b-search="0"] .lk-b-search, [data-b-cover="0"] .lk-b-cover { display: none; }
+[data-layout="compact"] .lk-b-queue, [data-layout="compact"] .lk-b-lyrics, [data-layout="compact"] .lk-b-search, [data-layout="compact"] .lk-b-cover { display: none; }
+.lk-sbar { display: block; height: 11px; border-radius: calc(5px * var(--rs)); background: var(--field); }
+.lk-sq { display: block; width: 34px; height: 34px; margin: 0 auto; border-radius: calc(6px * var(--rs)); background: linear-gradient(135deg, var(--accent), #ff9a4d); }
+.lk-ln { display: block; height: 5px; margin: 3px 0; border-radius: 3px; background: var(--track); }
+.lk-ln.acc { background: var(--accent); width: 70%; }
+.lk-off { display: none; margin-top: 12px; padding: 14px 6px; border-radius: calc(8px * var(--rs)); background: var(--field); color: var(--muted); text-align: center; font-size: 11px; }
+[data-b-list="0"] .lk-rows { display: none; }
+[data-b-list="0"] .lk-off { display: block; }
+.lk-pv { height: 250px; }
+.lk-blocks { display: flex; flex-direction: column; gap: 4px; }
+.lk-blocks-main { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--sep); }
+.lk-blk { position: relative; display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: calc(10px * var(--rs)); background: var(--field); }
+.lk-blk[draggable="true"] { cursor: grab; }
+.lk-blk.drag { opacity: .45; }
+.lk-blk.over-top::before, .lk-blk.over-bottom::after { content: ""; position: absolute; left: 6px; right: 6px; height: 3px; border-radius: 2px; background: var(--accent); }
+.lk-blk.over-top::before { top: -3px; }
+.lk-blk.over-bottom::after { bottom: -3px; }
+.lk-blk:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.lk-grip { width: 14px; flex: none; color: var(--faint); font-size: 13px; letter-spacing: -2px; user-select: none; }
+.lk-bn { flex: 1; min-width: 0; font-weight: 600; }
+.lk-bn small { display: block; margin-top: 1px; font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.lk-note { margin: 8px 0 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
