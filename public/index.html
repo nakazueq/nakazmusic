@@ -23,6 +23,7 @@
         // программа хранит самые свежие значения (например, обновлённый вход в Spotify)
         for (var k in s) if (s[k] != null && localStorage.getItem(k) !== s[k]) localStorage.setItem(k, s[k]);
         window.__storeKeys = Object.keys(s);
+        if (x.getResponseHeader('X-Safe-Css') === '1') window.__safeCss = true;
       }
     } catch (e) {}
   })();
@@ -241,6 +242,20 @@
       <div class="lk-bar"><span class="lk-np"></span><span class="lk-play"></span><span class="lk-prog"><i></i></span></div>
     </div>
 
+    <h3>Мои темы</h3>
+    <div class="lk-th-save">
+      <input id="lk-th-name" class="field lk-th-input" maxlength="40" placeholder="Название темы" autocomplete="off" spellcheck="false">
+      <button class="pill accent" id="lk-th-save">Сохранить текущее</button>
+    </div>
+    <div id="lk-themes" class="lk-themes"></div>
+    <div id="lk-th-empty" class="lk-note">Сохранённых тем пока нет.</div>
+    <div class="lk-th-tools">
+      <button class="pill" id="lk-th-import" title="Загрузить тему из файла .json">Импорт из файла…</button>
+      <button class="pill" id="lk-th-current" title="Сохранить текущее оформление в файл">Экспорт текущего</button>
+      <input type="file" id="lk-th-file" accept=".json,application/json" hidden>
+    </div>
+    <div id="lk-th-msg" class="lk-note" hidden></div>
+
     <h3>Блоки</h3>
     <div class="lk-blocks" id="lk-blocks"></div>
     <div class="lk-blocks lk-blocks-main" id="lk-blocks-main"></div>
@@ -273,6 +288,16 @@
     <div class="setrow"><label for="lk-blur">Сила блюра<small id="lk-blur-v"></small></label><input id="lk-blur" type="range" min="0" max="80" class="always"></div>
     <div class="setrow"><label for="lk-alpha">Прозрачность<small id="lk-alpha-v"></small></label><input id="lk-alpha" type="range" min="0" max="100" class="always"></div>
     <div class="setrow"><label for="lk-cover">Размер обложек<small id="lk-cover-v"></small></label><input id="lk-cover" type="range" min="70" max="160" step="5" class="always"></div>
+
+    <h3>Свой CSS</h3>
+    <div class="setrow lk-autorow">
+      <label for="lk-css-on">Применять свой CSS<small>Если интерфейс сломался: Ctrl+Shift+K отключает CSS, а запуск с ключом --safe-css стартует без него.</small></label>
+      <label class="switch"><input id="lk-css-on" type="checkbox"><span></span></label>
+    </div>
+    <div class="lk-note bad" id="lk-css-safe" hidden>Плеер запущен с --safe-css: свой CSS сейчас не применяется.</div>
+    <textarea id="lk-css" class="lk-css" spellcheck="false" placeholder=".row { border-radius: 0; }&#10;.player { height: 64px; }"></textarea>
+    <div class="lk-note" id="lk-css-msg" hidden></div>
+    <div class="lk-foot lk-css-foot"><button class="pill" id="lk-css-reset">Сбросить CSS</button></div>
 
     <div class="lk-foot"><button class="pill" id="lk-reset">Сбросить оформление</button></div>
   </div>

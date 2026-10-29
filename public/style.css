@@ -962,3 +962,16 @@ body.ly-mode .player { left: 14px; }
 /* цвета по обложке */
 .lk-autorow { border-top: 0; padding-top: 4px; }
 .lk-colors.dim { opacity: .45; pointer-events: none; }
+/* темы и свой CSS */
+.lk-th-save { display: flex; gap: 8px; }
+.lk-th-input { flex: 1; min-width: 0; height: 30px; padding: 0 10px; border: 0; border-radius: calc(8px * var(--rs)); background: var(--field); color: var(--text); font: inherit; }
+.lk-themes { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; max-height: 210px; overflow-y: auto; }
+.lk-th { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 10px; border-radius: calc(10px * var(--rs)); background: var(--field); }
+.lk-th.on { box-shadow: inset 0 0 0 2px var(--accent); }
+.lk-th-dot { width: 12px; height: 12px; flex: none; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); }
+.lk-th-name { flex: 1; min-width: 0; padding: 4px 0; border: 0; background: none; text-align: left; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lk-th-b { flex: none; background: none; }
+.lk-th-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.lk-note.bad { color: #ff453a; }
+.lk-css { display: block; width: 100%; height: 130px; margin-top: 8px; padding: 10px 12px; resize: vertical; border: 0; border-radius: calc(10px * var(--rs)); background: var(--field); color: var(--text); font: 12.5px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace; user-select: text; }
+.lk-css-foot { margin-top: 8px; }

@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 // Эти настройки дублируются в программу (%LOCALAPPDATA%\MyPlayer\store.json),
 // чтобы не вводить их заново после обновления или смены окна
-const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists']);
+const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes']);
 const storeQueue = {};
 let storeTimer = 0;
 function storeSync(k, v) {
@@ -86,7 +86,7 @@ const ACCENTS = [
   ['Оранжевый', '#FF9500'], ['Жёлтый', '#FFCC00'], ['Зелёный', '#34C759'], ['Бирюзовый', '#30B0C7'], ['Графит', '#8E8E93'],
 ];
 // тонкая настройка вида (окно «Оформление»): всё хранится внутри ui и уезжает в store.json
-const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prevWall: null, auto: false };
+const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prevWall: null, auto: false, css: '', cssOn: true };
 const DEFAULT_UI = { preset: 'glass', mode: 'light', accent: '#007AFF', wall: 'mist', alpha: 45, blur: 40, lite: false, compact: false, tray: true };
 const ui = { ...DEFAULT_UI, ...LS.json('ui', {}) };
 ui.look = { ...DEFAULT_LOOK, ...(ui.look || {}) };
@@ -282,8 +282,73 @@ async function autoCover() {
   autoApply(derivePalette(dom, baseMode()));
 }
 
+/* ---------- свой CSS ---------- */
+const CSS_MAX = 20000;
+// возвращает текст проблемы или '' если CSS безопасен: без @import, внешних url(), HTML и старых IE-приёмов
+function cssProblem(css) {
+  if (css.length > CSS_MAX) return `CSS длиннее ${CSS_MAX} символов`;
+  // раскрываем экранирование и убираем комментарии, чтобы u\72l( и /**/ не обходили проверку
+  const flat = css.replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\\([0-9a-f]{1,6})\s?/gi, (m, h) => { try { return String.fromCodePoint(parseInt(h, 16)); } catch { return ''; } })
+    .replace(/\\(.)/g, '$1');
+  if (/@import/i.test(flat)) return '@import не поддерживается';
+  if (/<\s*\/?\s*(style|script)|<!--/i.test(flat)) return 'в CSS не должно быть HTML';
+  if (/expression\s*\(|javascript:|vbscript:|behavior\s*:|-moz-binding/i.test(flat)) return 'в CSS есть запрещённая конструкция';
+  for (const m of flat.matchAll(/url\(\s*([^)]*)\)/gi)) {
+    if (!/^["']?\s*data:image\//i.test(m[1])) return 'url() разрешён только для data:image (внешние ссылки запрещены)';
+  }
+  return '';
+}
+const cssBalanced = (css) => {
+  let d = 0;
+  for (const ch of css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '')) {
+    if (ch === '{') d++; else if (ch === '}' && --d < 0) return false;
+  }
+  return d === 0;
+};
+const cssActive = () => !window.__safeCss && ui.look.cssOn !== false && !!ui.look.css && !cssProblem(ui.look.css);
+function applyUserCss() {
+  let el = document.getElementById('user-css');
+  if (!cssActive()) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('style'); el.id = 'user-css'; document.head.appendChild(el); }
+  if (el.textContent !== ui.look.css) el.textContent = ui.look.css;
+}
+// кнопка спасения: стили инлайн с !important, поэтому пользовательский CSS её не прячет
+let rescueTimer = 0;
+function showCssRescue() {
+  clearTimeout(rescueTimer);
+  let box = document.getElementById('css-rescue');
+  if (!cssActive()) { if (box) box.remove(); return; }
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'css-rescue';
+    box.style.cssText = 'all:initial!important;position:fixed!important;right:14px!important;top:14px!important;z-index:2147483647!important;display:flex!important;align-items:center!important;gap:10px!important;padding:8px 8px 8px 14px!important;border-radius:12px!important;background:#1d1d1f!important;color:#fff!important;font:13px system-ui,sans-serif!important;box-shadow:0 8px 30px rgba(0,0,0,.4)!important;opacity:1!important;visibility:visible!important;transform:none!important;pointer-events:auto!important;';
+    const txt = document.createElement('span');
+    txt.textContent = 'Свой CSS включён · Ctrl+Shift+K';
+    txt.style.cssText = 'all:initial!important;color:#fff!important;font:13px system-ui,sans-serif!important;';
+    const b = document.createElement('button');
+    b.textContent = 'Отключить';
+    b.style.cssText = 'all:initial!important;cursor:pointer!important;padding:5px 12px!important;border-radius:8px!important;background:#ff453a!important;color:#fff!important;font:600 13px system-ui,sans-serif!important;';
+    b.addEventListener('click', () => toggleUserCss(false));
+    box.append(txt, b);
+    document.documentElement.appendChild(box);
+  }
+  rescueTimer = setTimeout(() => { const x = document.getElementById('css-rescue'); if (x) x.remove(); }, 12000);
+}
+function toggleUserCss(on) {
+  ui.look.cssOn = on === undefined ? ui.look.cssOn === false : on;
+  saveUI(); applyUI();
+  if (ui.look.cssOn) showCssRescue(); else document.getElementById('css-rescue')?.remove();
+  toast(window.__safeCss ? 'Запуск с --safe-css: свой CSS отключён' : ui.look.cssOn ? 'Свой CSS включён' : 'Свой CSS отключён');
+}
+// Ctrl+Shift+K работает всегда, даже если CSS спрятал интерфейс
+window.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && !e.altKey && e.code === 'KeyK') { e.preventDefault(); e.stopPropagation(); toggleUserCss(); }
+}, true);
+
 function applyLook() {
   const r = document.documentElement, L = ui.look;
+  applyUserCss();
   const A = L.auto ? autoNow : null;
   const set = (k, v) => (v == null || v === '' ? r.style.removeProperty(k) : r.style.setProperty(k, v));
   set('--accent', A ? A.accent : ui.accent);
@@ -2173,6 +2238,7 @@ function buildLook() {
   range('lk-cover', () => ui.look.cover, (v) => { ui.look.cover = v; });
 
   buildBlocksDnD();
+  buildThemes();
   $('lk-auto').addEventListener('change', (e) => { ui.look.auto = e.target.checked; ui.preset = null; saveUI(); if (ui.look.auto) autoCover(); else autoClear(); });
   $('lk-side').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayout({ side: b.dataset.side }); });
   $('lk-mode').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayoutMode(b.dataset.mode); });
@@ -2193,6 +2259,258 @@ function buildLook() {
   $('close-look').addEventListener('click', closeLook);
   $('look').addEventListener('mousedown', (e) => { if (e.target === $('look')) closeLook(); });
 }
+/* ---------- темы: сохранение, экспорт, импорт ---------- */
+const THEME_FORMAT = 'sonara-theme';
+const THEME_FILE_MAX = 200000;
+const THEMES_MAX = 40;
+const isNum = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
+const hexOrNull = (v) => v === null || (typeof v === 'string' && HEX_RE.test(v));
+// проверка настроек темы: только известные поля с допустимыми значениями; возвращает { theme } или { error }
+function validateTheme(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return { error: 'Тема должна быть объектом' };
+  const out = {};
+  const only = (obj, keys, where) => {
+    for (const k of Object.keys(obj)) if (!keys.includes(k)) return `Неизвестное поле «${where}${k}»`;
+    return '';
+  };
+  let e = only(o, ['mode', 'accent', 'wall', 'alpha', 'blur', 'look', 'layout', 'blocks'], '');
+  if (e) return { error: e };
+  if ('mode' in o) { if (!['light', 'dark', 'auto'].includes(o.mode)) return { error: 'mode: ожидается light, dark или auto' }; out.mode = o.mode; }
+  if ('accent' in o) { if (typeof o.accent !== 'string' || !HEX_RE.test(o.accent)) return { error: 'accent: ожидается цвет #rrggbb' }; out.accent = o.accent.toUpperCase(); }
+  if ('wall' in o) { if (typeof o.wall !== 'string' || o.wall === 'custom' || !Object.prototype.hasOwnProperty.call(WALLS, o.wall)) return { error: 'wall: неизвестный фон' }; out.wall = o.wall; }
+  if ('alpha' in o) { if (!isNum(o.alpha, 0, 100)) return { error: 'alpha: число от 0 до 100' }; out.alpha = Math.round(o.alpha); }
+  if ('blur' in o) { if (!isNum(o.blur, 0, 80)) return { error: 'blur: число от 0 до 80' }; out.blur = Math.round(o.blur); }
+  if ('look' in o) {
+    const L = o.look;
+    if (!L || typeof L !== 'object' || Array.isArray(L)) return { error: 'look: ожидается объект' };
+    e = only(L, ['bg', 'text', 'font', 'rs', 'cover', 'auto', 'css', 'cssOn'], 'look.');
+    if (e) return { error: e };
+    const l = {};
+    for (const k of ['bg', 'text']) if (k in L) { if (!hexOrNull(L[k])) return { error: `look.${k}: ожидается цвет #rrggbb или null` }; l[k] = L[k] && L[k].toLowerCase(); }
+    if ('font' in L) { if (typeof L.font !== 'string' || !FONTS.some(([v]) => v === L.font)) return { error: 'look.font: неизвестный шрифт' }; l.font = L.font; }
+    if ('rs' in L) { if (!isNum(L.rs, 0, 200)) return { error: 'look.rs: число от 0 до 200' }; l.rs = Math.round(L.rs); }
+    if ('cover' in L) { if (!isNum(L.cover, 70, 160)) return { error: 'look.cover: число от 70 до 160' }; l.cover = Math.round(L.cover); }
+    for (const k of ['auto', 'cssOn']) if (k in L) { if (typeof L[k] !== 'boolean') return { error: `look.${k}: ожидается true или false` }; l[k] = L[k]; }
+    if ('css' in L) {
+      if (typeof L.css !== 'string') return { error: 'look.css: ожидается строка' };
+      const p = cssProblem(L.css) || (cssBalanced(L.css) ? '' : 'в CSS не закрыта или лишняя скобка { }');
+      if (p) return { error: 'look.css: ' + p };
+      l.css = L.css;
+    }
+    out.look = l;
+  }
+  if ('layout' in o) {
+    const Y = o.layout;
+    if (!Y || typeof Y !== 'object' || Array.isArray(Y)) return { error: 'layout: ожидается объект' };
+    e = only(Y, ['mode', 'side'], 'layout.');
+    if (e) return { error: e };
+    const y = {};
+    if ('mode' in Y) { if (!['normal', 'compact'].includes(Y.mode)) return { error: 'layout.mode: normal или compact' }; y.mode = Y.mode; }
+    if ('side' in Y) { if (!['left', 'right'].includes(Y.side)) return { error: 'layout.side: left или right' }; y.side = Y.side; }
+    out.layout = y;
+  }
+  if ('blocks' in o) {
+    const B = o.blocks;
+    if (!B || typeof B !== 'object' || Array.isArray(B)) return { error: 'blocks: ожидается объект' };
+    e = only(B, ['order', 'off'], 'blocks.');
+    if (e) return { error: e };
+    const sideIds = Object.keys(BLOCKS).filter((id) => BLOCKS[id].side);
+    const ids = (arr, allowed, name) => {
+      if (!Array.isArray(arr) || arr.length > 20 || arr.some((x) => typeof x !== 'string' || !allowed.includes(x))) return null;
+      return arr;
+    };
+    const order = 'order' in B ? ids(B.order, sideIds, 'order') : [];
+    const off = 'off' in B ? ids(B.off, Object.keys(BLOCKS), 'off') : [];
+    if (!order || !off) return { error: 'blocks: неизвестный блок в списке' };
+    out.blocks = { order, off };
+  }
+  if (!Object.keys(out).length) return { error: 'В теме нет ни одной настройки оформления' };
+  return { theme: out };
+}
+function currentTheme() {
+  const L = ui.look;
+  return {
+    mode: ui.mode,
+    accent: HEX_RE.test(ui.accent) ? ui.accent.toUpperCase() : DEFAULT_UI.accent,
+    wall: ui.wall === 'custom' ? 'mist' : ui.wall,   // свою картинку фона в тему не кладём
+    alpha: ui.alpha,
+    blur: ui.blur,
+    look: { bg: HEX_RE.test(L.bg || '') ? L.bg : null, text: HEX_RE.test(L.text || '') ? L.text : null, font: L.font, rs: L.rs, cover: L.cover, auto: !!L.auto, css: L.css || '', cssOn: L.cssOn !== false },
+    layout: { mode: ui.layout.mode === 'full' ? 'normal' : ui.layout.mode, side: ui.layout.side },
+    blocks: { order: ui.blocks.order.slice(), off: ui.blocks.off.slice() },
+  };
+}
+function applyTheme(t) {
+  if (t.mode) ui.mode = t.mode;
+  if (t.accent) ui.accent = t.accent;
+  if (t.wall) ui.wall = t.wall;
+  if (t.alpha != null) ui.alpha = t.alpha;
+  if (t.blur != null) ui.blur = t.blur;
+  if (t.look) Object.assign(ui.look, t.look);
+  ui.look.prevWall = null;
+  if (t.layout) Object.assign(ui.layout, t.layout);
+  if (t.blocks) ui.blocks = normalizeBlocks(t.blocks);
+  ui.preset = null;
+  lastWallBg = null;
+  saveUI(); applyUI(); syncFullscreen();
+  if (ui.look.auto) autoCover(); else if (autoNow) autoClear();
+  showCssRescue();
+}
+let themes = [];
+function loadThemes() {
+  const raw = LS.json('themes', []);
+  themes = (Array.isArray(raw) ? raw : []).slice(0, THEMES_MAX).map((t) => {
+    const v = t && typeof t.id === 'string' && typeof t.name === 'string' ? validateTheme(t.theme) : null;
+    return v && v.theme ? { id: t.id, name: t.name.slice(0, 60), theme: v.theme, at: Number(t.at) || 0 } : null;
+  }).filter(Boolean);
+}
+const saveThemes = () => { LS.set('themes', JSON.stringify(themes)); renderThemes(); };
+function uniqueThemeName(name) {
+  const base = String(name || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 40) || 'Моя тема';
+  let n = base, i = 2;
+  while (themes.some((t) => t.name.toLowerCase() === n.toLowerCase())) n = `${base} (${i++})`;
+  return n;
+}
+function addTheme(name, theme) {
+  const t = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: uniqueThemeName(name), theme, at: Date.now() };
+  themes.unshift(t);
+  if (themes.length > THEMES_MAX) themes.length = THEMES_MAX;
+  saveThemes();
+  return t;
+}
+function themeMsg(text, bad) {
+  const el = $('lk-th-msg');
+  el.textContent = text || '';
+  el.hidden = !text;
+  el.classList.toggle('bad', !!bad);
+}
+const TH_ICONS = {
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>',
+  out: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg>',
+  del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/></svg>',
+};
+function renderThemes() {
+  const box = $('lk-themes');
+  if (!box) return;
+  const cur = JSON.stringify(currentTheme());
+  box.replaceChildren(...themes.map((t) => {
+    const d = document.createElement('div');
+    d.className = 'lk-th' + (JSON.stringify(t.theme) === cur ? ' on' : '');
+    d.dataset.id = t.id;
+    d.innerHTML = '<span class="lk-th-dot"></span><button class="lk-th-name" title="Применить"></button><button class="x lk-th-b" data-act="rename" title="Переименовать"></button><button class="x lk-th-b" data-act="export" title="Экспортировать в файл"></button><button class="x lk-th-b" data-act="delete" title="Удалить"></button>';
+    d.querySelector('.lk-th-dot').style.background = t.theme.accent || 'var(--accent)';
+    d.querySelector('.lk-th-name').textContent = t.name;
+    d.querySelector('[data-act="rename"]').innerHTML = TH_ICONS.edit;
+    d.querySelector('[data-act="export"]').innerHTML = TH_ICONS.out;
+    d.querySelector('[data-act="delete"]').innerHTML = TH_ICONS.del;
+    return d;
+  }));
+  $('lk-th-empty').hidden = themes.length > 0;
+}
+async function exportTheme(name, theme) {
+  const json = JSON.stringify({ format: THEME_FORMAT, version: 1, name, theme }, null, 2);
+  try {
+    const r = await api('/api/app/theme/export', { method: 'POST', headers: { 'X-Player': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ name, json }) });
+    themeMsg('Файл темы сохранён: ' + r.path, false);
+    toast('Тема сохранена в файл', 5000);
+  } catch (e) { themeMsg('Не получилось сохранить файл: ' + e.message, true); }
+}
+// файл темы: { format, version, name, theme }, ничего лишнего
+function parseThemeFile(text) {
+  if (text.length > THEME_FILE_MAX) return { error: 'Файл слишком большой для темы' };
+  let doc;
+  try { doc = JSON.parse(text.replace(/^﻿/, '')); } catch { return { error: 'Файл повреждён: это не JSON' }; }
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { error: 'Это не файл темы Sonara' };
+  if (doc.format !== THEME_FORMAT) return { error: 'Это не файл темы Sonara' };
+  if (doc.version !== 1) return { error: 'Версия темы не поддерживается' };
+  for (const k of Object.keys(doc)) if (!['format', 'version', 'name', 'theme'].includes(k)) return { error: `В файле есть лишнее поле «${k}»: в теме могут быть только настройки оформления` };
+  if (typeof doc.name !== 'string' || !doc.name.trim() || doc.name.length > 80) return { error: 'У темы нет имени' };
+  const v = validateTheme(doc.theme);
+  if (v.error) return { error: v.error };
+  return { name: doc.name, theme: v.theme };
+}
+async function importThemeFile(file) {
+  themeMsg('');
+  const res = parseThemeFile(await file.text());
+  if (res.error) { themeMsg('Тема не импортирована: ' + res.error, true); toast('Файл темы не подошёл'); return; }
+  // перед чужой темой сохраняем текущее оформление, чтобы можно было вернуться
+  themes = themes.filter((t) => t.name !== 'Перед импортом');
+  addTheme('Перед импортом', currentTheme());
+  const t = addTheme(res.name, res.theme);
+  applyTheme(t.theme);
+  themeMsg(`Тема «${t.name}» импортирована и применена. Прежнее оформление лежит в теме «Перед импортом».`, false);
+}
+function buildThemes() {
+  loadThemes();
+  renderThemes();
+  $('lk-th-save').addEventListener('click', () => {
+    const input = $('lk-th-name');
+    const t = addTheme(input.value || `Тема ${themes.length + 1}`, currentTheme());
+    input.value = '';
+    themeMsg(`Тема «${t.name}» сохранена`, false);
+  });
+  $('lk-th-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('lk-th-save').click(); });
+  $('lk-th-import').addEventListener('click', () => $('lk-th-file').click());
+  $('lk-th-file').addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) importThemeFile(f); });
+  $('lk-th-current').addEventListener('click', () => exportTheme('Моя тема', currentTheme()));
+  $('lk-themes').addEventListener('click', async (e) => {
+    const row = e.target.closest('.lk-th');
+    if (!row) return;
+    const t = themes.find((x) => x.id === row.dataset.id);
+    if (!t) return;
+    const act = e.target.closest('[data-act]');
+    if (!act) { if (e.target.closest('.lk-th-name') || e.target.closest('.lk-th-dot')) { applyTheme(t.theme); themeMsg(`Применена тема «${t.name}»`, false); } return; }
+    if (act.dataset.act === 'export') exportTheme(t.name, t.theme);
+    else if (act.dataset.act === 'rename') {
+      const name = await dialog({ title: 'Переименовать тему', value: t.name, ok: 'Сохранить' });
+      if (name) {
+        const others = themes.filter((x) => x !== t);
+        const all = themes;
+        themes = others;               // имя считаем уникальным среди остальных, а не против самой себя
+        t.name = uniqueThemeName(name);
+        themes = all;
+        saveThemes();
+      }
+    } else if (act.dataset.act === 'delete') {
+      if (await dialog({ title: `Удалить тему «${t.name}»?`, text: 'Текущее оформление не изменится.', ok: 'Удалить', danger: true })) { themes = themes.filter((x) => x.id !== t.id); saveThemes(); }
+    }
+  });
+
+  // свой CSS
+  const area = $('lk-css');
+  let cssTimer = 0;
+  area.addEventListener('input', () => {
+    clearTimeout(cssTimer);
+    cssTimer = setTimeout(() => {
+      const css = area.value;
+      const bad = cssProblem(css);
+      if (bad) { cssMsg(bad + '. CSS не применён.', true); return; }
+      ui.look.css = css;
+      if (css && ui.look.cssOn === false) ui.look.cssOn = true;
+      saveUI(); applyUI();
+      cssMsg(css ? (cssBalanced(css) ? 'Применено' : 'Применено, но скобки { } не сходятся: проверь CSS') : '', false);
+      showCssRescue();
+    }, 150);
+  });
+  $('lk-css-on').addEventListener('change', (e) => { ui.look.cssOn = e.target.checked; saveUI(); applyUI(); showCssRescue(); });
+  $('lk-css-reset').addEventListener('click', () => { ui.look.css = ''; ui.look.cssOn = true; area.value = ''; saveUI(); applyUI(); cssMsg('CSS сброшен', false); showCssRescue(); });
+}
+function cssMsg(text, bad) {
+  const el = $('lk-css-msg');
+  el.textContent = text || '';
+  el.hidden = !text;
+  el.classList.toggle('bad', !!bad);
+}
+function syncThemesUI() {
+  renderThemes();
+  const area = $('lk-css');
+  if (document.activeElement !== area && area.value !== (ui.look.css || '')) area.value = ui.look.css || '';
+  $('lk-css-on').checked = ui.look.cssOn !== false;
+  const safe = !!window.__safeCss;
+  $('lk-css-on').disabled = safe;
+  $('lk-css-safe').hidden = !safe;
+}
+
 /* ---------- блоки ---------- */
 const blockOn = (id) => !ui.blocks.off.includes(id);
 function applyBlocks() {
@@ -2405,6 +2723,7 @@ function syncLookUI() {
   if ($('look').hidden) return;
   const L = ui.look;
   syncBlocksUI();
+  syncThemesUI();
   $('lk-auto').checked = !!L.auto;
   $('lk-colors').classList.toggle('dim', !!L.auto);
   const info = $('lk-auto-info');
@@ -2811,6 +3130,7 @@ window.addEventListener('pagehide', () => { listenTick(); listenFlush(true); if 
   readRowH();
   buildSettings();
   applyUI();
+  showCssRescue();
   setVolume(state.volume, false);
   updatePlayer();
   ping();

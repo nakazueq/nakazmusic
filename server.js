@@ -32,7 +32,9 @@ try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
 const LOG_FILE = path.join(DATA_DIR, 'player.log');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
-const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists']);
+const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes']);
+// запуск с --safe-css (или SONARA_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
+const SAFE_CSS = process.argv.includes('--safe-css') || process.env.SONARA_SAFE_CSS === '1';
 const PLAYS_FILE = path.join(DATA_DIR, 'plays.jsonl');
 
 // ---------- лог в файл (консоли у exe нет) ----------
@@ -1049,6 +1051,22 @@ const server = http.createServer(async (req, res) => {
         else sseSend('main', 'cmd', { cmd: String(b.cmd || ''), value: b.value });
         return send(res, 200, { ok: true });
       }
+      if (p === '/api/app/theme/export' && req.method === 'POST') {
+        // файл темы кладём в Документы\Sonara\themes и показываем в проводнике
+        const b = JSON.parse((await readBody(req)) || '{}');
+        const json = String(b.json || '');
+        let doc = null;
+        try { doc = JSON.parse(json); } catch {}
+        if (!doc || doc.format !== 'sonara-theme' || json.length > 300000) return send(res, 400, { error: 'Это не файл темы' });
+        const base = String(b.name || '').replace(/[^\p{L}\p{N} _.-]+/gu, '').trim().slice(0, 50) || 'theme';
+        let dir = path.join(require('os').homedir(), 'Documents', 'Sonara', 'themes');
+        try { fs.mkdirSync(dir, { recursive: true }); } catch { dir = path.join(DATA_DIR, 'themes'); fs.mkdirSync(dir, { recursive: true }); }
+        let file = path.join(dir, base + '.sonara-theme.json');
+        for (let i = 2; fs.existsSync(file) && i < 100; i++) file = path.join(dir, `${base} (${i}).sonara-theme.json`);
+        fs.writeFileSync(file, json);
+        if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', ['/select,' + file], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('проводник', e.message); } }
+        return send(res, 200, { ok: true, path: file });
+      }
       if (p === '/api/app/art') {
         const a = await fetchArt(u.searchParams.get('u'));
         res.writeHead(200, { 'Content-Type': a.type, 'Cache-Control': 'private, max-age=86400' });
@@ -1066,7 +1084,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { ok: true });
       }
       if (p === '/api/app/store') {
-        if (req.method === 'GET') return send(res, 200, readJson(STORE_FILE, {}));
+        if (req.method === 'GET') { res.setHeader('X-Safe-Css', SAFE_CSS ? '1' : '0'); return send(res, 200, readJson(STORE_FILE, {})); }
         if (req.method !== 'POST') return send(res, 405, { error: 'method' });
         const patch = JSON.parse((await readBody(req)) || '{}');
         const store = readJson(STORE_FILE, {});
