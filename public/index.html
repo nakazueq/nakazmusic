@@ -118,6 +118,15 @@
   <main class="main">
     <div id="scroller" class="scroller">
       <header class="head" id="head">
+        <div class="gsearch" id="gsearch">
+          <label class="gs-field">
+            <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input id="gs-input" type="search" placeholder="Найти трек в Spotify, SoundCloud и YouTube Music" autocomplete="off" spellcheck="false">
+            <button type="button" class="gs-clear" id="gs-clear" title="Очистить (Esc)" hidden><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+          </label>
+          <div class="gs-chips" id="gs-chips" role="group" aria-label="Где искать"></div>
+          <div class="gs-notes" id="gs-notes" hidden></div>
+        </div>
         <div class="head-top">
           <div class="head-text">
             <h1 id="view-title">Вся музыка</h1>

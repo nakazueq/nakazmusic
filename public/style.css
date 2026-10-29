@@ -980,3 +980,25 @@ body.ly-mode .player { left: 14px; }
 .badge.yt { color: #e0201f; background: rgba(255, 45, 45, .12); }
 [data-theme="dark"] .badge.yt { color: #ff7a78; }
 .yt-actions { align-items: center; flex-wrap: wrap; margin-top: 8px; }
+/* глобальный поиск */
+.gsearch { padding-bottom: 14px; }
+.gs-field { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border-radius: calc(12px * var(--rs)); background: var(--field); color: var(--faint); transition: box-shadow .15s; }
+.gs-field:focus-within { box-shadow: 0 0 0 2px var(--accent); color: var(--text); }
+.gs-field svg { width: 17px; height: 17px; flex: none; }
+.gs-field input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: none; color: var(--text); font: inherit; font-size: 14px; }
+.gs-clear { width: 22px; height: 22px; display: grid; place-items: center; border: 0; border-radius: 50%; background: var(--press); color: var(--muted); padding: 0; }
+.gs-clear svg { width: 11px; height: 11px; }
+.gs-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.gs-chip { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 12px 0 10px; border: 0; border-radius: 999px; background: var(--field); color: var(--muted); font-size: 12.5px; font-weight: 600; transition: background .12s, color .12s, box-shadow .12s; }
+.gs-chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--faint)); opacity: .45; }
+.gs-chip.sp { --c: #1ed760; } .gs-chip.sc { --c: #ff7700; } .gs-chip.yt { --c: #ff2d2d; }
+.gs-chip.on { color: var(--text); background: color-mix(in srgb, var(--c) 16%, var(--field)); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); }
+.gs-chip.on::before { opacity: 1; }
+.gs-chip.na { opacity: .5; }
+.gs-chip b { font-weight: 700; font-size: 11.5px; color: var(--muted); }
+.gs-chip b.bad { color: #ff453a; }
+.gs-spin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--track); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+.gs-notes { margin-top: 8px; font-size: 12.5px; color: #ff453a; line-height: 1.5; }
+[data-b-search="0"] .gsearch { display: none; }
+.row .c3 { display: flex; align-items: center; gap: 4px; overflow: hidden; }
+.badge.dim { opacity: .4; text-decoration: line-through; }

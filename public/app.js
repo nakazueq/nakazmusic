@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 // Эти настройки дублируются в программу (%LOCALAPPDATA%\MyPlayer\store.json),
 // чтобы не вводить их заново после обновления или смены окна
-const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists']);
+const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src']);
 const storeQueue = {};
 let storeTimer = 0;
 function storeSync(k, v) {
@@ -672,11 +672,20 @@ async function spLoadLikes() {
     render();
   }
 }
+let spPremium = null;   // null: пока не знаем; false: аккаунт без Premium, играть из Spotify нельзя
 async function spMe() {
-  try { const me = await spApi('/me'); if (me) $('sp-state').dataset.name = me.display_name || me.id || ''; } catch {}
+  try {
+    const me = await spApi('/me');
+    if (me) {
+      $('sp-state').dataset.name = me.display_name || me.id || '';
+      spPremium = me.product ? me.product === 'premium' : null;
+      if (searchActive()) searchRefresh();
+    }
+  } catch {}
 }
 function spLogout() {
   LS.del('sp_token'); LS.del('sp_lib');
+  spPremium = null;
   state.lib.sp = [];
   if (sp.player) { try { sp.player.disconnect(); } catch {} }
   sp.player = null; sp.device = null; sp.ready = null;
@@ -703,7 +712,7 @@ function spInit() {
       p.addListener('not_ready', () => { sp.device = null; });
       p.addListener('initialization_error', () => { const e = fatal(WIDEVINE_MSG); e.widevine = true; fail(e); });
       p.addListener('authentication_error', () => fail(fatal('Spotify: войди заново в настройках')));
-      p.addListener('account_error', () => fail(fatal('Spotify: для плеера нужен Premium')));
+      p.addListener('account_error', () => { spPremium = false; fail(fatal('Spotify: для плеера нужен Premium')); });
       p.addListener('playback_error', ({ message }) => { if (state.cur && state.cur.src === 'sp') toast('Spotify: ' + message); });
       p.addListener('player_state_changed', spOnState);
       sp.player = p;
@@ -1135,9 +1144,19 @@ async function playTrack(t) {
     else await scPlay(t, token);
     if (token === state.token) state.fails = 0;
   } catch (e) {
+    // у объединённого трека есть другие источники: пробуем следующий, например YouTube, если у Spotify нет Premium
+    if (token === state.token && t.alts && t.alts.length) {
+      const [alt, ...rest] = t.alts;
+      const nxt = { ...t, src: alt.src, id: alt.id, uri: alt.uri, url: alt.url, duration: alt.duration || t.duration, alts: rest };
+      const qi = state.order[state.pos];
+      if (state.queue[qi] === t) state.queue[qi] = nxt;
+      toast(`Играю из другого источника: ${SRC_NAMES[alt.src] || alt.src}`);
+      return playTrack(nxt);
+    }
     playFailed(e, token);
   }
 }
+const SRC_NAMES = { sp: 'Spotify', sc: 'SoundCloud', yt: 'YouTube Music', local: 'С компа' };
 function playFailed(e, token) {
   if (token !== state.token) return;
   console.warn(e);
@@ -1378,12 +1397,14 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) upda
 const VIEW_TITLES = { all: 'Вся музыка', sp: 'Spotify', sc: 'SoundCloud', yt: 'YouTube Music', local: 'С компа', recs: 'Для тебя', radio: 'Радио', stats: 'Статистика' };
 const curPl = () => (state.view.startsWith('pl:') ? plGet(state.view.slice(3)) : null);
 function viewTitle() {
+  if (searchActive()) return 'Поиск';
   if (state.view.startsWith('pl:')) { const p = curPl(); return p ? p.name : 'Плейлист'; }
   if (state.view === 'radio' && state.radio.seed) return 'Радио: ' + state.radio.seed.title;
   return VIEW_TITLES[state.view] || 'Sonara';
 }
 function rebuildAll() {
   state.all = [...state.lib.sp, ...state.lib.sc, ...state.lib.yt, ...state.lib.local].sort((a, b) => (b.at || 0) - (a.at || 0));
+  if (searchActive()) searchMergeNow();
   render();
 }
 function viewSource() {
@@ -1414,7 +1435,7 @@ function render() {
   $('cnt-local').textContent = state.lib.local.length || '';
   $('cnt-yt').textContent = state.lib.yt.length || '';
   $('cnt-all').textContent = nsp + nsc + state.lib.yt.length + state.lib.local.length || '';
-  state.list = filtered(viewSource());
+  state.list = searchActive() ? searchSt.items : filtered(viewSource());
   renderHead();
   renderEmpty();
   vlReset();
@@ -1433,8 +1454,9 @@ function renderHead() {
   } else if (state.view === 'recs') {
     sub = state.recsLoading ? 'Подбираю треки по твоим лайкам…'
       : n ? `${n} ${plural(n, TRACKS)} с SoundCloud · на основе ${state.recsSeeds} ${plural(state.recsSeeds, ['лайка', 'лайков', 'лайков'])}` : '';
-  } else if (state.query) {
-    sub = `Найдено: ${n}`;
+  } else if (searchActive()) {
+    const busy = Object.values(searchSt.per).some((p) => p.st === 'loading') || (searchSt.timer && !Object.keys(searchSt.per).length);
+    sub = `«${state.query.trim()}» · ${n} ${plural(n, TRACKS)}${busy ? ' · ищу…' : ''}`;
   } else if (n) {
     const total = state.list.reduce((s, t) => s + (t.duration || 0), 0);
     sub = `${n} ${plural(n, TRACKS)} · ${fmtTotal(total)}${loading ? ' · обновляю…' : ''}`;
@@ -1466,7 +1488,13 @@ function renderEmpty() {
   const btnSc = '<button class="pill" data-acc="sc">Подключить SoundCloud</button>';
   const btnYt = '<button class="pill" data-acc="yt">Подключить YouTube Music</button>';
   let html;
-  if (state.query) html = emptyCard(ICONS.search, 'Ничего не нашлось', `По запросу «${escapeHtml(state.query)}» в этом разделе пусто.`);
+  if (searchActive()) {
+    const pers = Object.values(searchSt.per);
+    const busy = pers.some((p) => p.st === 'loading') || !pers.length;
+    const failed = pers.some((p) => p.st === 'err');
+    html = busy ? '<div class="empty-card"><div class="loader"></div><p>Ищу…</p></div>'
+      : emptyCard(ICONS.search, 'Ничего не нашлось', `По запросу «${escapeHtml(state.query.trim())}» нет треков в включённых источниках.${failed ? ' Часть источников не ответила, смотри пометки над списком.' : ' Попробуй включить другие источники.'}`);
+  }
   else if (state.view.startsWith('pl:')) html = emptyCard(ICONS.note, 'Плейлист пустой', 'Добавляй треки через ⋯ справа у трека или правой кнопкой мыши. Можно мешать Spotify и SoundCloud.');
   else if (state.view === 'radio') {
     html = state.radio.loading ? '<div class="empty-card"><div class="loader"></div><p>Настраиваю радио…</p></div>'
@@ -1530,9 +1558,15 @@ function makeRow() {
 }
 // заглушка для треков без обложки: серая нота на прозрачном фоне
 const NO_COVER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><g transform="translate(9 9) scale(.92)" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".7"><path d="M9 17.5V6.6l10-2.4v10.9"/><circle cx="6.6" cy="17.6" r="2.4" fill="#8e8e93"/><circle cx="16.6" cy="15.1" r="2.4" fill="#8e8e93"/></g></svg>');
-const isCur = (t) => !!state.cur && state.cur.src === t.src && state.cur.id === t.id;
+const isCur = (t) => !!state.cur && (state.cur.src === t.src && state.cur.id === t.id || (t.alts || []).some((x) => state.cur.src === x.src && state.cur.id === x.id));
+const SRC_BADGE = { sp: ['sp', 'Spotify'], sc: ['sc', 'SoundCloud'], yt: ['yt', 'YouTube'], local: ['lc', 'С компа'] };
+// у объединённого трека бейджи всех источников, недоступные для воспроизведения приглушены
+function srcBadges(t) {
+  const list = t._srcs ? ['sp', 'sc', 'yt', 'local'].filter((s) => t._srcs.includes(s)) : [t.src];
+  return list.map((s) => `<span class="badge ${SRC_BADGE[s][0]}${t._dim && t._dim.includes(s) ? ' dim' : ''}">${SRC_BADGE[s][1]}</span>`).join('');
+}
 function fillRow(el, t, i) {
-  const key = t.src + ':' + t.id + ':' + i;
+  const key = t.src + ':' + t.id + ':' + i + ':' + (t._srcs ? t._srcs.join() + (t._dim || []).join() : '');
   if (el._key !== key) {
     el._key = key;
     el._i = i;
@@ -1543,7 +1577,7 @@ function fillRow(el, t, i) {
     const cv = t.cover || NO_COVER;
     if (el._img.getAttribute('src') !== cv) el._img.src = cv;
     if (state.view === 'recs') el._c3.textContent = t.because ? t.because : '';
-    else el._c3.innerHTML = t.src === 'sp' ? '<span class="badge sp">Spotify</span>' : t.src === 'local' ? '<span class="badge lc">С компа</span>' : t.src === 'yt' ? '<span class="badge yt">YouTube</span>' : '<span class="badge sc">SoundCloud</span>';
+    else el._c3.innerHTML = srcBadges(t);
     el._d.textContent = t.duration ? fmt(t.duration) : '—';
   }
   const cur = isCur(t);
@@ -1634,6 +1668,7 @@ const saveYtLists = () => { LS.set('yt_lists', JSON.stringify(ytLists)); renderY
 async function ytCheck() {
   try { ytStatus = await api('/api/yt/status'); } catch {}
   renderYtLists();
+  renderSearchChips();
 }
 function renderYtLists() {
   const box = $('yt-lists');
@@ -1718,6 +1753,173 @@ $('yt-install').addEventListener('click', async () => {
   } catch (e) { setAccState('yt', 'Не получилось скачать yt-dlp: ' + e.message, 'err'); }
   b.disabled = false; renderYtLists();
 });
+
+/* ===================== Глобальный поиск ===================== */
+// Поиск идёт параллельно по включённым источникам, у каждого свой таймаут. Результаты приходят по мере готовности:
+// упавший или медленный источник не мешает остальным, у него в чипсе остаётся пометка.
+const SEARCH_SRCS = [['sp', 'Spotify'], ['sc', 'SoundCloud'], ['yt', 'YouTube Music']];
+const SEARCH_TIMEOUT = { sp: 8000, sc: 10000, yt: 20000 };
+const SEARCH_DEBOUNCE = 300;
+let searchOn = { sp: true, sc: true, yt: true };
+{ const saved = LS.json('search_src', {}); if (saved && typeof saved === 'object') for (const [id] of SEARCH_SRCS) if (typeof saved[id] === 'boolean') searchOn[id] = saved[id]; }
+const searchSt = { token: 0, remote: { sp: [], sc: [], yt: [] }, per: {}, items: [], timer: 0 };
+const searchActive = () => state.query.trim().length > 0;
+function searchAvail(id) {
+  if (id === 'sp') return !!LS.get('sp_token');
+  if (id === 'yt') return ytStatus.installed !== false;
+  return true;
+}
+const searchUsable = (id) => !!searchOn[id] && searchAvail(id);
+
+function setQuery(v, from) {
+  state.query = v;
+  for (const id of ['gs-input', 'search']) { const el = $(id); if (el !== from && el.value !== v) el.value = v; }
+  $('gs-clear').hidden = !v;
+  clearTimeout(searchSt.timer);
+  searchSt.timer = 0;
+  scroller.scrollTop = 0;
+  if (!v.trim()) {
+    searchSt.token++;
+    searchSt.remote = { sp: [], sc: [], yt: [] };
+    searchSt.per = {};
+    searchSt.items = [];
+    renderSearchChips();
+    render();
+    return;
+  }
+  if (state.view === 'stats') setView('all');
+  searchMergeNow();   // совпадения из своей библиотеки видны сразу, пока ждём сеть
+  renderSearchChips();
+  render();
+  searchSt.timer = setTimeout(runSearch, SEARCH_DEBOUNCE);
+}
+async function runSearch() {
+  searchSt.timer = 0;
+  const q = state.query.trim();
+  if (!q) return;
+  const token = ++searchSt.token;
+  const jobs = [];
+  for (const [id] of SEARCH_SRCS) {
+    if (!searchUsable(id)) { searchSt.per[id] = { st: searchOn[id] ? 'na' : 'off' }; continue; }
+    searchSt.per[id] = { st: 'loading' };
+    jobs.push(searchOne(id, q, token));
+  }
+  searchRefresh();
+  await Promise.allSettled(jobs);
+}
+async function searchOne(id, q, token) {
+  const ctl = new AbortController();
+  const ms = SEARCH_TIMEOUT[id];
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    let tracks;
+    if (id === 'sp') {
+      const j = await spApi('/search?type=track&limit=20&q=' + encodeURIComponent(q), { signal: ctl.signal });
+      tracks = ((j && j.tracks && j.tracks.items) || []).filter((t) => t && t.id && !t.is_local).map((t) => spMap(t));
+    } else {
+      tracks = (await api(`/api/search?src=${id}&q=${encodeURIComponent(q)}`, { signal: ctl.signal })).tracks || [];
+    }
+    if (token !== searchSt.token) return;
+    searchSt.remote[id] = tracks;
+    searchSt.per[id] = { st: 'ok', n: tracks.length };
+  } catch (e) {
+    if (token !== searchSt.token) return;
+    searchSt.remote[id] = [];
+    searchSt.per[id] = { st: 'err', msg: ctl.signal.aborted || e.name === 'AbortError' ? `не ответил за ${Math.round(ms / 1000)} с` : e.message };
+  } finally { clearTimeout(timer); }
+  searchRefresh();
+}
+function searchRefresh() {
+  searchMergeNow();
+  renderSearchChips();
+  if (searchActive()) render();
+}
+function renderSearchChips() {
+  const active = searchActive();
+  $('gs-chips').innerHTML = SEARCH_SRCS.map(([id, name]) => {
+    const per = searchSt.per[id] || {}, avail = searchAvail(id), on = !!searchOn[id] && avail;
+    let tag = '';
+    if (on && active) {
+      if (per.st === 'loading') tag = '<i class="gs-spin"></i>';
+      else if (per.st === 'ok') tag = `<b>${per.n}</b>`;
+      else if (per.st === 'err') tag = '<b class="bad">!</b>';
+    }
+    const title = !avail ? (id === 'sp' ? 'Spotify не подключён' : 'Нужен yt-dlp') : on ? 'Искать здесь: включено' : 'Искать здесь: выключено';
+    return `<button type="button" class="gs-chip ${id}${on ? ' on' : ''}${avail ? '' : ' na'}" data-src="${id}" aria-pressed="${on}" title="${title}"><span>${name}</span>${tag}</button>`;
+  }).join('');
+  const notes = [];
+  if (active) {
+    for (const [id, name] of SEARCH_SRCS) {
+      const per = searchSt.per[id] || {};
+      if (per.st === 'err') notes.push(`${name}: ${per.msg}`);
+      else if (searchOn[id] && !searchAvail(id)) notes.push(`${name}: ${id === 'sp' ? 'не подключён' : 'нужен yt-dlp'}`);
+    }
+  }
+  const box = $('gs-notes');
+  box.hidden = !notes.length;
+  box.textContent = notes.length ? '⚠ ' + notes.join(' · ') : '';
+}
+// ключ для объединения одинаковых треков: название без скобок, ремастеров и «Артист - …» плюс первый артист
+function dupParts(t) {
+  let title = String(t.title || '');
+  const artist = norm(String(t.artist || '').split(/,|&|\bfeat\b|\bft\b/i)[0]);
+  const m = title.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+  if (m) {
+    const a = norm(m[1]), b = norm(m[2]);
+    if (a && artist && (a.includes(artist) || artist.includes(a))) title = m[2];
+    else if (b && artist && b.includes(artist)) title = m[1];
+    else title = title.replace(/\s+[-–—]\s+(remaster(ed)?|.*\b(version|edit|mix)\b|live\b|mono|stereo).*$/i, '');
+  }
+  const key = norm(title).replace(/\b(official|video|audio|lyrics?|hd|hq|explicit|remaster(ed)?)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  return [key, artist];
+}
+const artistsOverlap = (a, b) => {
+  if (!a || !b) return true;
+  const x = a.replace(/ /g, ''), y = b.replace(/ /g, '');
+  return x.includes(y) || y.includes(x);
+};
+const durOk = (a, b) => !a || !b || Math.abs(a - b) <= 8000;
+const PLAY_RANK = { local: 0, sp: 1, yt: 2, sc: 3 };      // из какого источника играть дубль
+const META_RANK = { sp: 0, local: 1, sc: 2, yt: 3 };      // чьё название и обложку показывать
+function searchPlayable(t) {
+  if (t.src === 'local') return true;
+  if (t.src === 'sp') return !!LS.get('sp_token') && spPremium !== false;
+  return searchUsable(t.src);
+}
+function searchMergeNow() {
+  const words = norm(state.query).split(' ').filter(Boolean);
+  const lib = state.all.filter((t) => (t.src === 'local' || searchUsable(t.src)) && words.every((w) => (t._k || (t._k = norm(t.title + ' ' + t.artist))).includes(w)));
+  const lists = [{ w: 1.5, items: lib.slice(0, 80) }];
+  for (const [id] of SEARCH_SRCS) if (searchUsable(id)) lists.push({ w: 1, items: searchSt.remote[id] || [] });
+  const groups = [], byId = new Map();
+  for (const L of lists) {
+    L.items.forEach((t, rank) => {
+      const score = L.w / (15 + rank);
+      const same = byId.get(t.src + ':' + t.id);
+      if (same) { same.score += score; return; }
+      const [title, artist] = dupParts(t);
+      let g = title ? groups.find((x) => x.title === title && artistsOverlap(x.artist, artist) && durOk(x.dur, t.duration) && !x.members.some((m) => m.src === t.src)) : null;
+      if (!g) { g = { title, artist, dur: t.duration || 0, score: 0, members: [] }; groups.push(g); }
+      g.members.push(t);
+      g.score += score;
+      if (!g.dur && t.duration) g.dur = t.duration;
+      byId.set(t.src + ':' + t.id, g);
+    });
+  }
+  const playRank = (t) => (searchPlayable(t) ? 0 : 10) + PLAY_RANK[t.src];
+  searchSt.items = groups.sort((a, b) => b.score - a.score).map((g) => {
+    const mem = g.members.slice().sort((a, b) => playRank(a) - playRank(b));
+    const p = mem[0];
+    const meta = g.members.slice().sort((a, b) => META_RANK[a.src] - META_RANK[b.src])[0];
+    return Object.assign({}, p, {
+      title: meta.title, artist: meta.artist, album: meta.album || p.album,
+      cover: meta.cover || p.cover, art: meta.art || p.art, big: meta.big || p.big,
+      alts: mem.slice(1).filter(searchPlayable),
+      _srcs: mem.map((m) => m.src),
+      _dim: mem.filter((m) => !searchPlayable(m)).map((m) => m.src),
+    });
+  });
+}
 
 /* ===================== Подбор треков ===================== */
 async function loadRecs(force) {
@@ -1965,6 +2167,13 @@ function openTrackMenu(t, idx, x, y, alignRight) {
     state.queue.push(t);
     state.order.splice(state.pos + 1, 0, state.queue.length - 1);
     toast('Будет играть следующим');
+    renderQueue();
+  });
+  add('В конец очереди', ICONS.queue, () => {
+    if (!state.queue.length) { playFrom([t], 0); return; }
+    state.queue.push(t);
+    state.order.push(state.queue.length - 1);
+    toast('Добавлено в очередь');
     renderQueue();
   });
   items.push({ sep: true }, { head: 'Добавить в плейлист' });
@@ -2898,6 +3107,7 @@ function syncAccounts() {
   const y = accState.yt;
   $('yt-state').textContent = y.text || (ytLists.length ? '' : 'Не подключён');
   $('yt-state').className = 'state ' + y.cls;
+  renderSearchChips();
 }
 $('sp-connect').addEventListener('click', spLogin);
 $('sp-logout').addEventListener('click', spLogout);
@@ -2912,11 +3122,28 @@ $('sc-user').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('sc-l
 $('sp-client').addEventListener('keydown', (e) => { if (e.key === 'Enter') spLogin(); });
 
 /* ===================== События интерфейса ===================== */
-$('sidebar').addEventListener('click', (e) => { const b = e.target.closest('.nav[data-view]'); if (b) setView(b.dataset.view); });
-let searchTimer = null;
-$('search').addEventListener('input', (e) => {
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => { state.query = e.target.value; scroller.scrollTop = 0; render(); }, 120);
+$('sidebar').addEventListener('click', (e) => {
+  const b = e.target.closest('.nav[data-view]');
+  if (!b) return;
+  if (state.query) setQuery('');   // переход в раздел закрывает поиск
+  setView(b.dataset.view);
+});
+$('search').addEventListener('input', (e) => setQuery(e.target.value, e.target));
+$('gs-input').addEventListener('input', (e) => setQuery(e.target.value, e.target));
+$('gs-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && searchActive()) { clearTimeout(searchSt.timer); runSearch(); }
+  if (e.key === 'Escape') { e.stopPropagation(); if (state.query) setQuery(''); else e.target.blur(); }
+});
+$('gs-clear').addEventListener('click', () => { setQuery(''); $('gs-input').focus(); });
+$('gs-chips').addEventListener('click', (e) => {
+  const b = e.target.closest('.gs-chip');
+  if (!b) return;
+  const id = b.dataset.src;
+  if (!searchAvail(id)) { toast(id === 'sp' ? 'Spotify не подключён: войди в настройках' : 'Для YouTube Music нужен yt-dlp: скачай его в настройках'); return; }
+  searchOn[id] = !searchOn[id];
+  LS.set('search_src', JSON.stringify(searchOn));
+  if (searchOn[id] && searchActive()) { searchSt.per[id] = { st: 'loading' }; searchOne(id, state.query.trim(), searchSt.token); }
+  searchRefresh();
 });
 $('act-play').addEventListener('click', () => {
   if (!state.list.length) return;
@@ -2930,6 +3157,7 @@ $('act-shuffle').addEventListener('click', () => {
 $('act-rename').addEventListener('click', () => { const p = curPl(); if (p) plRename(p); });
 $('act-delete').addEventListener('click', () => { const p = curPl(); if (p) plDelete(p); });
 $('act-refresh').addEventListener('click', () => {
+  if (searchActive()) { clearTimeout(searchSt.timer); return runSearch(); }
   if (state.view === 'local') return loadLocal(true);
   if (state.view === 'radio') return radioMore();
   if (state.view === 'recs') return loadRecs(true);
@@ -2978,7 +3206,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && lyOpen) { setLyrics(false); return; }
   if (e.key === 'F11') { e.preventDefault(); toggleFull(); return; }
   if (e.key === 'Escape' && ui.layout.mode === 'full' && !typing) { toggleFull(); return; }
-  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') { e.preventDefault(); setLyrics(false); peekSide(true); $('search').focus(); $('search').select(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') { e.preventDefault(); setLyrics(false); const gs = $('gs-input'); if (gs.offsetParent) { gs.focus(); gs.select(); return; } peekSide(true); $('search').focus(); $('search').select(); return; }
   if (typing) return;
   if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
   else if (e.code === 'KeyL' && !e.ctrlKey && !e.altKey && !e.metaKey) { e.preventDefault(); toggleLyrics(); }
@@ -3294,6 +3522,7 @@ window.addEventListener('pagehide', () => { listenTick(); listenFlush(true); if 
   }
   if (LS.get('sc_user')) scLoadLikes(false);
   renderYtLists();
+  renderSearchChips();
   ytCheck();
   if (ytLists.length) ytLoadAll(false);
   loadLocal(false);

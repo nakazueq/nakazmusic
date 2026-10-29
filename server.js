@@ -33,7 +33,7 @@ try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
 const LOG_FILE = path.join(DATA_DIR, 'player.log');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
-const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists']);
+const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src']);
 // запуск с --safe-css (или SONARA_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
 const SAFE_CSS = process.argv.includes('--safe-css') || process.env.SONARA_SAFE_CSS === '1';
 const PLAYS_FILE = path.join(DATA_DIR, 'plays.jsonl');
@@ -1024,6 +1024,30 @@ async function ytdlpInstall() {
   return { version: String(rel.tag_name || ''), path: dest };
 }
 
+// ---------- глобальный поиск по SoundCloud и YouTube Music ----------
+const searchCache = new Map();
+async function searchTracks(src, q) {
+  const key = src + '|' + q.toLowerCase();
+  const hit = searchCache.get(key);
+  if (hit && Date.now() - hit.at < 120000) return hit.tracks;
+  let tracks;
+  if (src === 'sc') {
+    const r = await scGet('/search/tracks', { q, limit: 25 });
+    tracks = ((r && r.collection) || []).filter((t) => t && t.kind === 'track' && t.title).map((t) => scMap(t));
+  } else {
+    // ytsearch20: yt-dlp ищет по YouTube; длинные миксы и подкасты (дольше 20 минут) отбрасываем
+    const out = await ytdlp(['--flat-playlist', '-J', '--no-warnings', `ytsearch20:${q}`], 25000);
+    let data;
+    try { data = JSON.parse(out); } catch { throw ytFail('yt-dlp вернул что-то непонятное', 502); }
+    tracks = (data.entries || [])
+      .filter((e) => e && /^[\w-]{11}$/.test(e.id || '') && e.title && (!e.duration || e.duration <= 1200))
+      .map((e, i) => ({ ...ytMap(e, i, 0), at: 0 }));
+  }
+  searchCache.set(key, { at: Date.now(), tracks });
+  if (searchCache.size > 60) searchCache.delete(searchCache.keys().next().value);
+  return tracks;
+}
+
 // ---------- обложки для подбора цветов ----------
 // Страница читает пиксели обложки через canvas, а картинки Spotify и SoundCloud чужие и без CORS,
 // поэтому отдаём их с нашего адреса. Только https и только хосты CDN обложек, остальное не качаем.
@@ -1241,6 +1265,13 @@ const server = http.createServer(async (req, res) => {
       const user = (u.searchParams.get('user') || '').trim();
       if (!SC_USER_RE.test(user)) return send(res, 400, { error: 'Некорректный ник SoundCloud' });
       return send(res, 200, await scLikes(user, u.searchParams.get('force') === '1'));
+    }
+    if (p === '/api/search') {
+      const src = u.searchParams.get('src');
+      const q = String(u.searchParams.get('q') || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 120);
+      if (src !== 'sc' && src !== 'yt') return send(res, 400, { error: 'Неизвестный источник' });
+      if (!q) return send(res, 400, { error: 'Пустой запрос' });
+      return send(res, 200, { tracks: await searchTracks(src, q) });
     }
     if (p === '/api/yt/status') {
       const exe = ytdlpExe();
