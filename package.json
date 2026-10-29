@@ -1,0 +1,37 @@
+{
+  "name": "sonara",
+  "version": "3.5.0",
+  "description": "Sonara: Spotify и SoundCloud лайки в одном окне",
+  "main": "server.js",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "icon": "node tools/make-icon.mjs",
+    "build": "node tools/build.mjs"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "assets/icon-256.rgba",
+      "node_modules/@webviewjs/webview/*.js",
+      "node_modules/@webviewjs/webview-win32-x64-msvc/*.node",
+      "node_modules/@webviewjs/webview-win32-x64-msvc/package.json",
+      "assets/icon-32.rgba"
+    ]
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.24.0",
+    "pe-library": "^2.0.1",
+    "resedit": "^2.0.3",
+    "sharp": "^0.35.5"
+  },
+  "dependencies": {
+    "@webviewjs/webview": "^0.4.9"
+  },
+  "optionalDependencies": {
+    "@webviewjs/webview-win32-x64-msvc": "^0.4.9"
+  },
+  "productName": "Sonara",
+  "type": "commonjs"
+}

@@ -1,0 +1,28 @@
+# зависимости и результаты сборки
+node_modules/
+build/
+*.exe
+*.exe.bak
+
+# логи
+*.log
+npm-debug.log*
+
+# данные пользователя
+store.json
+config.json
+local-cache.json
+plays.jsonl
+sc-client.json
+sc-likes-*.json
+lyrics/
+
+# ключи, токены, секреты
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+*token*
+*secret*

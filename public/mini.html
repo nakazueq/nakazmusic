@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Sonara — мини</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #007AFF;
+    --text: #1d1d1f; --muted: rgba(29, 29, 31, .62);
+    --veil: rgba(246, 246, 249, .62);
+    --btn-hover: rgba(0, 0, 0, .07);
+    --track: rgba(0, 0, 0, .12);
+    --plain: #e9e9ee;
+  }
+  :root[data-theme="dark"] {
+    --text: #f5f5f7; --muted: rgba(245, 245, 247, .62);
+    --veil: rgba(18, 18, 22, .58);
+    --btn-hover: rgba(255, 255, 255, .1);
+    --track: rgba(255, 255, 255, .18);
+    --plain: #1c1c20;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    font: 13px/1.35 "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    color: var(--text);
+    background: var(--plain);
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: default; }
+  svg { display: block; }
+  .bg { position: fixed; inset: -40px; background: var(--plain) center / cover no-repeat; filter: blur(26px) saturate(1.6); transform: scale(1.1); }
+  .veil { position: fixed; inset: 0; background: var(--veil); }
+  .mini { position: relative; height: 100%; display: flex; align-items: center; gap: 13px; padding: 0 14px 4px 12px; }
+  .cv {
+    width: 74px; height: 74px; flex: none; border-radius: 9px; object-fit: cover;
+    background: var(--track);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .25), 0 0 0 .5px rgba(0, 0, 0, .1);
+    transition: transform .4s cubic-bezier(.2, .8, .2, 1);
+  }
+  .cv:not([src]) { visibility: hidden; }
+  body.paused .cv { transform: scale(.93); }
+  .meta { flex: 1; min-width: 0; }
+  .t, .a { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .t { font-weight: 700; font-size: 13.5px; letter-spacing: -.01em; padding-right: 44px; }
+  .a { color: var(--muted); font-size: 12px; }
+  .ctrl { display: flex; align-items: center; gap: 6px; margin-top: 6px; margin-left: -6px; }
+  .b { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; transition: background .12s, transform .08s; }
+  .b:hover { background: var(--btn-hover); }
+  .b:active { transform: scale(.9); }
+  .b svg { width: 19px; height: 19px; }
+  .b.play svg { width: 24px; height: 24px; }
+  .win { position: absolute; top: 8px; right: 8px; display: flex; gap: 2px; opacity: 0; transition: opacity .15s; }
+  body:hover .win { opacity: 1; }
+  .w { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; color: var(--muted); }
+  .w:hover { background: var(--btn-hover); color: var(--text); }
+  .w svg { width: 14px; height: 14px; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; height: 4px; background: var(--track); cursor: pointer; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--accent); }
+  .bar:hover { height: 6px; }
+</style>
+</head>
+<body class="paused">
+<div class="bg" id="bg" data-webview-drag-region></div>
+<div class="veil" data-webview-drag-region></div>
+<div class="mini" data-webview-drag-region>
+  <img class="cv" id="cv" alt="" data-webview-drag-region>
+  <div class="meta" data-webview-drag-region>
+    <div class="t" id="t" data-webview-drag-region>Ничего не играет</div>
+    <div class="a" id="a" data-webview-drag-region>Sonara</div>
+    <div class="ctrl" data-webview-drag-region>
+      <button class="b" data-cmd="prev" title="Назад"><svg viewBox="0 0 24 24"><path d="M20.5 7.2v9.6a.7.7 0 0 1-1.1.6L13 13v3.8a.7.7 0 0 1-1.1.6L5.2 12.6a.75.75 0 0 1 0-1.2l6.7-4.8a.7.7 0 0 1 1.1.6V11l6.4-4.4a.7.7 0 0 1 1.1.6z" fill="currentColor"/></svg></button>
+      <button class="b play" data-cmd="toggle" title="Играть / пауза" id="play"></button>
+      <button class="b" data-cmd="next" title="Дальше"><svg viewBox="0 0 24 24"><path d="M3.5 7.2v9.6a.7.7 0 0 0 1.1.6L11 13v3.8a.7.7 0 0 0 1.1.6l6.7-4.8a.75.75 0 0 0 0-1.2l-6.7-4.8a.7.7 0 0 0-1.1.6V11L4.6 6.6a.7.7 0 0 0-1.1.6z" fill="currentColor"/></svg></button>
+    </div>
+  </div>
+  <div class="win">
+    <button class="w" data-cmd="expand" title="Открыть плеер"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+    <button class="w" data-cmd="mini-close" title="Закрыть мини-плеер"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+  </div>
+</div>
+<div class="bar" id="bar" title="Перемотка"><i id="fill"></i></div>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const PLAY = '<svg viewBox="0 0 24 24"><path d="M7.5 5.2v13.6a1 1 0 0 0 1.53.85l10.9-6.8a1 1 0 0 0 0-1.7L9.03 4.35A1 1 0 0 0 7.5 5.2z" fill="currentColor"/></svg>';
+const PAUSE = '<svg viewBox="0 0 24 24"><rect x="6" y="4.5" width="4.2" height="15" rx="1.3" fill="currentColor"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3" fill="currentColor"/></svg>';
+
+// тема — та же, что в основном окне
+function applyTheme() {
+  let s = {};
+  try { s = JSON.parse(localStorage.getItem('ui') || '{}'); } catch {}
+  let m = s.mode || 'light';
+  if (m === 'auto') m = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  document.documentElement.dataset.theme = m;
+  if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
+}
+applyTheme();
+addEventListener('storage', (e) => { if (e.key === 'ui') applyTheme(); });
+
+let st = { hasTrack: false, playing: false, time: 0, dur: 0, at: Date.now() };
+let lastArt = null;
+function render() {
+  $('t').textContent = st.hasTrack ? st.title : 'Ничего не играет';
+  $('a').textContent = st.hasTrack ? st.artist : 'Sonara';
+  if (st.art !== lastArt) {
+    lastArt = st.art;
+    if (st.art) { $('cv').src = st.art; $('bg').style.backgroundImage = `url("${st.art}")`; }
+    else { $('cv').removeAttribute('src'); $('bg').style.backgroundImage = ''; }
+  }
+  $('play').innerHTML = st.playing ? PAUSE : PLAY;
+  document.body.classList.toggle('paused', !st.playing);
+  document.title = st.hasTrack ? `${st.title} · ${st.artist}` : 'Sonara — мини';
+  progress();
+}
+function now() { return st.playing ? st.time + (Date.now() - st.at) : st.time; }
+function progress() {
+  const p = st.dur ? Math.min(1, now() / st.dur) : 0;
+  $('fill').style.width = (p * 100).toFixed(2) + '%';
+}
+setInterval(progress, 500);
+
+function cmd(c, value) {
+  fetch('/api/app/cmd', { method: 'POST', headers: { 'X-Player': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ cmd: c, value }) }).catch(() => {});
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cmd]');
+  if (!b) return;
+  const c = b.dataset.cmd;
+  if (c === 'toggle') { st.time = now(); st.at = Date.now(); st.playing = !st.playing; render(); }
+  cmd(c);
+});
+$('bar').addEventListener('click', (e) => {
+  if (!st.dur) return;
+  const r = $('bar').getBoundingClientRect();
+  const ms = ((e.clientX - r.left) / r.width) * st.dur;
+  st.time = ms; st.at = Date.now(); progress();
+  cmd('seek', Math.round(ms));
+});
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); cmd('toggle'); }
+  else if (e.code === 'ArrowRight') cmd('next');
+  else if (e.code === 'ArrowLeft') cmd('prev');
+  else if (e.code === 'Escape') cmd('expand');
+});
+
+async function connect() {
+  let key;
+  try { const r = await fetch('/api/app/key', { headers: { 'X-Player': '1' } }); key = (await r.json()).key; }
+  catch { setTimeout(connect, 3000); return; }
+  const es = new EventSource(`/api/events?role=mini&key=${key}`);
+  es.addEventListener('state', (e) => { try { st = JSON.parse(e.data); render(); } catch {} });
+  es.onerror = () => { if (es.readyState === 2) setTimeout(connect, 3000); };
+}
+render();
+connect();
+</script>
+</body>
+</html>

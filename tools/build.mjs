@@ -1,0 +1,81 @@
+// Сборка Sonara.exe: иконка из SVG -> pkg с подменой иконки и версии в базовом бинарнике
+import { execFileSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import * as ResEdit from 'resedit';
+import { makeIcons } from './make-icon.mjs';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const pkgJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+const NAME = 'Sonara';
+const TARGET = 'node22-win-x64';
+const outExe = resolve(root, '..', NAME + '.exe');
+const buildDir = join(root, 'build');
+const pkgCli = join(root, 'node_modules', '@yao-pkg', 'pkg', 'lib-es5', 'bin.js');
+
+const run = (args, env = {}) => execFileSync(process.execPath, [pkgCli, ...args], { cwd: root, stdio: 'inherit', env: { ...process.env, ...env } });
+
+// базовый бинарник Node, который pkg кладёт в кэш; если его ещё нет, pkg скачает его обычной сборкой
+function findBase() {
+  const cache = process.env.PKG_CACHE_PATH || join(homedir(), '.pkg-cache');
+  const find = () => {
+    if (!existsSync(cache)) return null;
+    const hits = [];
+    for (const d of readdirSync(cache)) {
+      const dir = join(cache, d);
+      try { for (const f of readdirSync(dir)) if (/^fetched-v22.*-win-x64$/.test(f)) hits.push(join(dir, f)); } catch {}
+    }
+    return hits.sort().pop() || null;
+  };
+  return find() || (run(['.', '--targets', TARGET, '--output', join(buildDir, 'probe.exe')]), find());
+}
+
+function patch(basePath, icoPath, outPath) {
+  const exe = ResEdit.NtExecutable.from(readFileSync(basePath), { ignoreCert: true });
+  const res = ResEdit.NtExecutableResource.from(exe);
+
+  // иконка: заменяем группу, которая есть в Node, либо создаём новую
+  const ico = ResEdit.Data.IconFile.from(readFileSync(icoPath));
+  const icons = ico.icons.map((i) => i.data);
+  const groups = ResEdit.Resource.IconGroupEntry.fromEntries(res.entries);
+  const targets = groups.length ? groups.map((g) => [g.id, g.lang]) : [[1, 1033]];
+  for (const [id, lang] of targets) ResEdit.Resource.IconGroupEntry.replaceIconsForResource(res.entries, id, lang, icons);
+
+  // информация о версии: имя Sonara, версия из package.json
+  const [maj, min = 0, pat = 0] = String(pkgJson.version).split('.').map((n) => parseInt(n, 10) || 0);
+  const ver = `${maj}.${min}.${pat}.0`;
+  const lang = 1033, codepage = 1200;
+  const vi = ResEdit.Resource.VersionInfo.fromEntries(res.entries)[0] || ResEdit.Resource.VersionInfo.createEmpty();
+  for (const l of vi.getAllLanguagesForStringValues()) vi.removeAllStringValues(l);
+  vi.replaceAvailableLanguages([{ lang, codepage }]);
+  vi.setFileVersion(maj, min, pat, 0, lang);
+  vi.setProductVersion(maj, min, pat, 0, lang);
+  vi.setStringValues({ lang, codepage }, {
+    FileDescription: NAME,
+    ProductName: NAME,
+    InternalName: NAME,
+    OriginalFilename: NAME + '.exe',
+    CompanyName: NAME,
+    LegalCopyright: pkgJson.license ? `${NAME}, ${pkgJson.license}` : NAME,
+    FileVersion: ver,
+    ProductVersion: ver,
+  });
+  vi.outputToResourceEntries(res.entries);
+
+  res.outputResource(exe);
+  writeFileSync(outPath, Buffer.from(exe.generate()));
+}
+
+mkdirSync(buildDir, { recursive: true });
+console.log('1/3 иконка из SVG');
+const ico = await makeIcons();
+
+console.log('2/3 иконка и версия %s в базовый бинарник', pkgJson.version);
+const patched = join(buildDir, 'node-base-win-x64.exe');
+patch(findBase(), ico, patched);
+
+console.log('3/3 pkg -> %s', outExe);
+run(['.', '--targets', TARGET, '--output', outExe], { PKG_NODE_PATH: patched });
+console.log('\nГотово: %s v%s', outExe, pkgJson.version);
