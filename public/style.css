@@ -865,3 +865,29 @@ body.ly-mode .player { left: 14px; }
 .lk-x:hover { background: var(--press); }
 .lk-select { width: 100%; height: 34px; padding: 0 10px; border: 0; border-radius: 8px; background: var(--field); color: var(--text); font: inherit; }
 .lk-foot { margin-top: 18px; }
+/* ---------- раскладки ---------- */
+[data-side="right"] .app { grid-template-columns: minmax(0, 1fr) var(--side-w); }
+[data-side="right"] .sidebar { order: 2; border-right: 0; border-left: 1px solid var(--sep); }
+[data-side="right"] .player { left: 14px; right: calc(var(--side-w) + 14px); }
+[data-layout="compact"] { --side-w: 62px; }
+[data-layout="compact"] .sidebar .lbl, [data-layout="compact"] .sidebar .cnt, [data-layout="compact"] .search, [data-layout="compact"] .side-cover { display: none; }
+[data-layout="compact"] .brand { justify-content: center; padding: 0 0 14px; }
+[data-layout="compact"] .nav { justify-content: center; padding: 0; }
+[data-layout="full"] { --side-w: 0px; }
+[data-layout="full"] .app { grid-template-columns: minmax(0, 1fr); }
+[data-layout="full"] .sidebar { display: none; }
+[data-layout="full"] .player { left: 14px; right: 14px; }
+
+.lk-layout .setrow { flex-wrap: wrap; }
+.lk-layout .seg button { padding: 4px 10px; font-size: 12.5px; }
+[data-side="right"] .lk-pv { grid-template-columns: minmax(0, 1fr) 31%; }
+[data-side="right"] .lk-side { grid-column: 2; }
+[data-side="right"] .lk-main { grid-column: 1; }
+[data-layout="compact"] .lk-pv { grid-template-columns: 11% minmax(0, 1fr); }
+[data-side="right"][data-layout="compact"] .lk-pv { grid-template-columns: minmax(0, 1fr) 11%; }
+[data-layout="compact"] .lk-brand, [data-layout="compact"] .lk-nav { font-size: 0; justify-content: center; }
+[data-layout="compact"] .lk-brand i { margin: 0 auto; }
+[data-layout="compact"] .lk-nav::before { content: ""; display: block; width: 10px; height: 10px; margin: 3px auto; border-radius: 50%; background: currentColor; opacity: .55; }
+[data-layout="full"] .lk-pv, [data-side="right"][data-layout="full"] .lk-pv { grid-template-columns: minmax(0, 1fr); }
+[data-layout="full"] .lk-side { display: none; }
+[data-layout="full"] .lk-main, [data-side="right"][data-layout="full"] .lk-main { grid-column: 1; }

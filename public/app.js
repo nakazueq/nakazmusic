@@ -90,6 +90,10 @@ const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prev
 const DEFAULT_UI = { preset: 'glass', mode: 'light', accent: '#007AFF', wall: 'mist', alpha: 45, blur: 40, lite: false, compact: false, tray: true };
 const ui = { ...DEFAULT_UI, ...LS.json('ui', {}) };
 ui.look = { ...DEFAULT_LOOK, ...(ui.look || {}) };
+// раскладка: сайдбар слева/справа и режим окна (обычный, компактный, полноэкранный); prev нужен, чтобы выйти из полного экрана назад
+const DEFAULT_LAYOUT = { mode: 'normal', side: 'left', prev: 'normal' };
+ui.layout = { ...DEFAULT_LAYOUT, ...(ui.layout || {}) };
+const denseUI = () => !!ui.compact || ui.layout.mode === 'compact';
 const saveUI = () => LS.set('ui', JSON.stringify(ui));
 const mq = matchMedia('(prefers-color-scheme: dark)');
 
@@ -151,9 +155,10 @@ function applyLook() {
   set('--gs', ui.blur / 40);
   set('--cs', cs);
   // обложки в списке и строки под них: JS читает высоту строки для виртуального списка
-  const cv = Math.round((ui.compact ? 32 : 40) * cs);
+  const dense = denseUI();
+  const cv = Math.round((dense ? 32 : 40) * cs);
   set('--cover', cv + 'px');
-  set('--row-h', Math.max(ui.compact ? 44 : 56, cv + (ui.compact ? 12 : 16)) + 'px');
+  set('--row-h', Math.max(dense ? 44 : 56, cv + (dense ? 12 : 16)) + 'px');
   set('--np-cover', Math.round(50 * Math.min(cs, 1.25)) + 'px');
 }
 
@@ -161,7 +166,9 @@ function applyUI() {
   const r = document.documentElement;
   r.dataset.theme = currentMode();
   r.dataset.lite = ui.lite ? '1' : '0';
-  r.dataset.compact = ui.compact ? '1' : '0';
+  r.dataset.compact = denseUI() ? '1' : '0';
+  r.dataset.layout = ui.layout.mode;
+  r.dataset.side = ui.layout.side;
   r.style.setProperty('--accent', ui.accent);
   r.style.setProperty('--on-accent', isLightColor(ui.accent) ? '#1d1d1f' : '#ffffff');
   r.style.setProperty('--op', (0.96 - (ui.alpha / 100) * 0.76).toFixed(3));
@@ -1997,20 +2004,58 @@ function buildLook() {
   range('lk-alpha', () => ui.alpha, (v) => { ui.alpha = v; });
   range('lk-cover', () => ui.look.cover, (v) => { ui.look.cover = v; });
 
+  $('lk-side').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayout({ side: b.dataset.side }); });
+  $('lk-mode').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayoutMode(b.dataset.mode); });
+  $('lk-mini').addEventListener('click', openMiniPlayer);
+
   $('lk-reset').addEventListener('click', () => {
     const wall = ui.look.prevWall;
     Object.assign(ui.look, DEFAULT_LOOK);
+    Object.assign(ui.layout, DEFAULT_LAYOUT);
     if (wall && ui.wall === 'plain') ui.wall = wall;
     ui.blur = DEFAULT_UI.blur; ui.alpha = DEFAULT_UI.alpha; ui.accent = DEFAULT_UI.accent;
     lookSave();
+    syncFullscreen();
   });
   $('open-look').addEventListener('click', openLook);
   $('close-look').addEventListener('click', closeLook);
   $('look').addEventListener('mousedown', (e) => { if (e.target === $('look')) closeLook(); });
 }
+/* ---------- раскладки ---------- */
+let fsWanted = false;
+function syncFullscreen() {
+  const want = ui.layout.mode === 'full';
+  if (want === fsWanted) return;
+  fsWanted = want;
+  if (appInfo.native) appCmd('fullscreen', { on: want });
+  else if (want) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); }
+  else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+function setLayout(patch) { Object.assign(ui.layout, patch); saveUI(); applyUI(); syncFullscreen(); }
+function setLayoutMode(mode) {
+  if (mode === ui.layout.mode) return;
+  const prev = ui.layout.mode !== 'full' ? ui.layout.mode : ui.layout.prev;
+  setLayout({ mode, prev });
+}
+const toggleFull = () => setLayoutMode(ui.layout.mode === 'full' ? (ui.layout.prev === 'full' ? 'normal' : ui.layout.prev) : 'full');
+async function openMiniPlayer() {
+  const r = await appCmd('mini');
+  let j = null;
+  try { j = r && await r.json(); } catch {}
+  if (!j || !j.native) window.open('/mini', 'sonara-mini', 'popup,width=380,height=150');   // без родного окна открываем мини в отдельном окне браузера
+}
+// Esc в обычном браузере выходит из полного экрана сам: возвращаем раскладку
+document.addEventListener('fullscreenchange', () => {
+  if (appInfo.native || !fsWanted || document.fullscreenElement) return;
+  fsWanted = false;
+  if (ui.layout.mode === 'full') { ui.layout.mode = ui.layout.prev === 'full' ? 'normal' : ui.layout.prev; saveUI(); applyUI(); }
+});
+
 function syncLookUI() {
   if ($('look').hidden) return;
   const L = ui.look;
+  document.querySelectorAll('#lk-side button').forEach((b) => b.classList.toggle('on', b.dataset.side === ui.layout.side));
+  document.querySelectorAll('#lk-mode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === ui.layout.mode));
   const cur = (v, fallback) => (HEX_RE.test(v || '') ? v.toLowerCase() : fallback);
   const cs = getComputedStyle(document.documentElement);
   const val = { 'lk-bg': cur(L.bg, rgbToHex(cs.getPropertyValue('--main-rgb'))), 'lk-accent': cur(ui.accent, '#007aff'), 'lk-text': cur(L.text, rgbToHex(cs.color)) };
@@ -2118,6 +2163,8 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !$('settings').hidden) { closeSettings(); return; }
   if (e.key === 'Escape' && lyOpen && !$('ly-dlg').hidden) { $('ly-dlg').hidden = true; return; }
   if (e.key === 'Escape' && lyOpen) { setLyrics(false); return; }
+  if (e.key === 'F11') { e.preventDefault(); toggleFull(); return; }
+  if (e.key === 'Escape' && ui.layout.mode === 'full' && !typing) { toggleFull(); return; }
   if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') { e.preventDefault(); setLyrics(false); $('search').focus(); $('search').select(); return; }
   if (typing) return;
   if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
@@ -2415,6 +2462,7 @@ window.addEventListener('pagehide', () => { listenTick(); listenFlush(true); if 
       $('b-mini').hidden = false;
       $('row-tray').hidden = false;
       appCmd('settings', { closeToTray: ui.tray !== false });
+      syncFullscreen();   // сохранённый полноэкранный режим включаем сразу при старте
       publishState(true);
       $('hint-sp-play').innerHTML = 'Треки Spotify звучат через <b>приложение Spotify</b> на компе: если оно закрыто, плеер запустит его сам. Войди в нём в тот же аккаунт.';
       pushTheme();

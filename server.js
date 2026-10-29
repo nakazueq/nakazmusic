@@ -300,6 +300,7 @@ function saveBounds() {
   try {
     const w = native.win;
     if (w.isMinimized() || !w.isVisible()) return;
+    if (w.fullscreen != null) return;   // размер полноэкранного окна как обычный не запоминаем
     const max = w.isMaximized();
     const prev = config.winBounds || {};
     if (max) config.winBounds = { ...prev, max: true };
@@ -1024,6 +1025,11 @@ const server = http.createServer(async (req, res) => {
         else if (b.cmd === 'mini-hide') { if (mini) { try { mini.win.setMinimized(true); } catch {} } }
         else sseSend('main', 'cmd', { cmd: String(b.cmd || ''), value: b.value });
         return send(res, 200, { ok: true });
+      }
+      if (p === '/api/app/fullscreen' && req.method === 'POST') {
+        const b = JSON.parse((await readBody(req)) || '{}');
+        if (native) { try { native.win.setFullscreen(b.on ? native.wv.FullscreenType.Borderless : null); } catch (e) { log('полный экран', e.message); } }
+        return send(res, 200, { ok: true, native: !!native });
       }
       if (p === '/api/app/mini' && req.method === 'POST') { openMini(); return send(res, 200, { ok: true, native: !!native }); }
       if (p === '/api/app/settings' && req.method === 'POST') {
