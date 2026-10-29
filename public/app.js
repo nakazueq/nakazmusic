@@ -85,8 +85,11 @@ const ACCENTS = [
   ['Синий', '#007AFF'], ['Фиолетовый', '#AF52DE'], ['Розовый', '#FF2D55'], ['Красный', '#FF3B30'],
   ['Оранжевый', '#FF9500'], ['Жёлтый', '#FFCC00'], ['Зелёный', '#34C759'], ['Бирюзовый', '#30B0C7'], ['Графит', '#8E8E93'],
 ];
+// тонкая настройка вида (окно «Оформление»): всё хранится внутри ui и уезжает в store.json
+const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prevWall: null };
 const DEFAULT_UI = { preset: 'glass', mode: 'light', accent: '#007AFF', wall: 'mist', alpha: 45, blur: 40, lite: false, compact: false, tray: true };
 const ui = { ...DEFAULT_UI, ...LS.json('ui', {}) };
+ui.look = { ...DEFAULT_LOOK, ...(ui.look || {}) };
 const saveUI = () => LS.set('ui', JSON.stringify(ui));
 const mq = matchMedia('(prefers-color-scheme: dark)');
 
@@ -98,7 +101,61 @@ function isLightColor(hex) {
   const L = 0.2126 * lin(n >> 16) + 0.7152 * lin((n >> 8) & 255) + 0.0722 * lin(n & 255);
   return L > 0.45;
 }
-function currentMode() { return ui.mode === 'auto' ? (mq.matches ? 'dark' : 'light') : ui.mode; }
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+// свой цвет фона сам решает, светлая тема или тёмная: иначе текст может слиться с фоном
+function currentMode() {
+  if (HEX_RE.test(ui.look.bg || '')) return isLightColor(ui.look.bg) ? 'light' : 'dark';
+  return ui.mode === 'auto' ? (mq.matches ? 'dark' : 'light') : ui.mode;
+}
+const rgbOf = (hex) => `${parseInt(hex.slice(1, 3), 16)} ${parseInt(hex.slice(3, 5), 16)} ${parseInt(hex.slice(5, 7), 16)}`;
+function mixHex(a, b, t) {
+  const p = (h, i) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+  return '#' + [0, 1, 2].map((i) => Math.round(p(a, i) + (p(b, i) - p(a, i)) * t).toString(16).padStart(2, '0')).join('');
+}
+const FONTS = [
+  ['', 'По умолчанию'],
+  ['"Segoe UI"', 'Segoe UI'],
+  ['Bahnschrift', 'Bahnschrift'],
+  ['Calibri', 'Calibri'],
+  ['Verdana', 'Verdana'],
+  ['"Trebuchet MS"', 'Trebuchet MS'],
+  ['Georgia, serif', 'Georgia (с засечками)'],
+  ['Cambria, serif', 'Cambria (с засечками)'],
+  ['Consolas, "Cascadia Mono", monospace', 'Consolas (моноширинный)'],
+  ['"Comic Sans MS"', 'Comic Sans'],
+];
+const fontStack = (f) => (f ? `${f}, system-ui, sans-serif` : '');
+function applyLook() {
+  const r = document.documentElement, L = ui.look;
+  const set = (k, v) => (v == null || v === '' ? r.style.removeProperty(k) : r.style.setProperty(k, v));
+  if (HEX_RE.test(L.bg || '')) {
+    const light = isLightColor(L.bg);
+    set('--plain', L.bg);
+    set('--main-rgb', rgbOf(L.bg));
+    set('--side-rgb', rgbOf(mixHex(L.bg, '#000000', light ? 0.05 : 0.18)));
+    set('--bar-rgb', rgbOf(mixHex(L.bg, '#ffffff', light ? 0.5 : 0.07)));
+    set('--solid', mixHex(L.bg, '#ffffff', light ? 0.6 : 0.1));
+  } else {
+    for (const k of ['--plain', '--main-rgb', '--side-rgb', '--bar-rgb', '--solid']) set(k, null);
+  }
+  if (HEX_RE.test(L.text || '')) {
+    set('--text', L.text);
+    set('--muted', `color-mix(in srgb, ${L.text} 62%, transparent)`);
+    set('--faint', `color-mix(in srgb, ${L.text} 45%, transparent)`);
+  } else {
+    for (const k of ['--text', '--muted', '--faint']) set(k, null);
+  }
+  set('--font', fontStack(L.font));
+  const cs = L.cover / 100;
+  set('--rs', L.rs / 100);
+  set('--gs', ui.blur / 40);
+  set('--cs', cs);
+  // обложки в списке и строки под них: JS читает высоту строки для виртуального списка
+  const cv = Math.round((ui.compact ? 32 : 40) * cs);
+  set('--cover', cv + 'px');
+  set('--row-h', Math.max(ui.compact ? 44 : 56, cv + (ui.compact ? 12 : 16)) + 'px');
+  set('--np-cover', Math.round(50 * Math.min(cs, 1.25)) + 'px');
+}
 
 function applyUI() {
   const r = document.documentElement;
@@ -109,11 +166,14 @@ function applyUI() {
   r.style.setProperty('--on-accent', isLightColor(ui.accent) ? '#1d1d1f' : '#ffffff');
   r.style.setProperty('--op', (0.96 - (ui.alpha / 100) * 0.76).toFixed(3));
   r.style.setProperty('--blur', ui.blur + 'px');
+  applyLook();
+  r.dataset.theme = currentMode();
   applyWall();
   const old = rowH;
   readRowH();
   if (old !== rowH) vlReset();
   syncSettingsUI();
+  syncLookUI();
   pushTheme();
 }
 // заголовок родного окна Windows: светлый или тёмный под тему
@@ -1793,6 +1853,7 @@ function buildSettings() {
     b.innerHTML = `<div class="pv" style="background:${bg};--pv-side:${pv[0]};--pv-main:${pv[1]};--pv-acc:${p.accent}"><div class="w"><i></i><i></i></div></div><span>${p.name}</span>`;
     b.addEventListener('click', () => {
       Object.assign(ui, { preset: p.id, mode: p.mode, accent: p.accent, wall: p.wall, alpha: p.alpha });
+      Object.assign(ui.look, { bg: null, text: null, prevWall: null });   // цвета темы вместо своих
       saveUI(); applyUI();
     });
     pBox.appendChild(b);
@@ -1835,6 +1896,7 @@ function buildSettings() {
   $('opt-compact').addEventListener('change', (e) => { ui.compact = e.target.checked; saveUI(); applyUI(); });
   $('opt-tray').addEventListener('change', (e) => { ui.tray = e.target.checked; saveUI(); appCmd('settings', { closeToTray: ui.tray }); });
   $('wall-file').addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) onWallFile(f); e.target.value = ''; });
+  buildLook();
 }
 function buildWalls() {
   const wBox = $('walls');
@@ -1890,6 +1952,78 @@ function syncSettingsUI() {
   $('opt-lite').checked = !!ui.lite;
   $('opt-compact').checked = !!ui.compact;
   $('opt-tray').checked = ui.tray !== false;
+}
+
+/* ---------- окно «Оформление» с живым предпросмотром ---------- */
+function openLook() { closeSettings(); $('look').hidden = false; syncLookUI(); }
+function closeLook() { $('look').hidden = true; openSettings('look'); }
+const lookSave = () => { ui.preset = null; saveUI(); applyUI(); };
+function buildLook() {
+  const sel = $('lk-font');
+  for (const [v, name] of FONTS) {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = name;
+    if (v) o.style.fontFamily = fontStack(v);
+    sel.appendChild(o);
+  }
+  sel.addEventListener('change', () => { ui.look.font = sel.value; lookSave(); });
+
+  // цвета: input идёт на лету, change сохраняет в store.json
+  const color = (id, get, put, reset) => {
+    const el = $(id);
+    el.addEventListener('input', () => { put(el.value.toLowerCase()); ui.preset = null; applyUI(); });
+    el.addEventListener('change', saveUI);
+    $(id + '-x').addEventListener('click', () => { reset(); lookSave(); });
+  };
+  color('lk-bg', () => ui.look.bg, (v) => {
+    ui.look.bg = v;
+    // свой цвет виден только на однотонном фоне, поэтому переключаем и запоминаем прежний
+    if (ui.wall !== 'plain') { ui.look.prevWall = ui.wall; ui.wall = 'plain'; }
+  }, () => {
+    ui.look.bg = null;
+    if (ui.look.prevWall && ui.wall === 'plain') ui.wall = ui.look.prevWall;
+    ui.look.prevWall = null;
+  });
+  color('lk-accent', () => ui.accent, (v) => { ui.accent = v.toUpperCase(); }, () => { ui.accent = DEFAULT_UI.accent; });
+  color('lk-text', () => ui.look.text, (v) => { ui.look.text = v; }, () => { ui.look.text = null; });
+
+  const range = (id, get, put) => {
+    const el = $(id);
+    el.addEventListener('input', () => { put(Number(el.value)); ui.preset = null; setFill(el); applyUI(); });
+    el.addEventListener('change', saveUI);
+  };
+  range('lk-rs', () => ui.look.rs, (v) => { ui.look.rs = v; });
+  range('lk-blur', () => ui.blur, (v) => { ui.blur = v; });
+  range('lk-alpha', () => ui.alpha, (v) => { ui.alpha = v; });
+  range('lk-cover', () => ui.look.cover, (v) => { ui.look.cover = v; });
+
+  $('lk-reset').addEventListener('click', () => {
+    const wall = ui.look.prevWall;
+    Object.assign(ui.look, DEFAULT_LOOK);
+    if (wall && ui.wall === 'plain') ui.wall = wall;
+    ui.blur = DEFAULT_UI.blur; ui.alpha = DEFAULT_UI.alpha; ui.accent = DEFAULT_UI.accent;
+    lookSave();
+  });
+  $('open-look').addEventListener('click', openLook);
+  $('close-look').addEventListener('click', closeLook);
+  $('look').addEventListener('mousedown', (e) => { if (e.target === $('look')) closeLook(); });
+}
+function syncLookUI() {
+  if ($('look').hidden) return;
+  const L = ui.look;
+  const cur = (v, fallback) => (HEX_RE.test(v || '') ? v.toLowerCase() : fallback);
+  const cs = getComputedStyle(document.documentElement);
+  const val = { 'lk-bg': cur(L.bg, rgbToHex(cs.getPropertyValue('--main-rgb'))), 'lk-accent': cur(ui.accent, '#007aff'), 'lk-text': cur(L.text, rgbToHex(cs.color)) };
+  for (const [id, v] of Object.entries(val)) $(id).value = v;
+  $('lk-bg-x').hidden = !L.bg; $('lk-text-x').hidden = !L.text; $('lk-accent-x').hidden = String(ui.accent).toLowerCase() === DEFAULT_UI.accent.toLowerCase();
+  $('lk-font').value = FONTS.some(([v]) => v === L.font) ? L.font : '';
+  const sliders = [['lk-rs', L.rs, (v) => v + '%'], ['lk-blur', ui.blur, (v) => v + ' px'], ['lk-alpha', ui.alpha, (v) => v + '%'], ['lk-cover', L.cover, (v) => v + '%']];
+  for (const [id, v, fmtV] of sliders) { $(id).value = v; setFill($(id)); $(id + '-v').textContent = fmtV(v); }
+}
+// «r g b» или rgb(r, g, b) -> #rrggbb
+function rgbToHex(s) {
+  const n = String(s).match(/\d+/g);
+  return n && n.length >= 3 ? '#' + n.slice(0, 3).map((x) => Number(x).toString(16).padStart(2, '0')).join('') : '#ffffff';
 }
 
 /* ---------- аккаунты ---------- */
@@ -1980,6 +2114,7 @@ document.addEventListener('click', () => { if (sp.player) sp.player.activateElem
 document.addEventListener('keydown', (e) => {
   const typing = e.target.matches('input:not([type=range]):not([type=checkbox]), textarea');
   if (e.key === 'Escape' && ctxOpen) { closeMenu(); return; }
+  if (e.key === 'Escape' && !$('look').hidden) { closeLook(); return; }
   if (e.key === 'Escape' && !$('settings').hidden) { closeSettings(); return; }
   if (e.key === 'Escape' && lyOpen && !$('ly-dlg').hidden) { $('ly-dlg').hidden = true; return; }
   if (e.key === 'Escape' && lyOpen) { setLyrics(false); return; }

@@ -198,6 +198,52 @@
   </div>
 </footer>
 
+<!-- Оформление: тонкая настройка с живым предпросмотром -->
+<div id="look" class="sheet-wrap lk-wrap" hidden>
+  <div class="sheet lk-sheet" role="dialog" aria-label="Оформление">
+    <div class="sheet-head">
+      <b>Оформление</b>
+      <button class="x" id="close-look" title="Закрыть (Esc)">
+        <svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="lk-pv" aria-hidden="true">
+      <div class="lk-side">
+        <div class="lk-brand"><i></i>Sonara</div>
+        <div class="lk-nav on">Вся музыка</div>
+        <div class="lk-nav">Spotify</div>
+        <div class="lk-nav">SoundCloud</div>
+      </div>
+      <div class="lk-main">
+        <div class="lk-title">Вся музыка</div>
+        <div class="lk-row on"><span class="lk-cv"></span><span class="lk-tx"><b>Название трека</b><small>Исполнитель</small></span><em>3:42</em></div>
+        <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b>Другая песня</b><small>Другой артист</small></span><em>2:58</em></div>
+        <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b>Третий трек</b><small>Ещё исполнитель</small></span><em>4:11</em></div>
+      </div>
+      <div class="lk-bar"><span class="lk-np"></span><span class="lk-play"></span><span class="lk-prog"><i></i></span></div>
+    </div>
+
+    <h3>Цвета</h3>
+    <div class="lk-colors">
+      <div class="lk-color"><label for="lk-bg">Фон</label><input type="color" id="lk-bg"><button class="lk-x" id="lk-bg-x" title="Вернуть цвет темы" hidden>Сброс</button></div>
+      <div class="lk-color"><label for="lk-accent">Акцент</label><input type="color" id="lk-accent"><button class="lk-x" id="lk-accent-x" title="Вернуть цвет по умолчанию" hidden>Сброс</button></div>
+      <div class="lk-color"><label for="lk-text">Текст</label><input type="color" id="lk-text"><button class="lk-x" id="lk-text-x" title="Вернуть цвет темы" hidden>Сброс</button></div>
+    </div>
+
+    <h3>Шрифт</h3>
+    <select id="lk-font" class="field lk-select"></select>
+
+    <h3>Форма и стекло</h3>
+    <div class="setrow"><label for="lk-rs">Скругления<small id="lk-rs-v"></small></label><input id="lk-rs" type="range" min="0" max="200" step="5" class="always"></div>
+    <div class="setrow"><label for="lk-blur">Сила блюра<small id="lk-blur-v"></small></label><input id="lk-blur" type="range" min="0" max="80" class="always"></div>
+    <div class="setrow"><label for="lk-alpha">Прозрачность<small id="lk-alpha-v"></small></label><input id="lk-alpha" type="range" min="0" max="100" class="always"></div>
+    <div class="setrow"><label for="lk-cover">Размер обложек<small id="lk-cover-v"></small></label><input id="lk-cover" type="range" min="70" max="160" step="5" class="always"></div>
+
+    <div class="lk-foot"><button class="pill" id="lk-reset">Сбросить оформление</button></div>
+  </div>
+</div>
+
 <!-- Настройки -->
 <div id="settings" class="sheet-wrap" hidden>
   <div class="sheet" role="dialog" aria-label="Настройки">
@@ -213,6 +259,7 @@
     </div>
 
     <section data-pane="look">
+      <button class="pill accent" id="open-look">Тонкая настройка…</button>
       <h3>Темы</h3>
       <div id="presets" class="presets"></div>
 
