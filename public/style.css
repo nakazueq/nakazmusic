@@ -1002,3 +1002,7 @@ body.ly-mode .player { left: 14px; }
 [data-b-search="0"] .gsearch { display: none; }
 .row .c3 { display: flex; align-items: center; gap: 4px; overflow: hidden; }
 .badge.dim { opacity: .4; text-decoration: line-through; }
+/* перетаскивание ползунков и палитры: временно без тяжёлого размытия, после отпускания всё возвращается */
+html.lk-drag .sheet, html.lk-drag .ctx { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.lk-drag:not(.lk-drag-blur) .sidebar, html.lk-drag:not(.lk-drag-blur) .player, html.lk-drag:not(.lk-drag-blur) .head::before { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.lk-drag:not(.lk-drag-blur) .wall { filter: none !important; }

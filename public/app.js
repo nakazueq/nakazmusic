@@ -348,11 +348,16 @@ window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.shiftKey && !e.altKey && e.code === 'KeyK') { e.preventDefault(); e.stopPropagation(); toggleUserCss(); }
 }, true);
 
-function applyLook() {
+function applyLook(live) {
   const r = document.documentElement, L = ui.look;
   applyUserCss();
   const A = L.auto ? autoNow : null;
-  const set = (k, v) => (v == null || v === '' ? r.style.removeProperty(k) : r.style.setProperty(k, v));
+  // переменную трогаем, только если значение действительно изменилось: лишняя запись заставляет браузер пересчитать стили всей страницы
+  const set = (k, v) => {
+    const cur = r.style.getPropertyValue(k);
+    if (v == null || v === '') { if (cur) r.style.removeProperty(k); }
+    else if (cur !== String(v)) r.style.setProperty(k, v);
+  };
   set('--accent', A ? A.accent : ui.accent);
   set('--on-accent', A ? A.on : (isLightColor(ui.accent) ? '#1d1d1f' : '#ffffff'));
   const bg = A ? A.bg : L.bg;
@@ -386,7 +391,8 @@ function applyLook() {
   const dense = denseUI();
   const cv = Math.round((dense ? 32 : 40) * cs);
   set('--cover', cv + 'px');
-  set('--row-h', Math.max(dense ? 44 : 56, cv + (dense ? 12 : 16)) + 'px');
+  // высоту строки меняем только после перетаскивания: список позиционируется по ней из JS и пересобирается целиком
+  if (!live) set('--row-h', Math.max(dense ? 44 : 56, cv + (dense ? 12 : 16)) + 'px');
   set('--np-cover', Math.round(50 * Math.min(cs, 1.25)) + 'px');
 }
 
@@ -415,6 +421,50 @@ function applyUI() {
   syncLookUI();
   pushTheme();
 }
+/* ---------- живое применение при перетаскивании ползунков и палитры ----------
+   input приходит чаще, чем кадры: на каждое событие только меняем значение в ui, а CSS-переменные
+   обновляем один раз за кадр. Всё тяжёлое (высота строк, блоки, контраст, список тем) и запись на диск
+   делаем один раз, когда отпустили или после 300 мс тишины. */
+const LIVE_IDLE_MS = 300;
+let liveRaf = 0, liveIdle = 0, liveWall = false;
+const LK_FMT = { 'lk-rs': (v) => v + '%', 'lk-blur': (v) => v + ' px', 'lk-alpha': (v) => v + '%', 'lk-cover': (v) => v + '%' };
+function lkReadout(id) { const el = document.getElementById(id), out = document.getElementById(id + '-v'); if (el && out && LK_FMT[id]) out.textContent = LK_FMT[id](Number(el.value)); }
+function liveChange(opts = {}) {
+  const cl = document.documentElement.classList;
+  cl.add('lk-drag');
+  cl.toggle('lk-drag-blur', !!opts.blur);   // двигаем сам блюр: оставляем размытие фона, чтобы его было видно
+  if (opts.wall) liveWall = true;
+  if (!liveRaf) liveRaf = requestAnimationFrame(liveFlush);
+  clearTimeout(liveIdle);
+  liveIdle = setTimeout(liveEnd, LIVE_IDLE_MS);
+}
+function liveFlush() {
+  liveRaf = 0;
+  const r = document.documentElement;
+  const mode = currentMode();
+  if (r.dataset.theme !== mode) r.dataset.theme = mode;
+  const op = (0.96 - (ui.alpha / 100) * 0.76).toFixed(3);
+  if (r.style.getPropertyValue('--op') !== op) r.style.setProperty('--op', op);
+  const blur = ui.blur + 'px';
+  if (r.style.getPropertyValue('--blur') !== blur) r.style.setProperty('--blur', blur);
+  applyLook(true);
+  if (liveWall) { liveWall = false; applyWall(); }
+  pushTheme();
+}
+function liveEnd() {
+  clearTimeout(liveIdle);
+  liveIdle = 0;
+  if (liveRaf) { cancelAnimationFrame(liveRaf); liveRaf = 0; }
+  const cl = document.documentElement.classList;
+  const was = cl.contains('lk-drag');
+  cl.remove('lk-drag', 'lk-drag-blur');
+  liveWall = false;
+  applyUI();     // полная пересборка: строки списка, блоки, контраст, список тем, предпросмотр
+  saveUI();      // одна запись в store.json
+  return was;
+}
+window.__lookFlush = () => { if (liveRaf) { cancelAnimationFrame(liveRaf); liveFlush(); } };   // для замеров: кадр без ожидания rAF
+
 // заголовок родного окна Windows: светлый или тёмный под тему
 let pushedTheme = null;
 function pushTheme() {
@@ -2520,8 +2570,8 @@ function buildSettings() {
   custom.title = 'Свой цвет';
   custom.innerHTML = '<input type="color" id="accent-custom">';
   aBox.appendChild(custom);
-  $('accent-custom').addEventListener('input', (e) => { ui.accent = e.target.value.toUpperCase(); ui.preset = null; applyUI(); });
-  $('accent-custom').addEventListener('change', saveUI);
+  $('accent-custom').addEventListener('input', (e) => { ui.accent = e.target.value.toUpperCase(); ui.preset = null; liveChange(); });
+  $('accent-custom').addEventListener('change', liveEnd);
 
   buildWalls();
 
@@ -2532,8 +2582,8 @@ function buildSettings() {
   });
   const bindRange = (id, key) => {
     const el = $(id);
-    el.addEventListener('input', () => { ui[key] = Number(el.value); ui.preset = key === 'blur' ? ui.preset : null; setFill(el); applyUI(); });
-    el.addEventListener('change', saveUI);
+    el.addEventListener('input', () => { ui[key] = Number(el.value); ui.preset = key === 'blur' ? ui.preset : null; setFill(el); liveChange({ blur: key === 'blur' }); });
+    el.addEventListener('change', liveEnd);
   };
   bindRange('opt-alpha', 'alpha');
   bindRange('opt-blur', 'blur');
@@ -2616,8 +2666,8 @@ function buildLook() {
   // цвета: input идёт на лету, change сохраняет в store.json
   const color = (id, get, put, reset) => {
     const el = $(id);
-    el.addEventListener('input', () => { put(el.value.toLowerCase()); ui.preset = null; applyUI(); });
-    el.addEventListener('change', saveUI);
+    el.addEventListener('input', () => { put(el.value.toLowerCase()); ui.preset = null; liveChange({ wall: id === 'lk-bg' }); });
+    el.addEventListener('change', liveEnd);
     $(id + '-x').addEventListener('click', () => { reset(); lookSave(); });
   };
   color('lk-bg', () => ui.look.bg, (v) => {
@@ -2634,8 +2684,8 @@ function buildLook() {
 
   const range = (id, get, put) => {
     const el = $(id);
-    el.addEventListener('input', () => { put(Number(el.value)); ui.preset = null; setFill(el); applyUI(); });
-    el.addEventListener('change', saveUI);
+    el.addEventListener('input', () => { put(Number(el.value)); ui.preset = null; setFill(el); lkReadout(id); liveChange({ blur: id === 'lk-blur' }); });
+    el.addEventListener('change', liveEnd);
   };
   range('lk-rs', () => ui.look.rs, (v) => { ui.look.rs = v; });
   range('lk-blur', () => ui.blur, (v) => { ui.blur = v; });
