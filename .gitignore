@@ -1,14 +1,14 @@
-# зависимости и результаты сборки
+# PowerShell module cache created by the media keys helper during test runs
 node_modules/
 build/
 *.exe
 *.exe.bak
 
-# логи
+# PowerShell module cache created by the media keys helper during test runs
 *.log
 npm-debug.log*
 
-# данные пользователя
+# PowerShell module cache created by the media keys helper during test runs
 store.json
 config.json
 local-cache.json
@@ -17,7 +17,7 @@ sc-client.json
 sc-likes-*.json
 lyrics/
 
-# ключи, токены, секреты
+# PowerShell module cache created by the media keys helper during test runs
 .env
 .env.*
 *.pem
@@ -27,5 +27,5 @@ lyrics/
 *token*
 *secret*
 
-# ??? ??????? PowerShell, ??????? ??????? ???????? ??????????? ??? ???????? ????????
+# PowerShell module cache created by the media keys helper during test runs
 Microsoft/
