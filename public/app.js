@@ -135,6 +135,9 @@ const DEFAULT_UI = { preset: 'glass', mode: 'light', accent: '#007AFF', wall: 'm
 const ui = { ...DEFAULT_UI, ...LS.json('ui', {}) };
 ui.look = { ...DEFAULT_LOOK, ...(ui.look || {}) };
 ui.grad = normalizeGrad(ui.grad);
+// градиент из обложки: переключатель и последние цвета (3 hex), чтобы после запуска фон не прыгал, пока не заиграл трек
+ui.gradCover = !!ui.gradCover;
+ui.gradCoverLast = Array.isArray(ui.gradCoverLast) && ui.gradCoverLast.length === 3 && ui.gradCoverLast.every((c) => typeof c === 'string' && /^#[0-9a-f]{6}$/i.test(c)) ? ui.gradCoverLast.map((c) => c.toLowerCase()) : null;
 if (!Object.prototype.hasOwnProperty.call(WALLS, ui.wall)) ui.wall = DEFAULT_UI.wall;
 // раскладка: сайдбар слева/справа и режим окна (обычный, компактный, полноэкранный); prev нужен, чтобы выйти из полного экрана назад
 const DEFAULT_LAYOUT = { mode: 'normal', side: 'left', prev: 'normal' };
@@ -178,7 +181,7 @@ const HEX_RE = /^#[0-9a-f]{6}$/i;
 const baseMode = () => (ui.mode === 'auto' ? (mq.matches ? 'dark' : 'light') : ui.mode);
 function currentMode() {
   if (!(ui.look.auto && autoNow) && HEX_RE.test(ui.look.bg || '')) return isLightColor(ui.look.bg) ? 'light' : 'dark';
-  if (gradActive()) return gradAnalyze(ui.grad, userOpVal()).mode;   // свой градиент: тема по его средней яркости
+  if (gradActive()) return gradAnalyze(effGradTarget(), userOpVal()).mode;   // градиент (свой или из обложки): тема по его средней яркости
   return baseMode();   // цвета по обложке подстраиваются под выбранную светлую или тёмную тему, а не меняют её
 }
 
@@ -212,10 +215,11 @@ const gradCache = new Map();
 let gradLastMode = null;
 // средняя яркость градиента с учётом позиций точек -> светлая или тёмная тема; если на самых светлых или тёмных местах
 // текст читается хуже 4.5:1, панели делаем плотнее (но не больше 96%)
-function gradAnalyze(g, userOp) {
-  const key = gradCss(g) + '|' + userOp.toFixed(3);
+// panel: когда включён «Подбирать по обложке», панели окрашены её палитрой, и контраст считаем уже по её фону и тексту
+function gradAnalyze(g, userOp, panel) {
+  const key = gradCss(g) + '|' + userOp.toFixed(3) + (panel ? '|' + panel.rgb.join() + '|' + panel.text.join() : '');
   const hit = gradCache.get(key);
-  if (hit) { gradLastMode = hit.mode; return hit; }
+  if (hit) { if (!panel) gradLastMode = hit.mode; return hit; }
   const S = gradSamples(g);
   const wsum = S.reduce((a, s) => a + s.w, 0);
   const avgLum = S.reduce((a, s) => a + s.w * rgbLum(s.c), 0) / wsum;
@@ -225,18 +229,62 @@ function gradAnalyze(g, userOp) {
   const cl = avgContrast('light'), cd = avgContrast('dark');
   let mode = cl >= cd ? 'light' : 'dark';
   if (gradLastMode && Math.abs(cl - cd) < 0.3) mode = gradLastMode;   // у границы тема не должна мигать при перетаскивании
-  const worst = (op) => Math.min(...S.map((s) => rgbContrast(GRAD_PANEL[mode].text, blend(s.c, GRAD_PANEL[mode], op))));
+  const P = panel || GRAD_PANEL[mode];
+  const worst = (op) => Math.min(...S.map((s) => rgbContrast(P.text, blend(s.c, P, op))));
   let op = userOp, contrast = worst(op);
   while (contrast < 4.5 && op < 0.96) { op = Math.min(0.96, op + 0.04); contrast = worst(op); }
   const res = { mode, op, contrast, avgLum, avg, raised: op > userOp + 0.001 };
   gradCache.set(key, res);
-  if (gradCache.size > 80) gradCache.delete(gradCache.keys().next().value);
-  gradLastMode = mode;
+  if (gradCache.size > 120) gradCache.delete(gradCache.keys().next().value);
+  if (!panel) gradLastMode = mode;
   return res;
 }
-// подбор по градиенту действует, когда выбран фон «Градиент» и не включены свой цвет фона и подбор по обложке
-const gradActive = () => ui.wall === 'gradient' && !(ui.look.auto && autoNow) && !HEX_RE.test(ui.look.bg || '');
-const opValue = () => (gradActive() ? gradAnalyze(ui.grad, userOpVal()).op : userOpVal());
+// подбор по градиенту действует, когда выбран фон «Градиент» и не задан свой цвет фона
+const gradActive = () => ui.wall === 'gradient' && !HEX_RE.test(ui.look.bg || '');
+const palettePanel = () => (ui.look.auto && autoNow ? { rgb: hexToRgb3(autoNow.bg), text: hexToRgb3(autoNow.text) } : null);
+const opValue = () => (gradActive() ? gradAnalyze(effGradTarget(), userOpVal(), palettePanel()).op : userOpVal());
+// светлая или тёмная палитра по обложке: если фон градиентный, подстраиваемся под его яркость, чтобы они не спорили
+const paletteMode = () => (gradActive() ? gradAnalyze(effGradTarget(), userOpVal()).mode : baseMode());
+
+/* ---------- градиент из обложки ---------- */
+// цвета, которые нарисованы сейчас (при переходе промежуточные), и цели: тема и контраст считаются сразу по цели
+let coverNow = ui.gradCoverLast ? ui.gradCoverLast.slice() : null;
+let coverTarget = coverNow;
+let coverRaf = 0, coverFinal = 0;
+const coverGradOf = (c) => ({ type: ui.grad.type, angle: ui.grad.angle, stops: [{ c: c[0], p: 0 }, { c: c[1], p: 50 }, { c: c[2], p: 100 }] });
+// что рисуем и по чему считаем читаемость: свой градиент или градиент из цветов обложки (тип и угол всегда пользовательские)
+const effGrad = () => (ui.gradCover && coverNow ? coverGradOf(coverNow) : ui.grad);
+const effGradTarget = () => (ui.gradCover && (coverTarget || coverNow) ? coverGradOf(coverTarget || coverNow) : ui.grad);
+function setCoverGrad(colors) {
+  cancelAnimationFrame(coverRaf);
+  clearTimeout(coverFinal);
+  const same = coverTarget && coverTarget.every((c, i) => c === colors[i]);
+  coverTarget = colors;
+  ui.gradCoverLast = colors.slice();
+  const from = coverNow;
+  if (same && from && from.every((c, i) => c === colors[i])) return;
+  saveUI();
+  if (!from || ui.lite || document.hidden) { coverNow = colors.slice(); applyUI(); return; }
+  liveFlush();   // тема и плотность панелей сразу по цели, а цвет фона поплывёт за 0,7 с
+  const t0 = performance.now(), D = 700;
+  const finish = () => { coverNow = colors.slice(); applyUI(); };
+  coverFinal = setTimeout(() => { cancelAnimationFrame(coverRaf); finish(); }, D + 150);
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / D), e = k < 0.5 ? 2 * k * k : 1 - ((-2 * k + 2) ** 2) / 2;
+    if (k >= 1) { clearTimeout(coverFinal); finish(); return; }
+    coverNow = from.map((c, i) => mixHex(c, colors[i], e));
+    applyGrad();
+    coverRaf = requestAnimationFrame(step);
+  };
+  coverRaf = requestAnimationFrame(step);
+}
+function coverGradReset() {
+  cancelAnimationFrame(coverRaf);
+  clearTimeout(coverFinal);
+  coverNow = coverTarget = null;
+  ui.gradCover = false;
+  ui.gradCoverLast = null;
+}
 const rgbOf = (hex) => `${parseInt(hex.slice(1, 3), 16)} ${parseInt(hex.slice(3, 5), 16)} ${parseInt(hex.slice(5, 7), 16)}`;
 function mixHex(a, b, t) {
   const p = (h, i) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
@@ -302,7 +350,41 @@ function domColor(px) {
   if (!best || !best[3]) return null;
   return '#' + [0, 1, 2].map((k) => Math.round(best[k] / best[3]).toString(16).padStart(2, '0')).join('');
 }
-async function domOfArt(url) {
+// 2-3 заметно разных доминирующих цвета: берём самые весомые корзины гистограммы и пропускаем те, что слишком похожи на уже выбранные
+function domColors(px, n = 3) {
+  const buckets = new Map();
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] < 128) continue;
+    const r = px[i], g = px[i + 1], b = px[i + 2];
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), v = mx / 255, s = mx ? (mx - mn) / mx : 0;
+    let w = 0.2 + s;
+    if (v < 0.1 || (v > 0.95 && s < 0.1)) w *= 0.15;
+    const key = ((r >> 4) << 8) | ((g >> 4) << 4) | (b >> 4);
+    const a = buckets.get(key) || [0, 0, 0, 0];
+    a[0] += r * w; a[1] += g * w; a[2] += b * w; a[3] += w;
+    buckets.set(key, a);
+  }
+  const list = [...buckets.values()].filter((a) => a[3] > 0).sort((a, b) => b[3] - a[3]).map((a) => [a[0] / a[3], a[1] / a[3], a[2] / a[3]]);
+  // «красное» расстояние: ближе к тому, как глаз различает цвета, чем простой RGB
+  const dist = (p, q) => { const rm = (p[0] + q[0]) / 2, dr = p[0] - q[0], dg = p[1] - q[1], db = p[2] - q[2]; return Math.sqrt((2 + rm / 256) * dr * dr + 4 * dg * dg + (2 + (255 - rm) / 256) * db * db); };
+  const picked = [];
+  for (const c of list) { if (picked.every((p) => dist(p, c) >= 90)) picked.push(c); if (picked.length >= n) break; }
+  return picked.map((c) => '#' + c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join(''));
+}
+// ровно три цвета для градиента от тёмного к светлому: если на обложке только два цвета, третий берём между ними,
+// если один (однотонная обложка), строим его светлый и тёмный оттенки
+function coverStops(doms) {
+  let c = doms.slice(0, 3);
+  if (c.length === 1) {
+    const [h, s, l] = hexToHsl(c[0]);
+    c = [hslToHex(h, s, clampN(l - 0.22, 0.06, 0.9)), c[0], hslToHex((h + 14) % 360, s, clampN(l + 0.22, 0.1, 0.94))];
+  }
+  c.sort((a, b) => lumOf(a) - lumOf(b));
+  if (c.length === 2) c = [c[0], mixHex(c[0], c[1], 0.5), c[1]];
+  return c;
+}
+async function domOfArt(url) { return (await artColors(url)).dom; }
+async function artColors(url) {
   if (autoDoms.has(url)) return autoDoms.get(url);
   // чужие картинки читаем через сервер плеера (там нет CORS), свои и локальные напрямую
   const remote = /^https?:/i.test(url) && new URL(url).origin !== location.origin;
@@ -316,10 +398,11 @@ async function domOfArt(url) {
   const side = Math.min(bmp.width, bmp.height);
   g.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 40, 40);
   if (bmp.close) bmp.close();
-  const dom = domColor(g.getImageData(0, 0, 40, 40).data);
-  autoDoms.set(url, dom);
+  const data = g.getImageData(0, 0, 40, 40).data;
+  const res = { dom: domColor(data), doms: domColors(data, 3) };
+  autoDoms.set(url, res);
   if (autoDoms.size > 60) autoDoms.delete(autoDoms.keys().next().value);
-  return dom;
+  return res;
 }
 // палитра под тему: фон 13% или 93% яркости, текст >= 7:1, подписи >= 4.5:1, кнопки >= 4.5:1 и заметны на фоне (>= 3:1)
 function derivePalette(domHex, mode) {
@@ -376,15 +459,23 @@ function autoApply(pal) {
   autoRaf = requestAnimationFrame(step);
 }
 // вызывается при смене трека и при включении переключателя
+// Подбор по обложке и градиент из обложки работают от одних и тех же цветов трека и не спорят: градиент рисует фон,
+// палитра красит акцент, панели и текст, причём светлая или тёмная она по яркости градиента (paletteMode),
+// а плотность панелей считается по цветам палитры поверх градиента (opValue). Если обложки нет: палитра возвращается к теме,
+// а градиент остаётся последним.
 async function autoCover() {
   const tok = ++autoToken;
   const t = state.cur, art = t && (t.art || t.cover);
-  if (!ui.look.auto || !art) { autoClear(); return; }
-  let dom = null;
-  try { dom = await domOfArt(art); } catch (e) { console.warn(e); }
+  const wantPal = ui.look.auto, wantGrad = ui.gradCover;
+  if (!wantPal && autoNow) autoClear();
+  if (!wantPal && !wantGrad) return;
+  if (!art) { if (autoNow) autoClear(); return; }
+  let cols = null;
+  try { cols = await artColors(art); } catch (e) { console.warn(e); }
   if (tok !== autoToken) return;
-  if (!dom) { autoClear(); return; }
-  autoApply(derivePalette(dom, baseMode()));
+  if (!cols || !cols.dom) { if (autoNow) autoClear(); return; }
+  if (wantGrad) setCoverGrad(coverStops(cols.doms.length ? cols.doms : [cols.dom]));
+  if (wantPal) autoApply(derivePalette(cols.dom, paletteMode()));
 }
 
 /* ---------- свой CSS ---------- */
@@ -487,6 +578,7 @@ function applyLook(live) {
   }
   set('--font', fontStack(L.font));
   const cs = L.cover / 100;
+  set('--op', opValue().toFixed(3));   // плотность панелей: из ползунка, но не меньше нужной для читаемости на градиенте
   set('--rs', L.rs / 100);
   set('--gs', ui.blur / 40);
   set('--cs', cs);
@@ -511,7 +603,7 @@ function applyUI() {
   r.style.setProperty('--op', opValue().toFixed(3));
   r.style.setProperty('--blur', ui.blur + 'px');
   // сменили светлую/тёмную тему: палитру по обложке нужно собрать заново
-  if (ui.look.auto && autoNow && autoNow.mode !== baseMode()) autoCover();
+  if (ui.look.auto && autoNow && autoNow.mode !== paletteMode()) autoCover();
   applyLook();
   applyBlocks();
   if (ui.layout.mode !== 'full') r.classList.remove('peek');
@@ -583,7 +675,7 @@ function pushTheme() {
 // градиент живёт в одной CSS-переменной: при перетаскивании точек обновляется только она
 function applyGrad() {
   const r = document.documentElement;
-  const css = gradCss(ui.grad);
+  const css = gradCss(effGrad());
   if (r.style.getPropertyValue('--wall-grad') !== css) r.style.setProperty('--wall-grad', css);
   if (r.dataset.wall !== ui.wall) r.dataset.wall = ui.wall;
 }
@@ -1477,7 +1569,7 @@ function onTrackChanged() {
   updatePlayer();
   refreshCurrentRows();
   if (ui.wall === 'cover') applyWall();
-  if (ui.look.auto) autoCover();
+  if (ui.look.auto || ui.gradCover) autoCover();
   const big = bigArt(state.cur);
   const sc = $('side-cover');
   if (big) { const img = $('side-cover-img'); if (img.getAttribute('src') !== big) img.src = big; sc.hidden = false; }
@@ -2816,7 +2908,7 @@ function buildLook() {
   buildBlocksDnD();
   buildGradEditor();
   buildThemes();
-  $('lk-auto').addEventListener('change', (e) => { ui.look.auto = e.target.checked; ui.preset = null; saveUI(); if (ui.look.auto) autoCover(); else autoClear(); });
+  $('lk-auto').addEventListener('change', (e) => { ui.look.auto = e.target.checked; ui.preset = null; saveUI(); autoCover(); applyUI(); });
   $('lk-side').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayout({ side: b.dataset.side }); });
   $('lk-mode').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayoutMode(b.dataset.mode); });
   $('lk-mini').addEventListener('click', openMiniPlayer);
@@ -2831,6 +2923,7 @@ function buildLook() {
     // свой градиент сбрасываем и возвращаем прежний фон из темы
     if (ui.wall === 'gradient') ui.wall = ui.wallPrev && !SPECIAL_WALLS.has(ui.wallPrev) && WALLS[ui.wallPrev] ? ui.wallPrev : DEFAULT_UI.wall;
     ui.grad = normalizeGrad(null); ui.wallPrev = null; gradSel = null;
+    coverGradReset();
     lastWallBg = null;
     ui.blur = DEFAULT_UI.blur; ui.alpha = DEFAULT_UI.alpha; ui.accent = DEFAULT_UI.accent;
     lookSave();
@@ -2869,7 +2962,7 @@ function gradBarRefresh() {
   }
   const info = $('gr-info');
   if (gradActive()) {
-    const a = gradAnalyze(ui.grad, userOpVal());
+    const a = gradAnalyze(effGradTarget(), userOpVal(), palettePanel());
     info.textContent = `Тема подобрана по яркости градиента: ${a.mode === 'dark' ? 'тёмная' : 'светлая'} · контраст текста ${a.contrast.toFixed(1)}:1${a.raised ? ' · панели плотнее для читаемости' : ''}`;
   } else info.textContent = '';
   info.hidden = !info.textContent;
@@ -2964,6 +3057,13 @@ function buildGradEditor() {
     ui.grad.type = b.dataset.t;
     gradRender(); gradCommit();
   });
+  $('gr-cover').addEventListener('change', (e) => {
+    ui.gradCover = e.target.checked;
+    ui.preset = null;
+    if (ui.gradCover && ui.wall !== 'gradient') setWall('gradient');
+    lastWallBg = null;
+    saveUI(); autoCover(); applyUI();
+  });
   $('gr-angle').addEventListener('input', (e) => { ui.grad.angle = Number(e.target.value); setFill(e.target); $('gr-angle-v').textContent = ui.grad.type === 'conic' ? `Начало: ${ui.grad.angle}°` : `${ui.grad.angle}°`; gradLive(); });
   $('gr-angle').addEventListener('change', liveEnd);
   $('gr-color').addEventListener('input', (e) => { if (gradSel) { gradSel.c = e.target.value.toLowerCase(); gradLive(); } });
@@ -3023,6 +3123,11 @@ function syncGradUI() {
   const mode = ui.wall === 'plain' ? 'plain' : ui.wall === 'custom' ? 'custom' : ui.wall === 'gradient' ? 'gradient' : 'theme';
   document.querySelectorAll('#lk-wallmode button').forEach((b) => b.classList.toggle('on', b.dataset.wm === mode));
   $('lk-grad').hidden = ui.wall !== 'gradient';
+  $('gr-cover').checked = !!ui.gradCover;
+  $('lk-grad').classList.toggle('cover-on', !!ui.gradCover);
+  const sw = $('gr-cover-sw');
+  sw.hidden = !ui.gradCover;
+  if (ui.gradCover) [...sw.children].forEach((el, i) => { el.style.background = coverNow ? coverNow[i] : 'var(--field)'; });
   if (ui.wall === 'gradient' && !gradDrag) gradRender();
 }
 
@@ -3040,7 +3145,7 @@ function validateTheme(o) {
     for (const k of Object.keys(obj)) if (!keys.includes(k)) return `Неизвестное поле «${where}${k}»`;
     return '';
   };
-  let e = only(o, ['mode', 'accent', 'wall', 'alpha', 'blur', 'grad', 'look', 'layout', 'blocks'], '');
+  let e = only(o, ['mode', 'accent', 'wall', 'alpha', 'blur', 'grad', 'gradCover', 'look', 'layout', 'blocks'], '');
   if (e) return { error: e };
   if ('mode' in o) { if (!['light', 'dark', 'auto'].includes(o.mode)) return { error: 'mode: ожидается light, dark или auto' }; out.mode = o.mode; }
   if ('accent' in o) { if (typeof o.accent !== 'string' || !HEX_RE.test(o.accent)) return { error: 'accent: ожидается цвет #rrggbb' }; out.accent = o.accent.toUpperCase(); }
@@ -3052,6 +3157,8 @@ function validateTheme(o) {
     if (v.error) return { error: 'grad: ' + v.error };
     out.grad = v.grad;
   } else if (out.wall === 'gradient') out.grad = normalizeGrad(null);   // старая тема с градиентом без самих точек: берём градиент по умолчанию
+  // в тему входит только переключатель, сами цвета берутся у играющего трека
+  if ('gradCover' in o) { if (typeof o.gradCover !== 'boolean') return { error: 'gradCover: ожидается true или false' }; out.gradCover = o.gradCover; }
   if ('look' in o) {
     const L = o.look;
     if (!L || typeof L !== 'object' || Array.isArray(L)) return { error: 'look: ожидается объект' };
@@ -3126,6 +3233,7 @@ function currentTheme() {
     alpha: ui.alpha,
     blur: ui.blur,
     grad: gradClone(ui.grad),
+    gradCover: !!ui.gradCover,
     look: { bg: HEX_RE.test(L.bg || '') ? L.bg : null, text: HEX_RE.test(L.text || '') ? L.text : null, font: L.font, rs: L.rs, cover: L.cover, auto: !!L.auto, css: L.css || '', cssOn: L.cssOn !== false },
     layout: { mode: ui.layout.mode === 'full' ? 'normal' : ui.layout.mode, side: ui.layout.side },
     blocks: { order: ui.blocks.order.slice(), off: ui.blocks.off.slice() },
@@ -3135,6 +3243,7 @@ function applyTheme(t) {
   if (t.mode) ui.mode = t.mode;
   if (t.accent) ui.accent = t.accent;
   if (t.grad) { ui.grad = normalizeGrad(t.grad); gradSel = null; }
+  if ('gradCover' in t) ui.gradCover = t.gradCover;
   if (t.wall) setWall(t.wall);
   if (t.alpha != null) ui.alpha = t.alpha;
   if (t.blur != null) ui.blur = t.blur;
@@ -3145,7 +3254,7 @@ function applyTheme(t) {
   ui.preset = null;
   lastWallBg = null;
   saveUI(); applyUI(); syncFullscreen();
-  if (ui.look.auto) autoCover(); else if (autoNow) autoClear();
+  autoCover();
   showCssRescue();
 }
 let themes = [];

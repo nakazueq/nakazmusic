@@ -1027,3 +1027,8 @@ html.lk-drag:not(.lk-drag-blur) .wall { filter: none !important; }
 .gr-posl input { width: 58px; height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--field); color: var(--text); font: inherit; }
 .gr-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .pill:disabled { opacity: .4; }
+/* градиент из обложки: пока включён, точки и пресеты не нужны, меняются только тип и угол */
+.gr-coverrow { border-top: 0; padding: 0; }
+.gr-cover-sw { display: flex; gap: 8px; }
+.gr-cover-sw i { width: 34px; height: 20px; border-radius: calc(6px * var(--rs)); box-shadow: inset 0 0 0 1px var(--sep); transition: background .7s; }
+.lk-grad.cover-on .gr-presets, .lk-grad.cover-on .gr-bar, .lk-grad.cover-on .gr-edit, .lk-grad.cover-on .gr-actions { display: none; }
