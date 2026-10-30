@@ -38,6 +38,13 @@ const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume
 // запуск с --safe-css (или SONARA_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
 const SAFE_CSS = process.argv.includes('--safe-css') || process.env.SONARA_SAFE_CSS === '1';
 const PLAYS_FILE = path.join(DATA_DIR, 'plays.jsonl');
+// история прослушиваний читается целиком: если разрослась, оставляем свежие записи
+try {
+  if (fs.statSync(PLAYS_FILE).size > 6e6) {
+    const keep = fs.readFileSync(PLAYS_FILE, 'utf8').split('\n').filter(Boolean).slice(-40000);
+    fs.writeFileSync(PLAYS_FILE + '.tmp', keep.join('\n') + '\n'); fs.renameSync(PLAYS_FILE + '.tmp', PLAYS_FILE);
+  }
+} catch {}
 
 // ---------- лог в файл (консоли у exe нет) ----------
 try { if (fs.statSync(LOG_FILE).size > 512 * 1024) fs.renameSync(LOG_FILE, LOG_FILE + '.old'); } catch {}
@@ -51,7 +58,20 @@ process.on('uncaughtException', (e) => log('uncaughtException', e));
 process.on('unhandledRejection', (e) => log('unhandledRejection', e));
 
 function readJson(file, def) { try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return def; } }
-function writeJson(file, data) { try { fs.writeFileSync(file, JSON.stringify(data)); } catch (e) { log('не смог записать', file, e); } }
+// пишем через временный файл: если питание пропадёт посреди записи, старый файл останется целым
+function writeJson(file, data) {
+  const tmp = file + '.tmp';
+  try { fs.writeFileSync(tmp, JSON.stringify(data)); fs.renameSync(tmp, file); }
+  catch (e) { log('не смог записать', file, e); try { fs.unlinkSync(tmp); } catch {} }
+}
+// дочерние процессы (yt-dlp): при выходе не оставляем их висеть
+const liveKids = new Set();
+function trackKid(child) {
+  if (child && child.pid) { liveKids.add(child); child.on('exit', () => liveKids.delete(child)); }
+  return child;
+}
+function killKids() { for (const c of liveKids) { try { c.kill(); } catch {} } liveKids.clear(); }
+process.on('exit', killKids);
 const config = readJson(CONFIG_FILE, {});
 const discord = new DiscordPresence(log);
 discord.configure(config.discordOn, config.discordId);
@@ -522,7 +542,7 @@ function scLikesYtdlp(user) {
   const exe = ytdlpExe();
   if (!exe) return Promise.reject(new Error('yt-dlp не найден'));
   return new Promise((resolve, reject) => {
-    execFile(exe, ['--flat-playlist', '-J', '--no-warnings', `https://soundcloud.com/${user}/likes`],
+    trackKid(execFile(exe, ['--flat-playlist', '-J', '--no-warnings', `https://soundcloud.com/${user}/likes`],
       { maxBuffer: 256 * 1024 * 1024, timeout: 5 * 60 * 1000, windowsHide: true },
       (err, stdout, stderr) => {
         if (err) return reject(new Error(String(stderr || err.message).slice(0, 300)));
@@ -534,7 +554,7 @@ function scLikesYtdlp(user) {
             cover: '', art: '', at: 0,
           })));
         } catch { reject(new Error('yt-dlp вернул что-то непонятное')); }
-      });
+      }));
   });
 }
 async function scLikes(user, force) {
@@ -941,10 +961,10 @@ function ytdlp(args, timeout = 120000) {
   const exe = ytdlpExe();
   if (!exe) return Promise.reject(ytFail('Нужен yt-dlp: нажми «Скачать yt-dlp» в настройках, в карточке YouTube Music', 424));
   return new Promise((resolve, reject) => {
-    execFile(exe, args, { maxBuffer: 128 * 1024 * 1024, timeout, windowsHide: true }, (err, stdout, stderr) => {
+    trackKid(execFile(exe, args, { maxBuffer: 128 * 1024 * 1024, timeout, windowsHide: true }, (err, stdout, stderr) => {
       if (err) return reject(err.killed ? ytFail('YouTube отвечает слишком долго', 504) : ytError(stderr || err.message));
       resolve(stdout);
-    });
+    }));
   });
 }
 const ytCookieArgs = (on) => (on ? ['--cookies-from-browser', 'brave'] : []);
@@ -1562,6 +1582,13 @@ const server = http.createServer(async (req, res) => {
     if (p.startsWith('/api/')) return send(res, 404, { error: 'not found' });
   } catch (e) {
     log('ошибка', p, e.message);
+    if (res.headersSent) return res.destroy();
+    if (e instanceof SyntaxError) return send(res, 400, { error: 'Некорректный запрос' });
+    // нет интернета или сайт молчит: вместо английского «fetch failed» говорим понятно
+    const code = String((e.cause && e.cause.code) || e.code || '');
+    if (e.name === 'TimeoutError' || e.name === 'AbortError' || /^(ENOTFOUND|EAI_AGAIN|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EHOSTUNREACH|UND_ERR_)/.test(code) || e.message === 'fetch failed') {
+      return send(res, 504, { error: 'Нет связи с интернетом или сайт не отвечает. Проверь подключение и попробуй ещё раз' });
+    }
     return send(res, e.status && e.status < 500 ? e.status : 500, { error: e.message || 'Ошибка' });
   }
 

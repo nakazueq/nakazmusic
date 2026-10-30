@@ -796,8 +796,20 @@ function toast(msg, ms = 3800) {
   while (box.children.length > 3) box.firstChild.remove();
   setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, ms);
 }
+const NET_RE = /failed to fetch|networkerror|load failed|fetch failed|network request failed|timeout|timed out/i;
+const NET_MSG = 'Нет связи с интернетом или сайт не отвечает. Проверь подключение и попробуй ещё раз';
+const errText = (e) => (e && NET_RE.test(String(e.message)) ? NET_MSG : (e && e.message) || 'Что-то пошло не так');
+// сбои, до которых не дошёл свой обработчик: тихо в консоль, а про сеть говорим по-человечески
+window.addEventListener('unhandledrejection', (ev) => {
+  const e = ev.reason;
+  console.warn('необработанная ошибка', e);
+  ev.preventDefault();
+  if (e && NET_RE.test(String(e.message))) toast(NET_MSG);
+});
 async function api(url, opts) {
-  const r = await fetch(url, opts);
+  let r;
+  try { r = await fetch(url, opts); }
+  catch (e) { if (e && e.name === 'AbortError') throw e; throw new Error(NET_RE.test(String(e && e.message)) ? 'Плеер не отвечает: попробуй перезапустить Sonara' : errText(e)); }
   let j = null;
   try { j = await r.json(); } catch {}
   if (!r.ok) { const e = new Error((j && j.error) || `Ошибка ${r.status}`); e.status = r.status; throw e; }
@@ -1465,7 +1477,7 @@ function playFailed(e, token) {
   const skip = !(e && e.fatal) && state.queue.length > 1 && state.fails < Math.min(8, state.queue.length);
   // если пропускаем, уведомление короткое: подробности в консоли и player.log
   const name = state.cur && state.cur.title ? `«${state.cur.title.slice(0, 40)}»` : 'трек';
-  toast(skip ? `Не получилось включить ${name}, пропускаю` : e && e.message ? e.message : 'Не получилось включить трек', e && e.fatal ? 7000 : 3800);
+  toast(skip ? `Не получилось включить ${name}, пропускаю` : e && e.message ? errText(e) : 'Не получилось включить трек', e && e.fatal ? 7000 : 3800);
   if (e && e.fatal) return;
   if (++state.fails <= Math.min(8, state.queue.length) && state.queue.length > 1) setTimeout(() => { if (token === state.token) next('fail'); }, 900);
 }
@@ -1476,7 +1488,12 @@ function next(auto = false) {
   let p = state.pos + 1;
   if (p >= state.order.length && state.queueKind === 'radio') {
     // радио бесконечное: догружаем похожие и играем дальше
-    radioMore().then(() => { if (state.pos + 1 < state.order.length) { state.pos++; playTrack(state.queue[state.order[state.pos]]); } });
+    const token = state.token;
+    radioMore().then(() => {
+      if (token !== state.token) return;   // за время подбора трек уже сменили руками
+      if (state.pos + 1 < state.order.length) { state.pos++; playTrack(state.queue[state.order[state.pos]]); }
+      else if (!state.radio.more && !state.radio.loading) { engPause(); state.playing = false; updatePlayer(); toast('Радио: похожие треки закончились'); }
+    }).catch(() => {});
     return;
   }
   if (p >= state.order.length) {
@@ -1810,7 +1827,7 @@ function renderEmpty() {
   } else if (state.view === 'recs') {
     if (state.recsLoading) html = '<div class="empty-card"><div class="loader"></div><p>Ищу похожие треки…</p></div>';
     else if (!hasAny) html = emptyCard(ICONS.sparkle, 'Подборка по твоим лайкам', 'Подключи Spotify или SoundCloud, и тут появятся похожие треки, которых у тебя ещё нет.', btnSp + btnSc);
-    else html = emptyCard(ICONS.sparkle, 'Подборка по твоим лайкам', state.recsError || 'Нажми, и я найду похожие треки, которых у тебя ещё нет.', '<button class="pill accent" data-act="recs">Подобрать</button>');
+    else html = emptyCard(ICONS.sparkle, 'Подборка по твоим лайкам', escapeHtml(state.recsError) || 'Нажми, и я найду похожие треки, которых у тебя ещё нет.', '<button class="pill accent" data-act="recs">Подобрать</button>');
   } else if (state.loading.sp || state.loading.sc || state.loading.yt) html = '<div class="empty-card"><div class="loader"></div><p>Загружаю лайки…</p></div>';
   else if (state.view === 'sp') html = emptyCard(ICONS.note, 'Spotify', LS.get('sp_token') ? 'Лайкнутых треков пока нет.' : 'Подключи аккаунт, и тут появятся твои лайки.', LS.get('sp_token') ? '' : btnSp);
   else if (state.view === 'stats') { el.hidden = true; el.innerHTML = ''; return; }
