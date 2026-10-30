@@ -65,10 +65,54 @@ const WALLS = {
   night: { name: 'Ночь', css: 'radial-gradient(55% 60% at 15% 20%, #3b3272 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #173e64 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #4a2352 0%, transparent 70%), linear-gradient(160deg, #13141f, #1b1d2b)' },
   sunset: { name: 'Закат', css: 'radial-gradient(55% 60% at 15% 20%, #7a2e50 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #8a4b22 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #352d6c 0%, transparent 70%), linear-gradient(160deg, #1f1520, #191526)' },
   plain: { name: 'Однотонный' },
+  gradient: { name: 'Градиент' },
   cover: { name: 'Обложка' },
   custom: { name: 'Своя' },
 };
 const DARK_WALLS = new Set(['night', 'sunset']);
+// особые режимы фона: при переходе в них запоминаем обычный фон из темы, чтобы вернуться к нему
+const SPECIAL_WALLS = new Set(['plain', 'custom', 'gradient']);
+
+/* ---------- свой градиент для фона ---------- */
+const GRAD_TYPES = ['linear', 'radial', 'conic'];
+const GRAD_TYPE_NAMES = { linear: 'Линейный', radial: 'Радиальный', conic: 'Конический' };
+const GRAD_MIN_STOPS = 2, GRAD_MAX_STOPS = 5;
+const GRAD_PRESETS = [
+  { id: 'sunset', name: 'Закат', type: 'linear', angle: 160, stops: [['#2b1055', 0], ['#b3365f', 50], ['#ff9a5a', 100]] },
+  { id: 'ocean', name: 'Океан', type: 'linear', angle: 150, stops: [['#0b3c5d', 0], ['#1d7a9c', 55], ['#8fd6e8', 100]] },
+  { id: 'neon', name: 'Неон', type: 'linear', angle: 135, stops: [['#12002f', 0], ['#7a1cff', 45], ['#ff2fb3', 75], ['#00e5ff', 100]] },
+  { id: 'forest', name: 'Лес', type: 'linear', angle: 160, stops: [['#0b2a1c', 0], ['#1f6b43', 55], ['#a8d06a', 100]] },
+  { id: 'graphite', name: 'Графит', type: 'linear', angle: 160, stops: [['#16171b', 0], ['#2c2e35', 60], ['#4a4d57', 100]] },
+  { id: 'dawn', name: 'Рассвет', type: 'radial', angle: 0, stops: [['#ffd9a0', 0], ['#ff8fb1', 50], ['#6a5acd', 100]] },
+  { id: 'lavender', name: 'Лаванда', type: 'linear', angle: 120, stops: [['#e9e4f7', 0], ['#c9b8ee', 55], ['#f3c6e2', 100]] },
+  { id: 'fire', name: 'Огонь', type: 'conic', angle: 0, stops: [['#ff3b30', 0], ['#ff9500', 35], ['#ffcc00', 65], ['#ff3b30', 100]] },
+];
+const gradFromPreset = (p) => ({ type: p.type, angle: p.angle, stops: p.stops.map(([c, q]) => ({ c, p: q })) });
+const GRAD_DEFAULT = { type: 'linear', angle: 135, stops: [{ c: '#3a1c3f', p: 0 }, { c: '#b33a5b', p: 55 }, { c: '#f0a35e', p: 100 }] };
+// приводит что угодно к допустимому градиенту: тип из списка, угол 0..360, 2..5 точек с hex-цветом и позицией 0..100
+function normalizeGrad(g) {
+  const out = { type: 'linear', angle: 135, stops: [] };
+  if (g && typeof g === 'object') {
+    if (GRAD_TYPES.includes(g.type)) out.type = g.type;
+    if (typeof g.angle === 'number' && Number.isFinite(g.angle)) out.angle = Math.round(Math.min(360, Math.max(0, g.angle)));
+    if (Array.isArray(g.stops)) {
+      for (const s of g.stops.slice(0, GRAD_MAX_STOPS)) {
+        if (s && typeof s.c === 'string' && /^#[0-9a-f]{6}$/i.test(s.c) && typeof s.p === 'number' && Number.isFinite(s.p)) out.stops.push({ c: s.c.toLowerCase(), p: Math.round(Math.min(100, Math.max(0, s.p))) });
+      }
+    }
+  }
+  if (out.stops.length < GRAD_MIN_STOPS) return { ...GRAD_DEFAULT, stops: GRAD_DEFAULT.stops.map((s) => ({ ...s })) };
+  out.stops.sort((a, b) => a.p - b.p);
+  return out;
+}
+// css-значение градиента; bar: прямая полоса слева направо для предпросмотра точек
+function gradCss(g, bar) {
+  const stops = g.stops.map((s) => `${s.c} ${s.p}%`).join(', ');
+  if (bar) return `linear-gradient(90deg, ${stops})`;
+  if (g.type === 'radial') return `radial-gradient(ellipse at 50% 50%, ${stops})`;
+  if (g.type === 'conic') return `conic-gradient(from ${g.angle}deg at 50% 50%, ${stops})`;
+  return `linear-gradient(${g.angle}deg, ${stops})`;
+}
 const PV_LIGHT =['rgba(236,237,241,.78)', 'rgba(251,251,253,.88)'];
 const PV_DARK = ['rgba(38,38,42,.8)', 'rgba(26,26,29,.86)'];
 const PRESETS = [
@@ -87,9 +131,11 @@ const ACCENTS = [
 ];
 // тонкая настройка вида (окно «Оформление»): всё хранится внутри ui и уезжает в store.json
 const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prevWall: null, auto: false, css: '', cssOn: true };
-const DEFAULT_UI = { preset: 'glass', mode: 'light', accent: '#007AFF', wall: 'mist', alpha: 45, blur: 40, lite: false, compact: false, tray: true };
+const DEFAULT_UI = { preset: 'glass', mode: 'light', accent: '#007AFF', wall: 'mist', wallPrev: null, alpha: 45, blur: 40, lite: false, compact: false, tray: true };
 const ui = { ...DEFAULT_UI, ...LS.json('ui', {}) };
 ui.look = { ...DEFAULT_LOOK, ...(ui.look || {}) };
+ui.grad = normalizeGrad(ui.grad);
+if (!Object.prototype.hasOwnProperty.call(WALLS, ui.wall)) ui.wall = DEFAULT_UI.wall;
 // раскладка: сайдбар слева/справа и режим окна (обычный, компактный, полноэкранный); prev нужен, чтобы выйти из полного экрана назад
 const DEFAULT_LAYOUT = { mode: 'normal', side: 'left', prev: 'normal' };
 ui.layout = { ...DEFAULT_LAYOUT, ...(ui.layout || {}) };
@@ -413,6 +459,7 @@ function applyUI() {
   applyBlocks();
   if (ui.layout.mode !== 'full') r.classList.remove('peek');
   r.dataset.theme = currentMode();
+  applyGrad();
   applyWall();
   const old = rowH;
   readRowH();
@@ -448,7 +495,9 @@ function liveFlush() {
   const blur = ui.blur + 'px';
   if (r.style.getPropertyValue('--blur') !== blur) r.style.setProperty('--blur', blur);
   applyLook(true);
+  applyGrad();
   if (liveWall) { liveWall = false; applyWall(); }
+  if (gradBarDirty) gradBarRefresh();
   pushTheme();
 }
 function liveEnd() {
@@ -474,13 +523,27 @@ function pushTheme() {
   pushedTheme = m;
   appCmd('theme', '?mode=' + m);
 }
+// градиент живёт в одной CSS-переменной: при перетаскивании точек обновляется только она
+function applyGrad() {
+  const r = document.documentElement;
+  const css = gradCss(ui.grad);
+  if (r.style.getPropertyValue('--wall-grad') !== css) r.style.setProperty('--wall-grad', css);
+  if (r.dataset.wall !== ui.wall) r.dataset.wall = ui.wall;
+}
+// смена режима фона: из обычного фона темы запоминаем его, чтобы можно было вернуться
+function setWall(id) {
+  if (SPECIAL_WALLS.has(id) && !SPECIAL_WALLS.has(ui.wall)) ui.wallPrev = ui.wall;
+  ui.wall = id;
+}
 let lastWallBg = null;
 function applyWall() {
   const el = $('wall');
   let cls = 'wall';
   let bg = '';
   const w = ui.wall;
-  if (w === 'custom') {
+  if (w === 'gradient') {
+    cls += ' grad';
+  } else if (w === 'custom') {
     const img = LS.get('wallImg');
     if (img) { bg = `url("${img}")`; cls += ' img'; } else cls += ' plain';
   } else if (w === 'cover') {
@@ -2602,6 +2665,7 @@ function buildWalls() {
     b.dataset.id = id;
     if (w.css) b.style.background = w.css;
     else if (id === 'plain') b.style.background = 'var(--plain)';
+    else if (id === 'gradient') b.style.background = 'var(--wall-grad)';
     else if (id === 'cover') b.style.background = 'linear-gradient(135deg, #3a1c3f, #b33a5b 55%, #f0a35e)';
     else if (id === 'custom') {
       const img = LS.get('wallImg');
@@ -2611,7 +2675,7 @@ function buildWalls() {
     b.insertAdjacentHTML('beforeend', `<span>${w.name}</span>`);
     b.addEventListener('click', () => {
       if (id === 'custom' && (!LS.get('wallImg') || ui.wall === 'custom')) { $('wall-file').click(); return; }
-      ui.wall = id; ui.preset = null; saveUI(); applyUI();
+      setWall(id); ui.preset = null; saveUI(); applyUI();
     });
     wBox.appendChild(b);
   }
@@ -2627,7 +2691,7 @@ async function onWallFile(file) {
     if (bmp.close) bmp.close();
     const url = c.toDataURL('image/jpeg', 0.82);
     if (!LS.set('wallImg', url)) { toast('Картинка слишком большая, выбери поменьше'); return; }
-    ui.wall = 'custom'; ui.preset = null; saveUI();
+    setWall('custom'); ui.preset = null; saveUI();
     lastWallBg = null;
     buildWalls(); applyUI();
   } catch { toast('Не получилось открыть картинку'); }
@@ -2693,6 +2757,7 @@ function buildLook() {
   range('lk-cover', () => ui.look.cover, (v) => { ui.look.cover = v; });
 
   buildBlocksDnD();
+  buildGradEditor();
   buildThemes();
   $('lk-auto').addEventListener('change', (e) => { ui.look.auto = e.target.checked; ui.preset = null; saveUI(); if (ui.look.auto) autoCover(); else autoClear(); });
   $('lk-side').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) setLayout({ side: b.dataset.side }); });
@@ -2706,6 +2771,10 @@ function buildLook() {
     ui.blocks = normalizeBlocks(null);
     autoToken++; cancelAnimationFrame(autoRaf); autoNow = null;
     if (wall && ui.wall === 'plain') ui.wall = wall;
+    // свой градиент сбрасываем и возвращаем прежний фон из темы
+    if (ui.wall === 'gradient') ui.wall = ui.wallPrev && !SPECIAL_WALLS.has(ui.wallPrev) && WALLS[ui.wallPrev] ? ui.wallPrev : DEFAULT_UI.wall;
+    ui.grad = normalizeGrad(null); ui.wallPrev = null; gradSel = null;
+    lastWallBg = null;
     ui.blur = DEFAULT_UI.blur; ui.alpha = DEFAULT_UI.alpha; ui.accent = DEFAULT_UI.accent;
     lookSave();
     syncFullscreen();
@@ -2714,6 +2783,186 @@ function buildLook() {
   $('close-look').addEventListener('click', closeLook);
   $('look').addEventListener('mousedown', (e) => { if (e.target === $('look')) closeLook(); });
 }
+/* ---------- редактор градиента фона ---------- */
+let gradSel = null;          // выбранная точка (объект из ui.grad.stops)
+let gradBarDirty = false;    // полосу и ручки нужно обновить в ближайшем кадре
+let gradDrag = null;
+const gradClone = (g) => ({ type: g.type, angle: g.angle, stops: g.stops.map((s) => ({ ...s })) });
+const gradSort = () => ui.grad.stops.sort((a, b) => a.p - b.p);
+// цвет между двумя точками: новая точка на полосе сразу получает цвет, который там уже виден
+function gradColorAt(p) {
+  const s = ui.grad.stops;
+  if (p <= s[0].p) return s[0].c;
+  if (p >= s[s.length - 1].p) return s[s.length - 1].c;
+  for (let i = 0; i < s.length - 1; i++) if (p >= s[i].p && p <= s[i + 1].p) {
+    const span = s[i + 1].p - s[i].p || 1;
+    return mixHex(s[i].c, s[i + 1].c, (p - s[i].p) / span);
+  }
+  return s[0].c;
+}
+function gradBarRefresh() {
+  gradBarDirty = false;
+  const bar = $('gr-bar');
+  if (!bar) return;
+  bar.style.background = gradCss(ui.grad, true);
+  for (const h of bar.querySelectorAll('.gr-h')) {
+    h.style.left = h._stop.p + '%';
+    h.style.setProperty('--c', h._stop.c);
+    h.classList.toggle('on', h._stop === gradSel);
+  }
+  if (gradSel) {
+    const col = $('gr-color'), pos = $('gr-pos');
+    if (col.value !== gradSel.c) col.value = gradSel.c;
+    if (document.activeElement !== pos && Number(pos.value) !== gradSel.p) pos.value = gradSel.p;
+  }
+}
+// структура изменилась (добавили, удалили, пресет, тип): полная перерисовка редактора
+function gradRender() {
+  const g = ui.grad, bar = $('gr-bar');
+  if (!gradSel || !g.stops.includes(gradSel)) gradSel = g.stops[0];
+  bar.querySelectorAll('.gr-h').forEach((h) => h.remove());
+  for (const s of g.stops) {
+    const h = document.createElement('button');
+    h.type = 'button';
+    h.className = 'gr-h';
+    h._stop = s;
+    h.title = 'Потяни, чтобы сдвинуть. Двойной клик удаляет';
+    bar.appendChild(h);
+  }
+  document.querySelectorAll('#gr-type button').forEach((b) => b.classList.toggle('on', b.dataset.t === g.type));
+  $('gr-angle-row').hidden = g.type === 'radial';
+  $('gr-angle').value = g.angle; setFill($('gr-angle'));
+  $('gr-angle-v').textContent = g.type === 'conic' ? `Начало: ${g.angle}°` : `${g.angle}°`;
+  $('gr-add').disabled = g.stops.length >= GRAD_MAX_STOPS;
+  $('gr-del').disabled = g.stops.length <= GRAD_MIN_STOPS;
+  gradBarRefresh();
+}
+// после изменения структуры: фон применяется сразу, на диск пишем один раз
+function gradCommit() {
+  ui.preset = null;
+  if (ui.wall !== 'gradient') setWall('gradient');
+  clearTimeout(liveIdle);
+  document.documentElement.classList.remove('lk-drag', 'lk-drag-blur');
+  applyUI();
+  saveUI();
+}
+// движение точки, цвета или угла: только CSS-переменная и полоса, диск после паузы
+function gradLive() {
+  ui.preset = null;
+  if (ui.wall !== 'gradient') { setWall('gradient'); liveWall = true; }
+  gradBarDirty = true;
+  liveChange({ wall: false });
+}
+function gradAddAt(p) {
+  const g = ui.grad;
+  if (g.stops.length >= GRAD_MAX_STOPS) { toast('Максимум 5 точек'); return null; }
+  const s = { c: gradColorAt(p), p: Math.round(p) };
+  g.stops.push(s);
+  gradSort();
+  gradSel = s;
+  return s;
+}
+function gradRandom() {
+  const g = ui.grad, n = Math.min(GRAD_MAX_STOPS, Math.max(2, g.stops.length));
+  const h0 = Math.random() * 360, spread = 30 + Math.random() * 90, dark = Math.random() < 0.6;
+  const stops = [];
+  for (let i = 0; i < n; i++) {
+    const t = n === 1 ? 0 : i / (n - 1);
+    const l = dark ? 0.16 + t * 0.4 + Math.random() * 0.06 : 0.62 + t * 0.2 + Math.random() * 0.06;
+    stops.push({ c: hslToHex((h0 + t * spread + Math.random() * 12) % 360, 0.5 + Math.random() * 0.35, Math.min(0.9, l)), p: Math.round(t * 100) });
+  }
+  ui.grad = { type: g.type, angle: Math.round(Math.random() * 360), stops };
+  gradSel = null;
+}
+function buildGradEditor() {
+  const box = $('gr-presets');
+  for (const p of GRAD_PRESETS) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'gr-preset';
+    b.title = p.name;
+    b.style.background = gradCss(gradFromPreset(p));
+    b.innerHTML = `<span>${p.name}</span>`;
+    b.addEventListener('click', () => { ui.grad = gradFromPreset(p); gradSel = null; gradRender(); gradCommit(); });
+    box.appendChild(b);
+  }
+  $('lk-wallmode').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    const m = b.dataset.wm;
+    if (m === 'theme') ui.wall = ui.wallPrev && !SPECIAL_WALLS.has(ui.wallPrev) && WALLS[ui.wallPrev] ? ui.wallPrev : DEFAULT_UI.wall;
+    else if (m === 'custom' && !LS.get('wallImg')) { $('wall-file').click(); return; }
+    else setWall(m);
+    ui.preset = null; lastWallBg = null; saveUI(); applyUI();
+  });
+  $('gr-type').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    ui.grad.type = b.dataset.t;
+    gradRender(); gradCommit();
+  });
+  $('gr-angle').addEventListener('input', (e) => { ui.grad.angle = Number(e.target.value); setFill(e.target); $('gr-angle-v').textContent = ui.grad.type === 'conic' ? `Начало: ${ui.grad.angle}°` : `${ui.grad.angle}°`; gradLive(); });
+  $('gr-angle').addEventListener('change', liveEnd);
+  $('gr-color').addEventListener('input', (e) => { if (gradSel) { gradSel.c = e.target.value.toLowerCase(); gradLive(); } });
+  $('gr-color').addEventListener('change', liveEnd);
+  $('gr-pos').addEventListener('input', (e) => {
+    if (!gradSel || e.target.value === '') return;
+    gradSel.p = Math.min(100, Math.max(0, Math.round(Number(e.target.value))));
+    gradSort(); gradLive();
+  });
+  $('gr-pos').addEventListener('change', liveEnd);
+  $('gr-add').addEventListener('click', () => {
+    const s = ui.grad.stops;
+    let at = 50, best = -1;   // середина самого большого промежутка
+    for (let i = 0; i < s.length - 1; i++) if (s[i + 1].p - s[i].p > best) { best = s[i + 1].p - s[i].p; at = (s[i].p + s[i + 1].p) / 2; }
+    if (gradAddAt(at)) { gradRender(); gradCommit(); }
+  });
+  $('gr-del').addEventListener('click', () => gradDelete(gradSel));
+  $('gr-flip').addEventListener('click', () => {
+    ui.grad.stops = ui.grad.stops.map((s) => ({ c: s.c, p: 100 - s.p }));
+    gradSort(); gradRender(); gradCommit();
+  });
+  $('gr-rand').addEventListener('click', () => { gradRandom(); gradRender(); gradCommit(); });
+
+  // ручки на полосе: тянем мышью, клик по пустому месту добавляет точку
+  const bar = $('gr-bar');
+  const posOf = (e) => { const r = bar.getBoundingClientRect(); return Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100)); };
+  bar.addEventListener('pointerdown', (e) => {
+    const h = e.target.closest('.gr-h');
+    let stop = h && h._stop;
+    if (!stop) { stop = gradAddAt(posOf(e)); if (!stop) return; gradRender(); }
+    gradSel = stop;
+    gradDrag = stop;
+    try { bar.setPointerCapture(e.pointerId); } catch {}
+    gradBarDirty = true;
+    gradBarRefresh();
+    e.preventDefault();
+  });
+  bar.addEventListener('pointermove', (e) => {
+    if (!gradDrag) return;
+    gradDrag.p = Math.round(posOf(e));
+    gradSort();
+    gradLive();
+  });
+  const stopDrag = () => { if (!gradDrag) return; gradDrag = null; liveEnd(); gradRender(); };
+  bar.addEventListener('pointerup', stopDrag);
+  bar.addEventListener('pointercancel', stopDrag);
+  bar.addEventListener('dblclick', (e) => { const h = e.target.closest('.gr-h'); if (h) gradDelete(h._stop); });
+}
+function gradDelete(stop) {
+  const g = ui.grad;
+  if (!stop || g.stops.length <= GRAD_MIN_STOPS) { toast('Нужно хотя бы две точки'); return; }
+  g.stops = g.stops.filter((s) => s !== stop);
+  gradSel = null;
+  gradRender(); gradCommit();
+}
+function syncGradUI() {
+  const mode = ui.wall === 'plain' ? 'plain' : ui.wall === 'custom' ? 'custom' : ui.wall === 'gradient' ? 'gradient' : 'theme';
+  document.querySelectorAll('#lk-wallmode button').forEach((b) => b.classList.toggle('on', b.dataset.wm === mode));
+  $('lk-grad').hidden = ui.wall !== 'gradient';
+  if (ui.wall === 'gradient' && !gradDrag) gradRender();
+}
+
 /* ---------- темы: сохранение, экспорт, импорт ---------- */
 const THEME_FORMAT = 'sonara-theme';
 const THEME_FILE_MAX = 200000;
@@ -3178,6 +3427,7 @@ function syncLookUI() {
   if ($('look').hidden) return;
   const L = ui.look;
   syncBlocksUI();
+  syncGradUI();
   syncThemesUI();
   $('lk-auto').checked = !!L.auto;
   $('lk-colors').classList.toggle('dim', !!L.auto);

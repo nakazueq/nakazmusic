@@ -1006,3 +1006,24 @@ body.ly-mode .player { left: 14px; }
 html.lk-drag .sheet, html.lk-drag .ctx { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html.lk-drag:not(.lk-drag-blur) .sidebar, html.lk-drag:not(.lk-drag-blur) .player, html.lk-drag:not(.lk-drag-blur) .head::before { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 html.lk-drag:not(.lk-drag-blur) .wall { filter: none !important; }
+/* свой градиент для фона */
+.wall.grad { background-image: var(--wall-grad) !important; background-size: 100% 100%; filter: none; }
+[data-wall="gradient"] .lk-pv { background: var(--wall-grad); }
+.lk-wallseg { display: flex; flex-wrap: wrap; }
+.lk-wallseg button { flex: 1; padding: 4px 8px; font-size: 12.5px; }
+.lk-grad { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.gr-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.gr-preset { position: relative; height: 40px; padding: 0; border: 0; border-radius: calc(9px * var(--rs)); overflow: hidden; box-shadow: inset 0 0 0 1px var(--sep); }
+.gr-preset span { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 6px; font-size: 10.5px; font-weight: 600; text-align: left; color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); background: linear-gradient(transparent, rgba(0, 0, 0, .3)); }
+.gr-preset:hover { box-shadow: 0 0 0 2px var(--accent); }
+.gr-angle-row { border-top: 0; padding: 0; }
+.gr-bar { position: relative; height: 34px; margin: 6px 9px 4px; border-radius: calc(8px * var(--rs)); box-shadow: inset 0 0 0 1px var(--sep); cursor: copy; touch-action: none; }
+.gr-h { position: absolute; top: 50%; width: 20px; height: 20px; margin: -10px 0 0 -10px; padding: 0; border: 3px solid #fff; border-radius: 50%; background: var(--c); box-shadow: 0 1px 4px rgba(0, 0, 0, .45); cursor: grab; touch-action: none; }
+.gr-h:active { cursor: grabbing; }
+.gr-h.on { box-shadow: 0 0 0 2px var(--accent), 0 1px 4px rgba(0, 0, 0, .45); z-index: 1; }
+.gr-edit { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.gr-col input { width: 44px; height: 28px; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; }
+.gr-posl { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
+.gr-posl input { width: 58px; height: 28px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--field); color: var(--text); font: inherit; }
+.gr-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill:disabled { opacity: .4; }

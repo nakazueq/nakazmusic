@@ -280,6 +280,37 @@
       <div class="setrow"><label>Мини-плеер<small>Маленькое окно с управлением</small></label><button class="pill" id="lk-mini">Открыть</button></div>
     </div>
 
+    <h3>Фон</h3>
+    <div class="seg lk-wallseg" id="lk-wallmode">
+      <button data-wm="theme">Из темы</button>
+      <button data-wm="plain">Однотонный</button>
+      <button data-wm="custom">Картинка</button>
+      <button data-wm="gradient">Градиент</button>
+    </div>
+    <div class="lk-grad" id="lk-grad" hidden>
+      <div class="gr-presets" id="gr-presets"></div>
+      <div class="seg" id="gr-type">
+        <button data-t="linear">Линейный</button>
+        <button data-t="radial">Радиальный</button>
+        <button data-t="conic">Конический</button>
+      </div>
+      <div class="setrow gr-angle-row" id="gr-angle-row">
+        <label for="gr-angle">Угол<small id="gr-angle-v"></small></label>
+        <input id="gr-angle" type="range" min="0" max="360" class="always">
+      </div>
+      <div class="gr-bar" id="gr-bar" title="Клик по полосе добавляет точку"></div>
+      <div class="gr-edit">
+        <label class="gr-col" title="Цвет выбранной точки"><input id="gr-color" type="color"></label>
+        <label class="gr-posl">Позиция <input id="gr-pos" type="number" min="0" max="100" step="1"> %</label>
+        <button class="pill" id="gr-del" type="button">Удалить точку</button>
+      </div>
+      <div class="gr-actions">
+        <button class="pill" id="gr-add" type="button">Добавить точку</button>
+        <button class="pill" id="gr-flip" type="button">Перевернуть</button>
+        <button class="pill" id="gr-rand" type="button">Случайный</button>
+      </div>
+    </div>
+
     <h3>Цвета</h3>
     <div class="setrow lk-autorow">
       <label for="lk-auto">Подбирать по обложке<small>Акцент, фон и текст подстраиваются под обложку трека. Ручные цвета на это время не действуют.</small></label>
