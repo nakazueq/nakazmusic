@@ -34,7 +34,7 @@ try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
 const LOG_FILE = path.join(DATA_DIR, 'player.log');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
-const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb', 'keys']);
+const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb', 'keys', 'lang']);
 // запуск с --safe-css (или SONARA_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
 const SAFE_CSS = process.argv.includes('--safe-css') || process.env.SONARA_SAFE_CSS === '1';
 const PLAYS_FILE = path.join(DATA_DIR, 'plays.jsonl');
@@ -1513,6 +1513,7 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/app/settings' && req.method === 'POST') {
         const b = JSON.parse((await readBody(req)) || '{}');
         if (typeof b.closeToTray === 'boolean' && config.closeToTray !== b.closeToTray) { config.closeToTray = b.closeToTray; writeJson(CONFIG_FILE, config); }
+        if ((b.lang === 'ru' || b.lang === 'en') && config.lang !== b.lang) { config.lang = b.lang; writeJson(CONFIG_FILE, config); }
         if (typeof b.autoBackup === 'boolean' && (config.autoBackup !== false) !== b.autoBackup) { config.autoBackup = b.autoBackup; writeJson(CONFIG_FILE, config); }
         if (typeof b.updateCheck === 'boolean' && (config.updateCheck !== false) !== b.updateCheck) { config.updateCheck = b.updateCheck; writeJson(CONFIG_FILE, config); if (b.updateCheck) updateCheck(false); }
         if (typeof b.mediaKeys === 'boolean' && (config.mediaKeys !== false) !== b.mediaKeys) { config.mediaKeys = b.mediaKeys; writeJson(CONFIG_FILE, config); mediaKeys.starts = 0; mediaKeysApply(); }

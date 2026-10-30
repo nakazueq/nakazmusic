@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<title>Sonara — мини</title>
+<title data-i18n="m.root.1">Sonara — мини</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -70,21 +70,25 @@
 <div class="mini" data-webview-drag-region>
   <img class="cv" id="cv" alt="" data-webview-drag-region>
   <div class="meta" data-webview-drag-region>
-    <div class="t" id="t" data-webview-drag-region>Ничего не играет</div>
+    <div class="t" id="t" data-webview-drag-region data-i18n="m.t.1">Ничего не играет</div>
     <div class="a" id="a" data-webview-drag-region>Sonara</div>
     <div class="ctrl" data-webview-drag-region>
-      <button class="b" data-cmd="prev" title="Назад"><svg viewBox="0 0 24 24"><path d="M20.5 7.2v9.6a.7.7 0 0 1-1.1.6L13 13v3.8a.7.7 0 0 1-1.1.6L5.2 12.6a.75.75 0 0 1 0-1.2l6.7-4.8a.7.7 0 0 1 1.1.6V11l6.4-4.4a.7.7 0 0 1 1.1.6z" fill="currentColor"/></svg></button>
-      <button class="b play" data-cmd="toggle" title="Играть / пауза" id="play"></button>
-      <button class="b" data-cmd="next" title="Дальше"><svg viewBox="0 0 24 24"><path d="M3.5 7.2v9.6a.7.7 0 0 0 1.1.6L11 13v3.8a.7.7 0 0 0 1.1.6l6.7-4.8a.75.75 0 0 0 0-1.2l-6.7-4.8a.7.7 0 0 0-1.1.6V11L4.6 6.6a.7.7 0 0 0-1.1.6z" fill="currentColor"/></svg></button>
+      <button class="b" data-cmd="prev" title="Назад" data-i18n-attr="title=m.root.title.1"><svg viewBox="0 0 24 24"><path d="M20.5 7.2v9.6a.7.7 0 0 1-1.1.6L13 13v3.8a.7.7 0 0 1-1.1.6L5.2 12.6a.75.75 0 0 1 0-1.2l6.7-4.8a.7.7 0 0 1 1.1.6V11l6.4-4.4a.7.7 0 0 1 1.1.6z" fill="currentColor"/></svg></button>
+      <button class="b play" data-cmd="toggle" title="Играть / пауза" id="play" data-i18n-attr="title=m.play.title.1"></button>
+      <button class="b" data-cmd="next" title="Дальше" data-i18n-attr="title=m.root.title.2"><svg viewBox="0 0 24 24"><path d="M3.5 7.2v9.6a.7.7 0 0 0 1.1.6L11 13v3.8a.7.7 0 0 0 1.1.6l6.7-4.8a.75.75 0 0 0 0-1.2l-6.7-4.8a.7.7 0 0 0-1.1.6V11L4.6 6.6a.7.7 0 0 0-1.1.6z" fill="currentColor"/></svg></button>
     </div>
   </div>
   <div class="win">
-    <button class="w" data-cmd="expand" title="Открыть плеер"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
-    <button class="w" data-cmd="mini-close" title="Закрыть мини-плеер"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+    <button class="w" data-cmd="expand" title="Открыть плеер" data-i18n-attr="title=m.root.title.3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg></button>
+    <button class="w" data-cmd="mini-close" title="Закрыть мини-плеер" data-i18n-attr="title=m.root.title.4"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
   </div>
 </div>
-<div class="bar" id="bar" title="Перемотка"><i id="fill"></i></div>
+<div class="bar" id="bar" title="Перемотка" data-i18n-attr="title=m.bar.title.1"><i id="fill"></i></div>
 
+<script src="/locales/core.js"></script>
+<script src="/locales/ru.js"></script>
+<script src="/locales/en.js"></script>
+<script src="/i18n.js"></script>
 <script>
 'use strict';
 const $ = (id) => document.getElementById(id);
@@ -106,7 +110,7 @@ addEventListener('storage', (e) => { if (e.key === 'ui') applyTheme(); });
 let st = { hasTrack: false, playing: false, time: 0, dur: 0, at: Date.now() };
 let lastArt = null;
 function render() {
-  $('t').textContent = st.hasTrack ? st.title : 'Ничего не играет';
+  $('t').textContent = st.hasTrack ? st.title : T('m.t.1');
   $('a').textContent = st.hasTrack ? st.artist : 'Sonara';
   if (st.art !== lastArt) {
     lastArt = st.art;
@@ -159,6 +163,8 @@ async function connect() {
 }
 render();
 connect();
+// язык выбирают в главном окне: подхватываем без перезапуска
+window.addEventListener('storage', (e) => { if (e.key === 'lang' && e.newValue) I18N.setLanguage(e.newValue); });
 </script>
 </body>
 </html>

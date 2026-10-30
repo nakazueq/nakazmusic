@@ -52,14 +52,14 @@
 
     <label class="search">
       <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      <input id="search" type="search" placeholder="Поиск" autocomplete="off" spellcheck="false">
+      <input id="search" type="search" placeholder="Поиск" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder=h.search.placeholder.1">
     </label>
 
     <div class="side-nav" id="side-nav">
-    <div class="side-section lbl">Библиотека</div>
-    <button class="nav active" data-view="all" title="Вся музыка">
+    <div class="side-section lbl" data-i18n="h.side-nav.1">Библиотека</div>
+    <button class="nav active" data-view="all" title="Вся музыка" data-i18n-attr="title=h.side-nav.title.1">
       <svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.5" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.5" fill="currentColor"/></svg>
-      <span class="lbl">Вся музыка</span><span class="cnt" id="cnt-all"></span>
+      <span class="lbl" data-i18n="h.side-nav.2">Вся музыка</span><span class="cnt" id="cnt-all"></span>
     </button>
     <button class="nav" data-view="sp" title="Spotify">
       <i class="src-dot sp"></i><span class="lbl">Spotify</span><span class="cnt" id="cnt-sp"></span>
@@ -70,48 +70,48 @@
     <button class="nav" data-view="yt" title="YouTube Music">
       <i class="src-dot yt"></i><span class="lbl">YouTube Music</span><span class="cnt" id="cnt-yt"></span>
     </button>
-    <button class="nav" data-view="local" title="С компа">
+    <button class="nav" data-view="local" title="С компа" data-i18n-attr="title=h.side-nav.title.2">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.2h7a2 2 0 0 1 2 2v7.8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>
-      <span class="lbl">С компа</span><span class="cnt" id="cnt-local"></span>
+      <span class="lbl" data-i18n="h.side-nav.3">С компа</span><span class="cnt" id="cnt-local"></span>
     </button>
 
-    <div class="side-section lbl">Открытия</div>
-    <button class="nav" data-view="recs" title="Для тебя">
+    <div class="side-section lbl" data-i18n="h.side-nav.4">Открытия</div>
+    <button class="nav" data-view="recs" title="Для тебя" data-i18n-attr="title=h.side-nav.title.3">
       <svg viewBox="0 0 24 24"><path d="M11 3.5l1.7 4.8 4.8 1.7-4.8 1.7L11 16.5l-1.7-4.8L4.5 10l4.8-1.7z" fill="currentColor"/><path d="M18 14l.8 2.2 2.2.8-2.2.8L18 20l-.8-2.2-2.2-.8 2.2-.8z" fill="currentColor"/></svg>
-      <span class="lbl">Для тебя</span>
+      <span class="lbl" data-i18n="h.side-nav.5">Для тебя</span>
     </button>
-    <button class="nav" data-view="stats" title="Статистика">
+    <button class="nav" data-view="stats" title="Статистика" data-i18n-attr="title=h.side-nav.title.4">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M5 19v-6M10 19V9M15 19v-9M20 19V5"/></svg>
-      <span class="lbl">Статистика</span>
+      <span class="lbl" data-i18n="h.side-nav.6">Статистика</span>
     </button>
-    <button class="nav" data-view="radio" id="nav-radio" title="Радио" hidden>
+    <button class="nav" data-view="radio" id="nav-radio" title="Радио" hidden data-i18n-attr="title=h.nav-radio.title.1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="2.2" fill="currentColor" stroke="none"/><path d="M8.2 15.8a5.4 5.4 0 0 1 0-7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.3 18.7a9.5 9.5 0 0 1 0-13.4M18.7 5.3a9.5 9.5 0 0 1 0 13.4"/></svg>
-      <span class="lbl">Радио</span>
+      <span class="lbl" data-i18n="h.nav-radio.1">Радио</span>
     </button>
 
-    <div class="side-section lbl">Плейлисты</div>
+    <div class="side-section lbl" data-i18n="h.side-nav.7">Плейлисты</div>
     <div id="pl-list"></div>
-    <button class="nav nav-add" id="pl-new" title="Новый плейлист">
+    <button class="nav nav-add" id="pl-new" title="Новый плейлист" data-i18n-attr="title=h.pl-new.title.1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      <span class="lbl">Новый плейлист</span>
+      <span class="lbl" data-i18n="h.pl-new.1">Новый плейлист</span>
     </button>
     </div>
 
     <div class="side-spacer" id="side-spacer"></div>
-    <button id="side-cover" class="side-cover" hidden title="Текст песни">
+    <button id="side-cover" class="side-cover" hidden title="Текст песни" data-i18n-attr="title=h.side-cover.title.1">
       <img id="side-cover-img" alt="">
-      <span class="sc-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 17h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke-linecap="round"/></svg>Текст</span>
+      <span class="sc-hint" data-i18n="h.side-cover.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 17h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke-linecap="round"/></svg>Текст</span>
     </button>
-    <section id="blk-queue" class="side-card" aria-label="Очередь">
-      <div class="side-section lbl">Дальше</div>
+    <section id="blk-queue" class="side-card" aria-label="Очередь" data-i18n-attr="aria-label=h.blk-queue.aria.1">
+      <div class="side-section lbl" data-i18n="h.blk-queue.1">Дальше</div>
       <div id="queue-list" class="q-list"></div>
     </section>
-    <button id="blk-lyrics" class="side-card lyc" type="button" title="Открыть текст песни">
+    <button id="blk-lyrics" class="side-card lyc" type="button" title="Открыть текст песни" data-i18n-attr="title=h.blk-lyrics.title.1">
       <span class="lyc-l p" id="lyc-p"></span><span class="lyc-l c" id="lyc-c"></span><span class="lyc-l n" id="lyc-n"></span>
     </button>
-    <button class="nav" id="open-settings" title="Настройки">
+    <button class="nav" id="open-settings" title="Настройки" data-i18n-attr="title=h.open-settings.title.1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h8M16 7h4M4 12h2M10 12h10M4 17h10M18 17h2"/><circle cx="14" cy="7" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="16" cy="17" r="2"/></svg>
-      <span class="lbl">Настройки</span>
+      <span class="lbl" data-i18n="h.open-settings.1">Настройки</span>
     </button>
   </aside>
 
@@ -121,32 +121,32 @@
         <div class="gsearch" id="gsearch">
           <label class="gs-field">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            <input id="gs-input" type="search" placeholder="Найти трек в Spotify, SoundCloud и YouTube Music" autocomplete="off" spellcheck="false">
-            <button type="button" class="gs-clear" id="gs-clear" title="Очистить (Esc)" hidden><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
+            <input id="gs-input" type="search" placeholder="Найти трек в Spotify, SoundCloud и YouTube Music" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder=h.gs-input.placeholder.1">
+            <button type="button" class="gs-clear" id="gs-clear" title="Очистить (Esc)" hidden data-i18n-attr="title=h.gs-clear.title.1"><svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>
           </label>
-          <div class="gs-chips" id="gs-chips" role="group" aria-label="Где искать"></div>
+          <div class="gs-chips" id="gs-chips" role="group" aria-label="Где искать" data-i18n-attr="aria-label=h.gs-chips.aria.1"></div>
           <div class="gs-notes" id="gs-notes" hidden></div>
         </div>
         <div class="head-top">
           <div class="head-text">
-            <h1 id="view-title">Вся музыка</h1>
+            <h1 id="view-title" data-i18n="h.view-title.1">Вся музыка</h1>
             <div id="view-sub" class="sub"></div>
           </div>
           <div class="head-actions">
-            <button id="act-play" class="pill accent"><svg viewBox="0 0 24 24"><path d="M8 5.6v12.8a1 1 0 0 0 1.53.85l10.2-6.4a1 1 0 0 0 0-1.7L9.53 4.75A1 1 0 0 0 8 5.6z" fill="currentColor"/></svg>Слушать</button>
-            <button id="act-shuffle" class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3c2 0 3.2.9 4.3 2.6l2.4 4.8C13.8 16.1 15 17 17 17h4M3 17h3c1.2 0 2.2-.4 3-1.1M14 8.1c.8-.7 1.8-1.1 3-1.1h4M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5"/></svg>Перемешать</button>
-            <button id="act-m3u" class="pill" title="Выгрузить этот плейлист в файл M3U" hidden>M3U</button>
-            <button id="act-rename" class="pill icon-only" title="Переименовать" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg></button>
-            <button id="act-delete" class="pill icon-only" title="Удалить плейлист" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/></svg></button>
-            <button id="act-refresh" class="pill icon-only" title="Обновить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 1 1 17.7 6M20 4v5h-5"/></svg></button>
+            <button id="act-play" class="pill accent" data-i18n="h.act-play.1"><svg viewBox="0 0 24 24"><path d="M8 5.6v12.8a1 1 0 0 0 1.53.85l10.2-6.4a1 1 0 0 0 0-1.7L9.53 4.75A1 1 0 0 0 8 5.6z" fill="currentColor"/></svg>Слушать</button>
+            <button id="act-shuffle" class="pill" data-i18n="h.act-shuffle.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3c2 0 3.2.9 4.3 2.6l2.4 4.8C13.8 16.1 15 17 17 17h4M3 17h3c1.2 0 2.2-.4 3-1.1M14 8.1c.8-.7 1.8-1.1 3-1.1h4M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5"/></svg>Перемешать</button>
+            <button id="act-m3u" class="pill" title="Выгрузить этот плейлист в файл M3U" hidden data-i18n-attr="title=h.act-m3u.title.1">M3U</button>
+            <button id="act-rename" class="pill icon-only" title="Переименовать" hidden data-i18n-attr="title=h.act-rename.title.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg></button>
+            <button id="act-delete" class="pill icon-only" title="Удалить плейлист" hidden data-i18n-attr="title=h.act-delete.title.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/></svg></button>
+            <button id="act-refresh" class="pill icon-only" title="Обновить" data-i18n-attr="title=h.act-refresh.title.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 1 1 17.7 6M20 4v5h-5"/></svg></button>
           </div>
         </div>
-        <div class="cols"><span class="c-n">#</span><span>Название</span><span class="c3" id="col3">Источник</span><span class="c-d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg></span></div>
+        <div class="cols"><span class="c-n">#</span><span data-i18n="h.head.1">Название</span><span class="c3" id="col3" data-i18n="h.col3.1">Источник</span><span class="c-d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/></svg></span></div>
       </header>
       <div id="list" class="list"></div>
       <section id="stats" class="stats" hidden></section>
       <div id="empty" class="empty" hidden></div>
-      <div class="list-off">Блок «Список треков» выключен. Включить его можно в Оформление → Блоки.</div>
+      <div class="list-off" data-i18n="h.scroller.1">Блок «Список треков» выключен. Включить его можно в Оформление → Блоки.</div>
     </div>
   </main>
 </div>
@@ -161,7 +161,7 @@
     <div class="ly-blob b3"></div>
     <div class="ly-veil"></div>
   </div>
-  <button class="ly-close" id="ly-close" title="Закрыть (Esc)">
+  <button class="ly-close" id="ly-close" title="Закрыть (Esc)" data-i18n-attr="title=h.ly-close.title.1">
     <svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
   </button>
   <div class="ly-layout">
@@ -172,22 +172,22 @@
         <div id="ly-title" class="ly-title"></div>
         <div id="ly-artist" class="ly-artist"></div>
         <div id="ly-src" class="ly-src"></div>
-        <div class="ly-tools"><button class="pill" id="ly-custom-btn" title="Загрузить свой .lrc или вставить текст">Свой .lrc / текст</button></div>
+        <div class="ly-tools"><button class="pill" id="ly-custom-btn" title="Загрузить свой .lrc или вставить текст" data-i18n="h.ly-custom-btn.1" data-i18n-attr="title=h.ly-custom-btn.title.1">Свой .lrc / текст</button></div>
       </div>
     </div>
   </div>
   <div class="ly-dlg" id="ly-dlg" hidden>
     <div class="ly-dlg-box">
-      <h3>Свой текст</h3>
-      <p>Вставь текст песни или загрузи .lrc с таймкодами: тогда строки будут подсвечиваться в такт музыке. Он сохранится для этого трека и не будет заменяться автопоиском.</p>
-      <textarea id="ly-dlg-text" spellcheck="false" placeholder="[00:12.30] Первая строка&#10;[00:16.80] Вторая строка"></textarea>
+      <h3 data-i18n="h.ly-dlg.1">Свой текст</h3>
+      <p data-i18n="h.ly-dlg.2">Вставь текст песни или загрузи .lrc с таймкодами: тогда строки будут подсвечиваться в такт музыке. Он сохранится для этого трека и не будет заменяться автопоиском.</p>
+      <textarea id="ly-dlg-text" spellcheck="false" placeholder="[00:12.30] Первая строка&#10;[00:16.80] Вторая строка" data-i18n-attr="placeholder=h.ly-dlg-text.placeholder.1"></textarea>
       <div class="ly-dlg-row">
-        <button class="pill" id="ly-dlg-file">Выбрать .lrc / .txt</button>
+        <button class="pill" id="ly-dlg-file" data-i18n="h.ly-dlg-file.1">Выбрать .lrc / .txt</button>
         <input type="file" id="ly-dlg-input" accept=".lrc,.txt,text/plain" hidden>
         <span class="ly-dlg-gap"></span>
-        <button class="pill" id="ly-dlg-reset" title="Удалить свой текст и снова искать автоматически">Вернуть автопоиск</button>
-        <button class="pill" id="ly-dlg-cancel">Отмена</button>
-        <button class="pill accent" id="ly-dlg-save">Сохранить</button>
+        <button class="pill" id="ly-dlg-reset" title="Удалить свой текст и снова искать автоматически" data-i18n="h.ly-dlg-reset.1" data-i18n-attr="title=h.ly-dlg-reset.title.1">Вернуть автопоиск</button>
+        <button class="pill" id="ly-dlg-cancel" data-i18n="h.ly-dlg-cancel.1">Отмена</button>
+        <button class="pill accent" id="ly-dlg-save" data-i18n="h.ly-dlg-save.1">Сохранить</button>
       </div>
     </div>
   </div>
@@ -195,62 +195,62 @@
 
 <footer class="player" id="player">
   <div class="np">
-    <button class="np-cover" id="np-cover-btn" title="Текст песни"><img id="np-cover" alt=""></button>
+    <button class="np-cover" id="np-cover-btn" title="Текст песни" data-i18n-attr="title=h.np-cover-btn.title.1"><img id="np-cover" alt=""></button>
     <div class="np-meta">
-      <div id="np-title" class="np-t">Ничего не играет</div>
-      <div id="np-artist" class="np-a">Выбери трек в списке</div>
+      <div id="np-title" class="np-t" data-i18n="h.np-title.1">Ничего не играет</div>
+      <div id="np-artist" class="np-a" data-i18n="h.np-artist.1">Выбери трек в списке</div>
     </div>
   </div>
   <div class="ctrl">
     <div class="btns">
-      <button id="b-shuffle" class="ib sm" title="Перемешивание"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3c2 0 3.2.9 4.3 2.6l2.4 4.8C13.8 16.1 15 17 17 17h4M3 17h3c1.2 0 2.2-.4 3-1.1M14 8.1c.8-.7 1.8-1.1 3-1.1h4M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5"/></svg></button>
-      <button id="b-prev" class="ib" title="Назад"><svg viewBox="0 0 24 24"><path d="M20.5 7.2v9.6a.7.7 0 0 1-1.1.6L13 13v3.8a.7.7 0 0 1-1.1.6L5.2 12.6a.75.75 0 0 1 0-1.2l6.7-4.8a.7.7 0 0 1 1.1.6V11l6.4-4.4a.7.7 0 0 1 1.1.6z" fill="currentColor"/></svg></button>
-      <button id="b-play" class="ib big" title="Играть / пауза"></button>
-      <button id="b-next" class="ib" title="Дальше"><svg viewBox="0 0 24 24"><path d="M3.5 7.2v9.6a.7.7 0 0 0 1.1.6L11 13v3.8a.7.7 0 0 0 1.1.6l6.7-4.8a.75.75 0 0 0 0-1.2l-6.7-4.8a.7.7 0 0 0-1.1.6V11L4.6 6.6a.7.7 0 0 0-1.1.6z" fill="currentColor"/></svg></button>
-      <button id="b-repeat" class="ib sm" title="Повтор"></button>
-      <button id="b-sleep" class="ib sm sleep-btn" title="Таймер сна" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span id="sleep-lbl" class="sleep-lbl" hidden></span></button>
+      <button id="b-shuffle" class="ib sm" title="Перемешивание" data-i18n-attr="title=h.b-shuffle.title.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3c2 0 3.2.9 4.3 2.6l2.4 4.8C13.8 16.1 15 17 17 17h4M3 17h3c1.2 0 2.2-.4 3-1.1M14 8.1c.8-.7 1.8-1.1 3-1.1h4M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5"/></svg></button>
+      <button id="b-prev" class="ib" title="Назад" data-i18n-attr="title=h.b-prev.title.1"><svg viewBox="0 0 24 24"><path d="M20.5 7.2v9.6a.7.7 0 0 1-1.1.6L13 13v3.8a.7.7 0 0 1-1.1.6L5.2 12.6a.75.75 0 0 1 0-1.2l6.7-4.8a.7.7 0 0 1 1.1.6V11l6.4-4.4a.7.7 0 0 1 1.1.6z" fill="currentColor"/></svg></button>
+      <button id="b-play" class="ib big" title="Играть / пауза" data-i18n-attr="title=h.b-play.title.1"></button>
+      <button id="b-next" class="ib" title="Дальше" data-i18n-attr="title=h.b-next.title.1"><svg viewBox="0 0 24 24"><path d="M3.5 7.2v9.6a.7.7 0 0 0 1.1.6L11 13v3.8a.7.7 0 0 0 1.1.6l6.7-4.8a.75.75 0 0 0 0-1.2l-6.7-4.8a.7.7 0 0 0-1.1.6V11L4.6 6.6a.7.7 0 0 0-1.1.6z" fill="currentColor"/></svg></button>
+      <button id="b-repeat" class="ib sm" title="Повтор" data-i18n-attr="title=h.b-repeat.title.1"></button>
+      <button id="b-sleep" class="ib sm sleep-btn" title="Таймер сна" type="button" data-i18n-attr="title=h.b-sleep.title.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span id="sleep-lbl" class="sleep-lbl" hidden></span></button>
     </div>
     <div class="prog">
       <span id="t-cur">0:00</span>
-      <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Перемотка">
+      <input id="seek" type="range" min="0" max="1000" value="0" aria-label="Перемотка" data-i18n-attr="aria-label=h.seek.aria.1">
       <span id="t-dur">0:00</span>
     </div>
   </div>
   <div class="vol">
-    <button id="b-mini" class="ib sm" title="Мини-плеер" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><rect x="11.5" y="11.5" width="6.5" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg></button>
-    <button id="b-lyrics" class="ib sm" title="Текст песни (L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 17h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke-linecap="round"/></svg></button>
-    <button id="b-mute" class="ib sm" title="Звук"></button>
-    <input id="volume" type="range" min="0" max="100" value="70" aria-label="Громкость">
+    <button id="b-mini" class="ib sm" title="Мини-плеер" hidden data-i18n-attr="title=h.b-mini.title.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><rect x="11.5" y="11.5" width="6.5" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg></button>
+    <button id="b-lyrics" class="ib sm" title="Текст песни (L)" data-i18n-attr="title=h.b-lyrics.title.1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 17h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke-linecap="round"/></svg></button>
+    <button id="b-mute" class="ib sm" title="Звук" data-i18n-attr="title=h.b-mute.title.1"></button>
+    <input id="volume" type="range" min="0" max="100" value="70" aria-label="Громкость" data-i18n-attr="aria-label=h.volume.aria.1">
   </div>
 </footer>
 
 <!-- Таймер сна -->
-<div id="sleep-pop" class="sleep-pop" hidden role="dialog" aria-label="Таймер сна">
-  <div class="sp-head">Таймер сна</div>
+<div id="sleep-pop" class="sleep-pop" hidden role="dialog" aria-label="Таймер сна" data-i18n-attr="aria-label=h.sleep-pop.aria.1">
+  <div class="sp-head" data-i18n="h.sleep-pop.1">Таймер сна</div>
   <div class="sp-status" id="sp-status" hidden>
-    <div>Осталось: <b id="sp-left"></b></div>
-    <button id="sp-cancel" class="pill" type="button">Отменить</button>
+    <div data-i18n="h.sp-status.1">Осталось: <b id="sp-left"></b></div>
+    <button id="sp-cancel" class="pill" type="button" data-i18n="h.sp-cancel.1">Отменить</button>
   </div>
   <div class="sp-grid">
-    <button type="button" data-min="15">15 мин</button>
-    <button type="button" data-min="30">30 мин</button>
-    <button type="button" data-min="45">45 мин</button>
-    <button type="button" data-min="60">60 мин</button>
+    <button type="button" data-min="15" data-i18n="h.sleep-pop.2">15 мин</button>
+    <button type="button" data-min="30" data-i18n="h.sleep-pop.3">30 мин</button>
+    <button type="button" data-min="45" data-i18n="h.sleep-pop.4">45 мин</button>
+    <button type="button" data-min="60" data-i18n="h.sleep-pop.5">60 мин</button>
   </div>
   <div class="sp-custom">
-    <input id="sp-custom" type="number" min="1" max="720" step="1" placeholder="Свои минуты" autocomplete="off">
-    <button id="sp-custom-go" class="pill" type="button">Старт</button>
+    <input id="sp-custom" type="number" min="1" max="720" step="1" placeholder="Свои минуты" autocomplete="off" data-i18n-attr="placeholder=h.sp-custom.placeholder.1">
+    <button id="sp-custom-go" class="pill" type="button" data-i18n="h.sp-custom-go.1">Старт</button>
   </div>
-  <button id="sp-track" class="sp-wide" type="button">До конца трека</button>
-  <p class="sp-note">Последние 30 секунд громкость плавно падает, потом пауза. Плеер не закрывается.</p>
+  <button id="sp-track" class="sp-wide" type="button" data-i18n="h.sp-track.1">До конца трека</button>
+  <p class="sp-note" data-i18n="h.sleep-pop.6">Последние 30 секунд громкость плавно падает, потом пауза. Плеер не закрывается.</p>
 </div>
 
 <!-- Оформление: тонкая настройка с живым предпросмотром -->
 <div id="look" class="sheet-wrap lk-wrap" hidden>
-  <div class="sheet lk-sheet" role="dialog" aria-label="Оформление">
+  <div class="sheet lk-sheet" role="dialog" aria-label="Оформление" data-i18n-attr="aria-label=h.look.aria.1">
     <div class="sheet-head">
-      <b>Оформление</b>
-      <button class="x" id="close-look" title="Закрыть (Esc)">
+      <b data-i18n="h.look.1">Оформление</b>
+      <button class="x" id="close-look" title="Закрыть (Esc)" data-i18n-attr="title=h.close-look.title.1">
         <svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
     </div>
@@ -259,175 +259,181 @@
       <div class="lk-side">
         <div class="lk-brand"><i></i>Sonara</div>
         <div class="lk-b lk-b-search"><span class="lk-sbar"></span></div>
-        <div class="lk-b lk-b-nav"><div class="lk-nav on">Вся музыка</div><div class="lk-nav">Spotify</div></div>
+        <div class="lk-b lk-b-nav"><div class="lk-nav on" data-i18n="h.look.2">Вся музыка</div><div class="lk-nav">Spotify</div></div>
         <div class="lk-b lk-b-cover"><span class="lk-sq"></span></div>
         <div class="lk-b lk-b-queue"><span class="lk-ln"></span><span class="lk-ln"></span></div>
         <div class="lk-b lk-b-lyrics"><span class="lk-ln acc"></span><span class="lk-ln"></span></div>
         <i class="lk-spacer"></i>
       </div>
       <div class="lk-main">
-        <div class="lk-title">Вся музыка</div>
+        <div class="lk-title" data-i18n="h.look.3">Вся музыка</div>
         <div class="lk-rows">
-          <div class="lk-row on"><span class="lk-cv"></span><span class="lk-tx"><b>Название трека</b><small>Исполнитель</small></span><em>3:42</em></div>
-          <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b>Другая песня</b><small>Другой артист</small></span><em>2:58</em></div>
-          <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b>Третий трек</b><small>Ещё исполнитель</small></span><em>4:11</em></div>
+          <div class="lk-row on"><span class="lk-cv"></span><span class="lk-tx"><b data-i18n="h.look.4">Название трека</b><small data-i18n="h.look.5">Исполнитель</small></span><em>3:42</em></div>
+          <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b data-i18n="h.look.6">Другая песня</b><small data-i18n="h.look.7">Другой артист</small></span><em>2:58</em></div>
+          <div class="lk-row"><span class="lk-cv"></span><span class="lk-tx"><b data-i18n="h.look.8">Третий трек</b><small data-i18n="h.look.9">Ещё исполнитель</small></span><em>4:11</em></div>
         </div>
-        <div class="lk-off">Список треков скрыт</div>
+        <div class="lk-off" data-i18n="h.look.10">Список треков скрыт</div>
       </div>
       <div class="lk-bar"><span class="lk-np"></span><span class="lk-play"></span><span class="lk-prog"><i></i></span></div>
     </div>
 
-    <h3>Мои темы</h3>
+    <h3 data-i18n="h.look.11">Мои темы</h3>
     <div class="lk-th-save">
-      <input id="lk-th-name" class="field lk-th-input" maxlength="40" placeholder="Название темы" autocomplete="off" spellcheck="false">
-      <button class="pill accent" id="lk-th-save">Сохранить текущее</button>
+      <input id="lk-th-name" class="field lk-th-input" maxlength="40" placeholder="Название темы" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder=h.lk-th-name.placeholder.1">
+      <button class="pill accent" id="lk-th-save" data-i18n="h.lk-th-save.1">Сохранить текущее</button>
     </div>
     <div id="lk-themes" class="lk-themes"></div>
-    <div id="lk-th-empty" class="lk-note">Сохранённых тем пока нет.</div>
+    <div id="lk-th-empty" class="lk-note" data-i18n="h.lk-th-empty.1">Сохранённых тем пока нет.</div>
     <div class="lk-th-tools">
-      <button class="pill" id="lk-th-import" title="Загрузить тему из файла .json">Импорт из файла…</button>
-      <button class="pill" id="lk-th-current" title="Сохранить текущее оформление в файл">Экспорт текущего</button>
+      <button class="pill" id="lk-th-import" title="Загрузить тему из файла .json" data-i18n="h.lk-th-import.1" data-i18n-attr="title=h.lk-th-import.title.1">Импорт из файла…</button>
+      <button class="pill" id="lk-th-current" title="Сохранить текущее оформление в файл" data-i18n="h.lk-th-current.1" data-i18n-attr="title=h.lk-th-current.title.1">Экспорт текущего</button>
       <input type="file" id="lk-th-file" accept=".json,application/json" hidden>
     </div>
     <div id="lk-th-msg" class="lk-note" hidden></div>
 
-    <h3>Блоки</h3>
+    <h3 data-i18n="h.look.12">Блоки</h3>
     <div class="lk-blocks" id="lk-blocks"></div>
     <div class="lk-blocks lk-blocks-main" id="lk-blocks-main"></div>
-    <p class="lk-note">Блоки сайдбара можно перетаскивать за ручку (или Alt+↑ / Alt+↓). Последний блок в списке прижат к низу.</p>
+    <p class="lk-note" data-i18n="h.look.13">Блоки сайдбара можно перетаскивать за ручку (или Alt+↑ / Alt+↓). Последний блок в списке прижат к низу.</p>
 
-    <h3>Раскладка</h3>
+    <h3 data-i18n="h.look.14">Раскладка</h3>
     <div class="lk-layout">
-      <div class="setrow"><label>Сайдбар</label><div class="seg" id="lk-side"><button data-side="left">Слева</button><button data-side="right">Справа</button></div></div>
-      <div class="setrow"><label>Режим<small>Полный экран: F11, выход Esc</small></label><div class="seg" id="lk-mode"><button data-mode="normal">Обычный</button><button data-mode="compact">Компактный</button><button data-mode="full">Полный экран</button></div></div>
-      <div class="setrow"><label>Мини-плеер<small>Маленькое окно с управлением</small></label><button class="pill" id="lk-mini">Открыть</button></div>
+      <div class="setrow"><label data-i18n="h.look.15">Сайдбар</label><div class="seg" id="lk-side"><button data-side="left" data-i18n="h.lk-side.1">Слева</button><button data-side="right" data-i18n="h.lk-side.2">Справа</button></div></div>
+      <div class="setrow"><label data-i18n="h.look.16">Режим<small data-i18n="h.look.17">Полный экран: F11, выход Esc</small></label><div class="seg" id="lk-mode"><button data-mode="normal" data-i18n="h.lk-mode.1">Обычный</button><button data-mode="compact" data-i18n="h.lk-mode.2">Компактный</button><button data-mode="full" data-i18n="h.lk-mode.3">Полный экран</button></div></div>
+      <div class="setrow"><label data-i18n="h.look.18">Мини-плеер<small data-i18n="h.look.19">Маленькое окно с управлением</small></label><button class="pill" id="lk-mini" data-i18n="h.lk-mini.1">Открыть</button></div>
     </div>
 
-    <h3>Фон</h3>
+    <h3 data-i18n="h.look.20">Фон</h3>
     <div class="seg lk-wallseg" id="lk-wallmode">
-      <button data-wm="theme">Из темы</button>
-      <button data-wm="plain">Однотонный</button>
-      <button data-wm="custom">Картинка</button>
-      <button data-wm="gradient">Градиент</button>
+      <button data-wm="theme" data-i18n="h.lk-wallmode.1">Из темы</button>
+      <button data-wm="plain" data-i18n="h.lk-wallmode.2">Однотонный</button>
+      <button data-wm="custom" data-i18n="h.lk-wallmode.3">Картинка</button>
+      <button data-wm="gradient" data-i18n="h.lk-wallmode.4">Градиент</button>
     </div>
     <div class="lk-grad" id="lk-grad" hidden>
       <div class="setrow gr-coverrow">
-        <label for="gr-cover">Градиент из обложки<small>Цвета берутся из 2–3 главных цветов обложки играющего трека и плавно меняются вместе с ним. Тип и угол остаются вашими</small></label>
+        <label for="gr-cover" data-i18n="h.lk-grad.1">Градиент из обложки<small data-i18n="h.lk-grad.2">Цвета берутся из 2–3 главных цветов обложки играющего трека и плавно меняются вместе с ним. Тип и угол остаются вашими</small></label>
         <label class="switch"><input id="gr-cover" type="checkbox"><span></span></label>
       </div>
       <div class="gr-cover-sw" id="gr-cover-sw" hidden><i></i><i></i><i></i></div>
       <div class="gr-presets" id="gr-presets"></div>
       <div class="seg" id="gr-type">
-        <button data-t="linear">Линейный</button>
-        <button data-t="radial">Радиальный</button>
-        <button data-t="conic">Конический</button>
+        <button data-t="linear" data-i18n="h.gr-type.1">Линейный</button>
+        <button data-t="radial" data-i18n="h.gr-type.2">Радиальный</button>
+        <button data-t="conic" data-i18n="h.gr-type.3">Конический</button>
       </div>
       <div class="setrow gr-angle-row" id="gr-angle-row">
-        <label for="gr-angle">Угол<small id="gr-angle-v"></small></label>
+        <label for="gr-angle" data-i18n="h.gr-angle-row.1">Угол<small id="gr-angle-v"></small></label>
         <input id="gr-angle" type="range" min="0" max="360" class="always">
       </div>
-      <div class="gr-bar" id="gr-bar" title="Клик по полосе добавляет точку"></div>
+      <div class="gr-bar" id="gr-bar" title="Клик по полосе добавляет точку" data-i18n-attr="title=h.gr-bar.title.1"></div>
       <div class="gr-edit">
-        <label class="gr-col" title="Цвет выбранной точки"><input id="gr-color" type="color"></label>
-        <label class="gr-posl">Позиция <input id="gr-pos" type="number" min="0" max="100" step="1"> %</label>
-        <button class="pill" id="gr-del" type="button">Удалить точку</button>
+        <label class="gr-col" title="Цвет выбранной точки" data-i18n-attr="title=h.lk-grad.title.1"><input id="gr-color" type="color"></label>
+        <label class="gr-posl" data-i18n="h.lk-grad.3">Позиция <input id="gr-pos" type="number" min="0" max="100" step="1"> %</label>
+        <button class="pill" id="gr-del" type="button" data-i18n="h.gr-del.1">Удалить точку</button>
       </div>
       <div class="gr-actions">
-        <button class="pill" id="gr-add" type="button">Добавить точку</button>
-        <button class="pill" id="gr-flip" type="button">Перевернуть</button>
-        <button class="pill" id="gr-rand" type="button">Случайный</button>
+        <button class="pill" id="gr-add" type="button" data-i18n="h.gr-add.1">Добавить точку</button>
+        <button class="pill" id="gr-flip" type="button" data-i18n="h.gr-flip.1">Перевернуть</button>
+        <button class="pill" id="gr-rand" type="button" data-i18n="h.gr-rand.1">Случайный</button>
       </div>
       <div class="lk-note" id="gr-info" hidden></div>
     </div>
 
-    <h3>Цвета</h3>
+    <h3 data-i18n="h.look.21">Цвета</h3>
     <div class="setrow lk-autorow">
-      <label for="lk-auto">Подбирать по обложке<small>Акцент, фон и текст подстраиваются под обложку трека. Ручные цвета на это время не действуют.</small></label>
+      <label for="lk-auto" data-i18n="h.look.22">Подбирать по обложке<small data-i18n="h.look.23">Акцент, фон и текст подстраиваются под обложку трека. Ручные цвета на это время не действуют.</small></label>
       <label class="switch"><input id="lk-auto" type="checkbox"><span></span></label>
     </div>
     <div class="lk-note" id="lk-auto-info" hidden></div>
     <div class="lk-colors" id="lk-colors">
-      <div class="lk-color"><label for="lk-bg">Фон</label><input type="color" id="lk-bg"><button class="lk-x" id="lk-bg-x" title="Вернуть цвет темы" hidden>Сброс</button></div>
-      <div class="lk-color"><label for="lk-accent">Акцент</label><input type="color" id="lk-accent"><button class="lk-x" id="lk-accent-x" title="Вернуть цвет по умолчанию" hidden>Сброс</button></div>
-      <div class="lk-color"><label for="lk-text">Текст</label><input type="color" id="lk-text"><button class="lk-x" id="lk-text-x" title="Вернуть цвет темы" hidden>Сброс</button></div>
+      <div class="lk-color"><label for="lk-bg" data-i18n="h.lk-colors.1">Фон</label><input type="color" id="lk-bg"><button class="lk-x" id="lk-bg-x" title="Вернуть цвет темы" hidden data-i18n="h.lk-bg-x.1" data-i18n-attr="title=h.lk-bg-x.title.1">Сброс</button></div>
+      <div class="lk-color"><label for="lk-accent" data-i18n="h.lk-colors.2">Акцент</label><input type="color" id="lk-accent"><button class="lk-x" id="lk-accent-x" title="Вернуть цвет по умолчанию" hidden data-i18n="h.lk-accent-x.1" data-i18n-attr="title=h.lk-accent-x.title.1">Сброс</button></div>
+      <div class="lk-color"><label for="lk-text" data-i18n="h.lk-colors.3">Текст</label><input type="color" id="lk-text"><button class="lk-x" id="lk-text-x" title="Вернуть цвет темы" hidden data-i18n="h.lk-text-x.1" data-i18n-attr="title=h.lk-text-x.title.1">Сброс</button></div>
     </div>
 
-    <h3>Шрифт</h3>
+    <h3 data-i18n="h.look.24">Шрифт</h3>
     <select id="lk-font" class="field lk-select"></select>
 
-    <h3>Форма и стекло</h3>
-    <div class="setrow"><label for="lk-rs">Скругления<small id="lk-rs-v"></small></label><input id="lk-rs" type="range" min="0" max="200" step="5" class="always"></div>
-    <div class="setrow"><label for="lk-blur">Сила блюра<small id="lk-blur-v"></small></label><input id="lk-blur" type="range" min="0" max="80" class="always"></div>
-    <div class="setrow"><label for="lk-alpha">Прозрачность<small id="lk-alpha-v"></small></label><input id="lk-alpha" type="range" min="0" max="100" class="always"></div>
-    <div class="setrow"><label for="lk-cover">Размер обложек<small id="lk-cover-v"></small></label><input id="lk-cover" type="range" min="70" max="160" step="5" class="always"></div>
+    <h3 data-i18n="h.look.25">Форма и стекло</h3>
+    <div class="setrow"><label for="lk-rs" data-i18n="h.look.26">Скругления<small id="lk-rs-v"></small></label><input id="lk-rs" type="range" min="0" max="200" step="5" class="always"></div>
+    <div class="setrow"><label for="lk-blur" data-i18n="h.look.27">Сила блюра<small id="lk-blur-v"></small></label><input id="lk-blur" type="range" min="0" max="80" class="always"></div>
+    <div class="setrow"><label for="lk-alpha" data-i18n="h.look.28">Прозрачность<small id="lk-alpha-v"></small></label><input id="lk-alpha" type="range" min="0" max="100" class="always"></div>
+    <div class="setrow"><label for="lk-cover" data-i18n="h.look.29">Размер обложек<small id="lk-cover-v"></small></label><input id="lk-cover" type="range" min="70" max="160" step="5" class="always"></div>
 
-    <h3>Свой CSS</h3>
+    <h3 data-i18n="h.look.30">Свой CSS</h3>
     <div class="setrow lk-autorow">
-      <label for="lk-css-on">Применять свой CSS<small>Если интерфейс сломался: Ctrl+Shift+K отключает CSS, а запуск с ключом --safe-css стартует без него.</small></label>
+      <label for="lk-css-on" data-i18n="h.look.31">Применять свой CSS<small data-i18n="h.look.32">Если интерфейс сломался: Ctrl+Shift+K отключает CSS, а запуск с ключом --safe-css стартует без него.</small></label>
       <label class="switch"><input id="lk-css-on" type="checkbox"><span></span></label>
     </div>
-    <div class="lk-note bad" id="lk-css-safe" hidden>Плеер запущен с --safe-css: свой CSS сейчас не применяется.</div>
+    <div class="lk-note bad" id="lk-css-safe" hidden data-i18n="h.lk-css-safe.1">Плеер запущен с --safe-css: свой CSS сейчас не применяется.</div>
     <textarea id="lk-css" class="lk-css" spellcheck="false" placeholder=".row { border-radius: 0; }&#10;.player { height: 64px; }"></textarea>
     <div class="lk-note" id="lk-css-msg" hidden></div>
-    <div class="lk-foot lk-css-foot"><button class="pill" id="lk-css-reset">Сбросить CSS</button></div>
+    <div class="lk-foot lk-css-foot"><button class="pill" id="lk-css-reset" data-i18n="h.lk-css-reset.1">Сбросить CSS</button></div>
 
-    <div class="lk-foot"><button class="pill" id="lk-reset">Сбросить оформление</button></div>
+    <div class="lk-foot"><button class="pill" id="lk-reset" data-i18n="h.lk-reset.1">Сбросить оформление</button></div>
   </div>
 </div>
 
 <!-- Настройки -->
 <div id="settings" class="sheet-wrap" hidden>
-  <div class="sheet" role="dialog" aria-label="Настройки">
+  <div class="sheet" role="dialog" aria-label="Настройки" data-i18n-attr="aria-label=h.settings.aria.1">
     <div class="sheet-head">
       <div class="seg" id="tabs">
-        <button data-tab="look" class="on">Оформление</button>
-        <button data-tab="acc">Аккаунты</button>
-        <button data-tab="keys">Клавиши</button>
-        <button data-tab="backup">Копии</button>
-        <button data-tab="about">О программе</button>
+        <button data-tab="look" class="on" data-i18n="h.tabs.1">Оформление</button>
+        <button data-tab="acc" data-i18n="h.tabs.2">Аккаунты</button>
+        <button data-tab="keys" data-i18n="h.tabs.3">Клавиши</button>
+        <button data-tab="backup" data-i18n="h.tabs.4">Копии</button>
+        <button data-tab="about" data-i18n="h.tabs.5">О программе</button>
       </div>
-      <button class="x" id="close-settings" title="Закрыть">
+      <button class="x" id="close-settings" title="Закрыть" data-i18n-attr="title=h.close-settings.title.1">
         <svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7 7 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
     </div>
 
     <section data-pane="look">
-      <button class="pill accent" id="open-look">Тонкая настройка…</button>
-      <h3>Темы</h3>
+      <button class="pill accent" id="open-look" data-i18n="h.open-look.1">Тонкая настройка…</button>
+      <h3 data-i18n="h.settings.1">Темы</h3>
       <div id="presets" class="presets"></div>
 
-      <h3>Режим</h3>
-      <div class="seg" id="mode-seg">
-        <button data-mode="light">Светлый</button>
-        <button data-mode="dark">Тёмный</button>
-        <button data-mode="auto">Как в Windows</button>
+      <h3 data-i18n="h.lang.1">Язык</h3>
+      <div class="seg" id="lang-seg">
+        <button data-lang="ru">Русский</button>
+        <button data-lang="en">English</button>
       </div>
 
-      <h3>Цвет акцента</h3>
+      <h3 data-i18n="h.settings.2">Режим</h3>
+      <div class="seg" id="mode-seg">
+        <button data-mode="light" data-i18n="h.mode-seg.1">Светлый</button>
+        <button data-mode="dark" data-i18n="h.mode-seg.2">Тёмный</button>
+        <button data-mode="auto" data-i18n="h.mode-seg.3">Как в Windows</button>
+      </div>
+
+      <h3 data-i18n="h.settings.3">Цвет акцента</h3>
       <div id="accents" class="accents"></div>
 
-      <h3>Фон</h3>
+      <h3 data-i18n="h.settings.4">Фон</h3>
       <div id="walls" class="walls"></div>
       <input id="wall-file" type="file" accept="image/*" hidden>
 
       <div class="setrow">
-        <label for="opt-alpha">Прозрачность<small>Насколько панели пропускают фон</small></label>
+        <label for="opt-alpha" data-i18n="h.settings.5">Прозрачность<small data-i18n="h.settings.6">Насколько панели пропускают фон</small></label>
         <input id="opt-alpha" type="range" min="0" max="100" class="always">
       </div>
       <div class="setrow">
-        <label for="opt-blur">Размытие картинки фона<small>Для своей картинки и обложки</small></label>
+        <label for="opt-blur" data-i18n="h.settings.7">Размытие картинки фона<small data-i18n="h.settings.8">Для своей картинки и обложки</small></label>
         <input id="opt-blur" type="range" min="0" max="80" class="always">
       </div>
       <div class="setrow">
-        <label for="opt-compact">Компактный список<small>Больше треков на экране</small></label>
+        <label for="opt-compact" data-i18n="h.settings.9">Компактный список<small data-i18n="h.settings.10">Больше треков на экране</small></label>
         <label class="switch"><input id="opt-compact" type="checkbox"><span></span></label>
       </div>
       <div class="setrow" id="row-tray" hidden>
-        <label for="opt-tray">Закрывать в трей<small>Крестик прячет плеер к часам, музыка играет дальше</small></label>
+        <label for="opt-tray" data-i18n="h.row-tray.1">Закрывать в трей<small data-i18n="h.row-tray.2">Крестик прячет плеер к часам, музыка играет дальше</small></label>
         <label class="switch"><input id="opt-tray" type="checkbox"><span></span></label>
       </div>
       <div class="setrow">
-        <label for="opt-lite">Лёгкий режим<small>Без размытия и анимаций: меньше нагрузка на видеокарту</small></label>
+        <label for="opt-lite" data-i18n="h.settings.11">Лёгкий режим<small data-i18n="h.settings.12">Без размытия и анимаций: меньше нагрузка на видеокарту</small></label>
         <label class="switch"><input id="opt-lite" type="checkbox"><span></span></label>
       </div>
     </section>
@@ -436,17 +442,17 @@
       <div class="card">
         <div class="card-head"><i class="src-dot sp"></i><b>Spotify</b><span id="sp-state" class="state"></span></div>
         <div class="field-row">
-          <input id="sp-client" class="field" placeholder="Client ID из Spotify Dashboard" autocomplete="off" spellcheck="false">
-          <button id="sp-connect" class="btn">Подключить</button>
-          <button id="sp-logout" class="btn gray" hidden>Выйти</button>
+          <input id="sp-client" class="field" placeholder="Client ID из Spotify Dashboard" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder=h.sp-client.placeholder.1">
+          <button id="sp-connect" class="btn" data-i18n="h.sp-connect.1">Подключить</button>
+          <button id="sp-logout" class="btn gray" hidden data-i18n="h.sp-logout.1">Выйти</button>
         </div>
         <details class="help">
-          <summary>Где взять Client ID</summary>
+          <summary data-i18n="h.settings.13">Где взять Client ID</summary>
           <ol>
-            <li>Открой <b>developer.spotify.com/dashboard</b> и нажми «Create app».</li>
-            <li>В Redirect URI впиши <code id="redirect-uri"></code></li>
-            <li>Отметь <b>Web API</b> и <b>Web Playback SDK</b>, сохрани, скопируй Client ID сюда.</li>
-            <li id="hint-sp-play">Для Brave: открой <code>brave://settings/extensions</code>, включи <b>Widevine</b> и перезапусти браузер, иначе Spotify не заиграет.</li>
+            <li data-i18n="h.settings.14,h.settings.15">Открой <b>developer.spotify.com/dashboard</b> и нажми «Create app».</li>
+            <li data-i18n="h.settings.16">В Redirect URI впиши <code id="redirect-uri"></code></li>
+            <li data-i18n="h.settings.17,h.settings.18,h.settings.19">Отметь <b>Web API</b> и <b>Web Playback SDK</b>, сохрани, скопируй Client ID сюда.</li>
+            <li id="hint-sp-play" data-i18n="h.hint-sp-play.1,h.hint-sp-play.2,h.hint-sp-play.3">Для Brave: открой <code>brave://settings/extensions</code>, включи <b>Widevine</b> и перезапусти браузер, иначе Spotify не заиграет.</li>
           </ol>
         </details>
       </div>
@@ -454,75 +460,75 @@
       <div class="card">
         <div class="card-head"><i class="src-dot sc"></i><b>SoundCloud</b><span id="sc-state" class="state"></span></div>
         <div class="field-row">
-          <input id="sc-user" class="field" placeholder="Ник или ссылка на профиль" autocomplete="off" spellcheck="false">
-          <button id="sc-load" class="btn">Загрузить лайки</button>
+          <input id="sc-user" class="field" placeholder="Ник или ссылка на профиль" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder=h.sc-user.placeholder.1">
+          <button id="sc-load" class="btn" data-i18n="h.sc-load.1">Загрузить лайки</button>
         </div>
-        <p class="hint">Ник это часть ссылки soundcloud.com/<b>ник</b>. Лайки должны быть открыты.</p>
+        <p class="hint" data-i18n="h.settings.20,h.settings.22">Ник это часть ссылки soundcloud.com/<b data-i18n="h.settings.21">ник</b>. Лайки должны быть открыты.</p>
       </div>
 
       <div class="card">
         <div class="card-head"><i class="src-dot yt"></i><b>YouTube Music</b><span id="yt-state" class="state"></span></div>
         <div id="yt-lists" class="folders"></div>
         <div class="field-row">
-          <input id="yt-link" class="field" placeholder="Ссылка на плейлист YouTube / YouTube Music" autocomplete="off" spellcheck="false">
-          <button id="yt-add" class="btn">Добавить</button>
+          <input id="yt-link" class="field" placeholder="Ссылка на плейлист YouTube / YouTube Music" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder=h.yt-link.placeholder.1">
+          <button id="yt-add" class="btn" data-i18n="h.yt-add.1">Добавить</button>
         </div>
         <div class="field-row yt-actions">
-          <button id="yt-likes" class="btn gray">Мои лайки (через Brave)</button>
-          <button id="yt-install" class="btn gray">Обновить yt-dlp</button>
+          <button id="yt-likes" class="btn gray" data-i18n="h.yt-likes.1">Мои лайки (через Brave)</button>
+          <button id="yt-install" class="btn gray" data-i18n="h.yt-install.1">Обновить yt-dlp</button>
           <span id="yt-version" class="hint"></span>
         </div>
         <div class="setrow flat">
-          <label for="yt-cookie-fb">Пробовать cookies Brave, если ролик не играет<small>Только в последнюю очередь, когда остальные способы не сработали. Brave лучше закрыть</small></label>
+          <label for="yt-cookie-fb" data-i18n="h.settings.23">Пробовать cookies Brave, если ролик не играет<small data-i18n="h.settings.24">Только в последнюю очередь, когда остальные способы не сработали. Brave лучше закрыть</small></label>
           <label class="switch"><input id="yt-cookie-fb" type="checkbox"><span></span></label>
         </div>
-        <p class="hint">Плейлист должен быть открыт по ссылке: войти в аккаунт не нужно, Premium тоже. «Понравившиеся» закрыты от посторонних, поэтому для них плеер берёт вход из Brave: в нём должен быть выполнен вход на YouTube, а сам Brave лучше закрыть. Звук берётся через yt-dlp.</p>
+        <p class="hint" data-i18n="h.settings.25">Плейлист должен быть открыт по ссылке: войти в аккаунт не нужно, Premium тоже. «Понравившиеся» закрыты от посторонних, поэтому для них плеер берёт вход из Brave: в нём должен быть выполнен вход на YouTube, а сам Brave лучше закрыть. Звук берётся через yt-dlp.</p>
       </div>
 
       <div class="card">
-        <div class="card-head"><i class="src-dot lc"></i><b>Музыка с компа</b><span id="lc-state" class="state"></span></div>
+        <div class="card-head"><i class="src-dot lc"></i><b data-i18n="h.settings.26">Музыка с компа</b><span id="lc-state" class="state"></span></div>
         <div id="lc-folders" class="folders"></div>
         <div class="field-row">
-          <input id="lc-path" class="field" placeholder="Путь к папке, например C:\Users\you\Music" autocomplete="off" spellcheck="false">
-          <button id="lc-add" class="btn">Добавить</button>
+          <input id="lc-path" class="field" placeholder="Путь к папке, например C:\Users\you\Music" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder=h.lc-path.placeholder.1">
+          <button id="lc-add" class="btn" data-i18n="h.lc-add.1">Добавить</button>
         </div>
-        <button id="lc-pick" class="btn gray lc-pick" hidden>Выбрать треки в папке…</button>
-        <p class="hint">mp3, wav, flac, m4a, ogg. Подпапки тоже читаются. Название, артист и обложка берутся из файла, а если их нет, из имени «Артист - Трек».</p>
+        <button id="lc-pick" class="btn gray lc-pick" hidden data-i18n="h.lc-pick.1">Выбрать треки в папке…</button>
+        <p class="hint" data-i18n="h.settings.27">mp3, wav, flac, m4a, ogg. Подпапки тоже читаются. Название, артист и обложка берутся из файла, а если их нет, из имени «Артист - Трек».</p>
       </div>
 
       <div class="card">
         <div class="card-head"><i class="src-dot dc"></i><b>Discord</b><span id="dc-state" class="state"></span></div>
         <div class="setrow flat">
-          <label for="dc-on">Показывать, что я слушаю<small>В профиле появится «Слушает …» с треком и обложкой</small></label>
+          <label for="dc-on" data-i18n="h.settings.28">Показывать, что я слушаю<small data-i18n="h.settings.29">В профиле появится «Слушает …» с треком и обложкой</small></label>
           <label class="switch"><input id="dc-on" type="checkbox"><span></span></label>
         </div>
         <div class="field-row">
-          <input id="dc-id" class="field" placeholder="Application ID из Discord Developer Portal" autocomplete="off" spellcheck="false">
-          <button id="dc-save" class="btn">Сохранить</button>
+          <input id="dc-id" class="field" placeholder="Application ID из Discord Developer Portal" autocomplete="off" spellcheck="false" data-i18n-attr="placeholder=h.dc-id.placeholder.1">
+          <button id="dc-save" class="btn" data-i18n="h.dc-save.1">Сохранить</button>
         </div>
         <details class="help">
-          <summary>Как получить Application ID (1 минута)</summary>
+          <summary data-i18n="h.settings.30">Как получить Application ID (1 минута)</summary>
           <ol>
-            <li>Открой <b>discord.com/developers/applications</b> и нажми «New Application».</li>
-            <li>Назови его <b>Sonara</b>: это имя будет в статусе.</li>
-            <li>На странице General Information скопируй <b>Application ID</b> и вставь сюда.</li>
-            <li>В Discord включи: Настройки → Конфиденциальность активности → «Делиться активностью».</li>
+            <li data-i18n="h.settings.31,h.settings.32">Открой <b>discord.com/developers/applications</b> и нажми «New Application».</li>
+            <li data-i18n="h.settings.33,h.settings.34">Назови его <b>Sonara</b>: это имя будет в статусе.</li>
+            <li data-i18n="h.settings.35,h.settings.36">На странице General Information скопируй <b>Application ID</b> и вставь сюда.</li>
+            <li data-i18n="h.settings.37">В Discord включи: Настройки → Конфиденциальность активности → «Делиться активностью».</li>
           </ol>
         </details>
       </div>
     </section>
 
     <section data-pane="keys" hidden>
-      <h3>Сочетания в окне плеера</h3>
+      <h3 data-i18n="h.settings.38">Сочетания в окне плеера</h3>
       <div id="kb-list" class="kb-list"></div>
       <div id="kb-msg" class="kb-msg" hidden></div>
       <div class="kb-foot">
-        <button id="kb-reset" class="pill" type="button">Сбросить все</button>
-        <span class="muted">Нажми на сочетание и затем на новые клавиши. Esc отменяет. Пока ты печатаешь в поле, плеер клавиши не трогает.</span>
+        <button id="kb-reset" class="pill" type="button" data-i18n="h.kb-reset.1">Сбросить все</button>
+        <span class="muted" data-i18n="h.settings.39">Нажми на сочетание и затем на новые клавиши. Esc отменяет. Пока ты печатаешь в поле, плеер клавиши не трогает.</span>
       </div>
-      <h3>Медиаклавиши Windows</h3>
+      <h3 data-i18n="h.settings.40">Медиаклавиши Windows</h3>
       <div class="setrow flat">
-        <label for="kb-global">Глобальные медиаклавиши<small>Play/Pause, Следующий и Предыдущий работают при свёрнутом окне и в трее. Клавиши занимаются, только пока в плеере есть трек, иначе остаются другим программам</small></label>
+        <label for="kb-global" data-i18n="h.settings.41">Глобальные медиаклавиши<small data-i18n="h.settings.42">Play/Pause, Следующий и Предыдущий работают при свёрнутом окне и в трее. Клавиши занимаются, только пока в плеере есть трек, иначе остаются другим программам</small></label>
         <label class="switch"><input id="kb-global" type="checkbox" checked><span></span></label>
       </div>
       <div id="kb-global-state" class="kb-global-state"></div>
@@ -530,48 +536,48 @@
 
     <section data-pane="backup" hidden>
       <div class="card">
-        <div class="card-head"><b>Копия библиотеки</b><span id="bk-state" class="state"></span></div>
-        <p class="hint">Лайки Spotify, SoundCloud и YouTube Music и все плейлисты одним файлом JSON: название, артист, источник, ссылка или id и дата. Файлы лежат в Документы\Sonara\backup.</p>
+        <div class="card-head"><b data-i18n="h.settings.43">Копия библиотеки</b><span id="bk-state" class="state"></span></div>
+        <p class="hint" data-i18n="h.settings.44">Лайки Spotify, SoundCloud и YouTube Music и все плейлисты одним файлом JSON: название, артист, источник, ссылка или id и дата. Файлы лежат в Документы\Sonara\backup.</p>
         <div class="field-row bk-actions">
-          <button id="bk-save" class="btn" type="button">Сохранить копию библиотеки</button>
-          <button id="bk-restore" class="btn gray" type="button">Восстановить из копии…</button>
+          <button id="bk-save" class="btn" type="button" data-i18n="h.bk-save.1">Сохранить копию библиотеки</button>
+          <button id="bk-restore" class="btn gray" type="button" data-i18n="h.bk-restore.1">Восстановить из копии…</button>
           <input id="bk-file" type="file" accept=".json,application/json" hidden>
         </div>
         <div class="setrow flat">
-          <label for="bk-auto">Автокопия раз в неделю<small>Хранятся последние 5 автоматических копий, копии, сохранённые вручную, не удаляются</small></label>
+          <label for="bk-auto" data-i18n="h.settings.45">Автокопия раз в неделю<small data-i18n="h.settings.46">Хранятся последние 5 автоматических копий, копии, сохранённые вручную, не удаляются</small></label>
           <label class="switch"><input id="bk-auto" type="checkbox" checked><span></span></label>
         </div>
         <div id="bk-msg" class="bk-msg" hidden></div>
-        <h3>Последние копии</h3>
+        <h3 data-i18n="h.settings.47">Последние копии</h3>
         <div id="bk-files" class="folders"></div>
-        <button id="bk-open" class="btn gray bk-open" type="button">Открыть папку с копиями</button>
-        <p class="hint">Восстановление ничего не удаляет и не меняет в аккаунтах: плейлисты с тем же названием дополняются недостающими треками, остальные создаются заново, а лайки каждого сервиса появляются отдельными плейлистами «Лайки … (копия)». Сами лайки в Spotify и SoundCloud плеер вернуть не может, потому что не имеет права их менять.</p>
+        <button id="bk-open" class="btn gray bk-open" type="button" data-i18n="h.bk-open.1">Открыть папку с копиями</button>
+        <p class="hint" data-i18n="h.settings.48">Восстановление ничего не удаляет и не меняет в аккаунтах: плейлисты с тем же названием дополняются недостающими треками, остальные создаются заново, а лайки каждого сервиса появляются отдельными плейлистами «Лайки … (копия)». Сами лайки в Spotify и SoundCloud плеер вернуть не может, потому что не имеет права их менять.</p>
       </div>
       <div class="card">
-        <div class="card-head"><b>Плейлисты в M3U</b></div>
-        <p class="hint">Каждый плейлист отдельным файлом .m3u8 в Документы\Sonara\backup\m3u: ссылки на треки Spotify, SoundCloud и YouTube Music, а для файлов с компа путь к файлу. Один плейлист можно выгрузить кнопкой «M3U» в его шапке.</p>
-        <button id="bk-m3u" class="btn" type="button">Экспортировать все плейлисты в M3U</button>
+        <div class="card-head"><b data-i18n="h.settings.49">Плейлисты в M3U</b></div>
+        <p class="hint" data-i18n="h.settings.50">Каждый плейлист отдельным файлом .m3u8 в Документы\Sonara\backup\m3u: ссылки на треки Spotify, SoundCloud и YouTube Music, а для файлов с компа путь к файлу. Один плейлист можно выгрузить кнопкой «M3U» в его шапке.</p>
+        <button id="bk-m3u" class="btn" type="button" data-i18n="h.bk-m3u.1">Экспортировать все плейлисты в M3U</button>
       </div>
     </section>
 
     <section data-pane="about" hidden>
       <div class="about">
         <div class="brand-icon big"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg></div>
-        <div><b>Sonara</b> <span id="ver" class="muted"></span><div class="muted">Лайки Spotify и SoundCloud в одном окне</div></div>
+        <div><b>Sonara</b> <span id="ver" class="muted"></span><div class="muted" data-i18n="h.settings.51">Лайки Spotify и SoundCloud в одном окне</div></div>
       </div>
-      <h3>Обновления</h3>
+      <h3 data-i18n="h.settings.52">Обновления</h3>
       <div class="setrow flat">
-        <label for="upd-on">Проверять обновления при запуске<small>Не чаще раза в сутки: плеер только смотрит последний релиз на GitHub. Ничего не скачивает и не отправляет, кроме обычного запроса страницы релиза</small></label>
+        <label for="upd-on" data-i18n="h.settings.53">Проверять обновления при запуске<small data-i18n="h.settings.54">Не чаще раза в сутки: плеер только смотрит последний релиз на GitHub. Ничего не скачивает и не отправляет, кроме обычного запроса страницы релиза</small></label>
         <label class="switch"><input id="upd-on" type="checkbox" checked><span></span></label>
       </div>
       <div class="bk-actions">
-        <button id="upd-check" class="btn gray" type="button">Проверить сейчас</button>
+        <button id="upd-check" class="btn gray" type="button" data-i18n="h.upd-check.1">Проверить сейчас</button>
         <span id="upd-msg" class="hint"></span>
       </div>
-      <h3>Горячие клавиши</h3>
-      <p class="hint">Все сочетания и их переназначение лежат на вкладке «Клавиши». Медиа-клавиши клавиатуры тоже работают.</p>
-      <h3>Если что-то не работает</h3>
-      <p class="hint">Лог программы лежит тут: <code id="log-path"></code></p>
+      <h3 data-i18n="h.settings.55">Горячие клавиши</h3>
+      <p class="hint" data-i18n="h.settings.56">Все сочетания и их переназначение лежат на вкладке «Клавиши». Медиа-клавиши клавиатуры тоже работают.</p>
+      <h3 data-i18n="h.settings.57">Если что-то не работает</h3>
+      <p class="hint" data-i18n="h.settings.58">Лог программы лежит тут: <code id="log-path"></code></p>
     </section>
   </div>
 </div>
@@ -586,7 +592,7 @@
     <p id="dlg-text" class="hint"></p>
     <input id="dlg-input" class="field" autocomplete="off" spellcheck="false">
     <div class="dlg-btns">
-      <button id="dlg-cancel" class="btn gray">Отмена</button>
+      <button id="dlg-cancel" class="btn gray" data-i18n="h.dlg-cancel.1">Отмена</button>
       <button id="dlg-ok" class="btn">OK</button>
     </div>
   </div>
@@ -594,11 +600,15 @@
 
 <div id="upd-bar" class="upd-bar" hidden>
   <span id="upd-text"></span>
-  <button id="upd-open" class="btn" type="button">Открыть страницу релиза</button>
-  <button id="upd-x" class="ib sm" type="button" title="Скрыть" aria-label="Скрыть">✕</button>
+  <button id="upd-open" class="btn" type="button" data-i18n="h.upd-open.1">Открыть страницу релиза</button>
+  <button id="upd-x" class="ib sm" type="button" title="Скрыть" aria-label="Скрыть" data-i18n-attr="title=h.upd-x.title.1;aria-label=h.upd-x.aria.1">✕</button>
 </div>
 <div id="toasts" class="toasts"></div>
 <audio id="audio" preload="none"></audio>
+<script src="/locales/core.js"></script>
+<script src="/locales/ru.js"></script>
+<script src="/locales/en.js"></script>
+<script src="/i18n.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 // Эти настройки дублируются в программу (%LOCALAPPDATA%\MyPlayer\store.json),
 // чтобы не вводить их заново после обновления или смены окна
-const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb', 'keys']);
+const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb', 'keys', 'lang']);
 const storeQueue = {};
 let storeTimer = 0;
 function storeSync(k, v) {
@@ -2831,6 +2831,17 @@ function buildSettings() {
 
   buildWalls();
 
+  // язык переключается сразу, без перезапуска: сохраняем выбор и сообщаем программе (трей, заголовки окон, ошибки сервера)
+  const syncLangSeg = () => document.querySelectorAll('#lang-seg button').forEach((b) => b.classList.toggle('on', b.dataset.lang === I18N.lang));
+  $('lang-seg').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    I18N.setLanguage(b.dataset.lang);
+    LS.set('lang', b.dataset.lang);   // явный выбор запоминаем, даже если язык и так совпал с языком системы
+    appCmd('settings', { lang: b.dataset.lang });
+  });
+  document.addEventListener('langchange', syncLangSeg);
+  syncLangSeg();
   $('mode-seg').addEventListener('click', (e) => {
     const b = e.target.closest('button');
     if (!b) return;
