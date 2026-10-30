@@ -41,7 +41,7 @@ Sonara isn't signed with a code-signing certificate, and antivirus programs some
 | --- | --- | --- |
 | `Sonara.exe` (Node.js packed with pkg) | the app itself | Unsigned pkg builds are sometimes flagged by Defender, Kaspersky and Avast. |
 | `%LOCALAPPDATA%\MyPlayer\mkhelper.exe` | global media keys (RegisterHotKey); 6 KB, no network access | Low: a plain unsigned exe with a description and version. This used to be a hidden PowerShell using `-EncodedCommand` and `Add-Type`, which looks far more suspicious. PowerShell is now only a fallback if `mkhelper.exe` fails to start. |
-| `%LOCALAPPDATA%MyPlayersplash.exe` | the small start-up screen shown while the window is being created; 8 KB, no network access | Low: a plain unsigned exe with a description and version. If it is blocked, the player simply starts without the start-up screen. |
+| `%LOCALAPPDATA%\MyPlayer\splash.exe` | the small start-up screen shown while the window is being created; 8 KB, no network access | Low: a plain unsigned exe with a description and version. If it is blocked, the player simply starts without the start-up screen. |
 | `yt-dlp.exe` (downloaded by a button in the settings) | YouTube Music | Downloaded from the official GitHub release and checked against its SHA-256. |
 | Icon and version info patched into the exe | the app icon and file properties | Harmless by itself, but patching resources in an unsigned file can lower its reputation. |
 
