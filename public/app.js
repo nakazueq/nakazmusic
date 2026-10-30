@@ -1206,7 +1206,7 @@ function spcResume() {
 function spcSeek(ms) { spcCmd(`/me/player/seek?position_ms=${Math.round(ms)}`); clearTimeout(spc.endTimer); spc.endAt = 0; spcSchedule(1500); }
 function spcVolume() {
   clearTimeout(spc.volTimer);
-  spc.volTimer = setTimeout(() => spcCmd(`/me/player/volume?volume_percent=${state.volume}`), 350);
+  spc.volTimer = setTimeout(() => spcCmd(`/me/player/volume?volume_percent=${Math.round(state.volume * fadeMul)}`), 350);
 }
 
 /* ---------- команды окну программы ---------- */
@@ -1367,7 +1367,9 @@ document.addEventListener('error', (e) => {
 }, true);
 
 /* ===================== Ядро плеера ===================== */
-const gain = () => (state.volume / 100) ** 2;
+// fadeMul: плавное затухание таймера сна, 1 это обычная громкость; ползунок громкости при этом не двигается
+let fadeMul = 1;
+const gain = () => (state.volume / 100) ** 2 * fadeMul;
 function shuffleArr(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 function buildOrder(first) {
   const n = state.queue.length;
@@ -1468,6 +1470,7 @@ function playFailed(e, token) {
   if (++state.fails <= Math.min(8, state.queue.length) && state.queue.length > 1) setTimeout(() => { if (token === state.token) next('fail'); }, 900);
 }
 function next(auto = false) {
+  if (auto === true && sleepT.mode === 'track') { sleepFire(); return; }   // таймер «до конца трека»: стоп вместо следующего трека
   if (!state.queue.length) return;
   if (auto === true && state.repeat === 'one' && state.cur) { playTrack(state.cur); return; }
   let p = state.pos + 1;
@@ -1614,9 +1617,9 @@ function publishState(force) {
   const s = {
     hasTrack: !!t, title: t ? t.title : '', artist: t ? t.artist : '', art: t ? bigArt(t) : '', src: t ? t.src : '',
     album: t ? t.album || '' : '', url: t ? (t.src === 'sp' ? `https://open.spotify.com/track/${t.id}` : t.src === 'sc' || t.src === 'yt' ? t.url || '' : '') : '',
-    playing: !!state.playing, time: Math.round(lyNow()), dur: Math.round(state.dur || 0), at: Date.now(),
+    playing: !!state.playing, time: Math.round(lyNow()), dur: Math.round(state.dur || 0), at: Date.now(), sleep: !!sleepT.mode,
   };
-  const key = [s.title, s.artist, s.playing, s.dur].join('|');
+  const key = [s.title, s.artist, s.playing, s.dur, s.sleep].join('|');
   if (!force && key === pubKey && Date.now() - pubAt < 8000) return;
   pubKey = key; pubAt = Date.now();
   appCmd('state', s);
@@ -1638,6 +1641,7 @@ async function connectEvents() {
     else if (d.cmd === 'next') next(false);
     else if (d.cmd === 'prev') prev();
     else if (d.cmd === 'pause') { if (state.playing) engPause(); }
+    else if (d.cmd === 'sleepcancel') sleepCancel();
     else if (d.cmd === 'seek') seek(Number(d.value) || 0);
     else if (d.cmd === 'volume') setVolume(Number(d.value));
     else if (d.cmd === 'lyrics') setLyrics(true);
@@ -1649,6 +1653,7 @@ async function connectEvents() {
   };
 }
 function onTick() {
+  sleepTick();   // тики идут и в свёрнутом окне, где обычные таймеры засыпают
   spcTick();
   listenTick();
   if (document.hidden) {
@@ -3764,6 +3769,120 @@ seekEl.addEventListener('input', () => {
 seekEl.addEventListener('change', () => { state.seeking = false; seek((seekEl.value / 1000) * state.dur); });
 document.addEventListener('click', () => { if (sp.player) sp.player.activateElement().catch(() => {}); }, { capture: true });
 
+/* ===================== Таймер сна ===================== */
+// mode 'time': пауза через заданное время; mode 'track': пауза в конце играющего сейчас трека (вместо следующего).
+// За 30 секунд до конца громкость плавно падает, потом пауза: плеер остаётся открытым, а громкость возвращается.
+const SLEEP_FADE_MS = 30000;
+const sleepT = { mode: null, end: 0, label: '' };
+let sleepTimer = 0;
+const sleepFmt = (ms) => {
+  const s = Math.max(0, Math.ceil(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  return h ? `${h}:${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}` : `${m}:${String(r).padStart(2, '0')}`;
+};
+// сколько осталось; для трека неизвестной длины Infinity: ни обратного отсчёта, ни затухания
+function sleepLeft() {
+  if (sleepT.mode === 'time') return Math.max(0, sleepT.end - Date.now());
+  if (sleepT.mode === 'track') return state.dur > 0 ? Math.max(0, state.dur - lyNow()) : Infinity;
+  return 0;
+}
+function applyGain() {
+  audio.volume = gain();
+  if (sp.player) sp.player.setVolume(gain()).catch(() => {});
+  if (scw) { try { scw.setVolume(gain() * 100); } catch {} }
+}
+let fadeSpcAt = 0;
+function setFade(m) {
+  if (Math.abs(m - fadeMul) < 0.004) return;
+  fadeMul = m;
+  applyGain();
+  // Spotify в приложении: громкость только запросами к API, поэтому реже, шагами
+  if (isSpConnect() && spc.device && Date.now() - fadeSpcAt > 2500) { fadeSpcAt = Date.now(); spcCmd(`/me/player/volume?volume_percent=${Math.round(state.volume * fadeMul)}`); }
+}
+function sleepRestoreVolume() {
+  if (fadeMul === 1) return;
+  fadeMul = 1;
+  applyGain();
+  if (isSpConnect() && spc.device) spcCmd(`/me/player/volume?volume_percent=${state.volume}`);
+}
+function sleepUi() {
+  const on = !!sleepT.mode;
+  const left = on ? sleepLeft() : 0;
+  const txt = !on ? '' : left === Infinity ? 'до конца' : sleepFmt(left);
+  $('b-sleep').classList.toggle('on', on);
+  $('sleep-lbl').textContent = txt;
+  $('sleep-lbl').hidden = !on;
+  $('b-sleep').title = on ? `Таймер сна: ${sleepT.label}, осталось ${txt}` : 'Таймер сна';
+  $('sp-status').hidden = !on;
+  $('sp-left').textContent = on ? (sleepT.mode === 'track' ? (left === Infinity ? 'до конца трека' : `${txt} до конца трека`) : txt) : '';
+  document.querySelectorAll('#sleep-pop [data-min]').forEach((b) => b.classList.toggle('on', on && sleepT.mode === 'time' && sleepT.label === `${b.dataset.min} мин`));
+  $('sp-track').classList.toggle('on', on && sleepT.mode === 'track');
+}
+function sleepSchedule() {
+  clearTimeout(sleepTimer);
+  sleepTimer = 0;
+  if (!sleepT.mode) return;
+  sleepTimer = setTimeout(sleepTick, fadeMul < 1 ? 250 : 1000);
+}
+function sleepTick() {
+  if (!sleepT.mode) return;
+  if (sleepT.mode === 'track' && !state.cur) { sleepCancel(); return; }
+  const left = sleepLeft();
+  if (sleepT.mode === 'time' && left <= 0) { sleepFire(); return; }
+  if (state.playing && left < SLEEP_FADE_MS) setFade(Math.max(0, left / SLEEP_FADE_MS));
+  else if (fadeMul < 1) sleepRestoreVolume();   // пауза или перемотка на начало: затухание отменяем
+  sleepUi();
+  sleepSchedule();
+}
+function sleepStop() {
+  clearTimeout(sleepTimer);
+  sleepTimer = 0;
+  sleepT.mode = null;
+  sleepUi();
+  publishState(true);
+}
+function sleepFire() {
+  sleepStop();
+  if (state.playing) engPause();   // для Spotify в приложении это пауза через API
+  toast('Таймер сна: поставил на паузу');
+  setTimeout(sleepRestoreVolume, 700);   // громкость возвращаем уже на паузе, чтобы следующий запуск не был тихим
+}
+function sleepCancel(silent) {
+  if (!sleepT.mode) return;
+  sleepStop();
+  sleepRestoreVolume();
+  if (!silent) toast('Таймер сна отменён');
+}
+function sleepStart(mode, ms, label) {
+  if (sleepT.mode) { sleepStop(); sleepRestoreVolume(); }
+  if (mode === 'track' && !state.cur) { toast('Включи трек: таймер сработает в его конце'); return; }
+  sleepT.mode = mode;
+  sleepT.label = label;
+  sleepT.end = mode === 'time' ? Date.now() + ms : 0;
+  toast(`Таймер сна: ${label}`);
+  sleepUi();
+  sleepSchedule();
+  publishState(true);
+}
+const openSleepPop = () => { $('sleep-pop').hidden = false; $('b-sleep').classList.add('open'); sleepUi(); };
+function closeSleepPop() { $('sleep-pop').hidden = true; $('b-sleep').classList.remove('open'); }
+$('b-sleep').addEventListener('click', () => { if ($('sleep-pop').hidden) openSleepPop(); else closeSleepPop(); });
+$('sleep-pop').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.dataset.min) { sleepStart('time', Number(b.dataset.min) * 60000, `${b.dataset.min} мин`); closeSleepPop(); }
+  else if (b.id === 'sp-track') { sleepStart('track', 0, 'до конца трека'); closeSleepPop(); }
+  else if (b.id === 'sp-cancel') { sleepCancel(); closeSleepPop(); }
+  else if (b.id === 'sp-custom-go') {
+    const v = Math.round(Number($('sp-custom').value));
+    if (!(v >= 1 && v <= 720)) { $('sp-custom').focus(); toast('Свой таймер: от 1 до 720 минут'); return; }
+    sleepStart('time', v * 60000, `${v} мин`);
+    $('sp-custom').value = '';
+    closeSleepPop();
+  }
+});
+$('sp-custom').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('sp-custom-go').click(); });
+document.addEventListener('mousedown', (e) => { if (!$('sleep-pop').hidden && !e.target.closest('#sleep-pop, #b-sleep')) closeSleepPop(); });
+
 /* ===================== Горячие клавиши ===================== */
 // Сочетание записываем как «Ctrl+Alt+Shift+Meta+<e.code>»: e.code не зависит от раскладки, русская М тоже KeyM.
 function comboOf(e) {
@@ -3924,6 +4043,7 @@ function buildKeys() {
 
 document.addEventListener('keydown', (e) => {
   const typing = e.target.matches('input:not([type=range]):not([type=checkbox]), textarea');
+  if (e.key === 'Escape' && !$('sleep-pop').hidden) { closeSleepPop(); return; }
   if (e.key === 'Escape' && ctxOpen) { closeMenu(); return; }
   if (e.key === 'Escape' && !$('look').hidden) { closeLook(); return; }
   if (e.key === 'Escape' && !$('settings').hidden) { closeSettings(); return; }

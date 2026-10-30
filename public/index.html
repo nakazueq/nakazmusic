@@ -216,11 +216,33 @@
   </div>
   <div class="vol">
     <button id="b-mini" class="ib sm" title="Мини-плеер" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><rect x="11.5" y="11.5" width="6.5" height="5" rx="1.2" fill="currentColor" stroke="none"/></svg></button>
+    <button id="b-sleep" class="ib sm sleep-btn" title="Таймер сна" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg><span id="sleep-lbl" class="sleep-lbl" hidden></span></button>
     <button id="b-lyrics" class="ib sm" title="Текст песни (L)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 17h-7l-4.5 3.5V17H5a1.5 1.5 0 0 1-1.5-1.5v-9A1.5 1.5 0 0 1 5 5z"/><path d="M8.5 9.5h7M8.5 12.5h4.5" stroke-linecap="round"/></svg></button>
     <button id="b-mute" class="ib sm" title="Звук"></button>
     <input id="volume" type="range" min="0" max="100" value="70" aria-label="Громкость">
   </div>
 </footer>
+
+<!-- Таймер сна -->
+<div id="sleep-pop" class="sleep-pop" hidden role="dialog" aria-label="Таймер сна">
+  <div class="sp-head">Таймер сна</div>
+  <div class="sp-status" id="sp-status" hidden>
+    <div>Осталось: <b id="sp-left"></b></div>
+    <button id="sp-cancel" class="pill" type="button">Отменить</button>
+  </div>
+  <div class="sp-grid">
+    <button type="button" data-min="15">15 мин</button>
+    <button type="button" data-min="30">30 мин</button>
+    <button type="button" data-min="45">45 мин</button>
+    <button type="button" data-min="60">60 мин</button>
+  </div>
+  <div class="sp-custom">
+    <input id="sp-custom" type="number" min="1" max="720" step="1" placeholder="Свои минуты" autocomplete="off">
+    <button id="sp-custom-go" class="pill" type="button">Старт</button>
+  </div>
+  <button id="sp-track" class="sp-wide" type="button">До конца трека</button>
+  <p class="sp-note">Последние 30 секунд громкость плавно падает, потом пауза. Плеер не закрывается.</p>
+</div>
 
 <!-- Оформление: тонкая настройка с живым предпросмотром -->
 <div id="look" class="sheet-wrap lk-wrap" hidden>

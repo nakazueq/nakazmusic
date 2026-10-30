@@ -345,6 +345,7 @@ function trayMenu() {
       { id: 'toggle', label: playing ? 'Пауза' : 'Играть' },
       { id: 'next', label: 'Следующий трек' },
       { id: 'prev', label: 'Предыдущий трек' },
+      ...(nowState && nowState.sleep ? [{ id: 'sleepcancel', label: 'Отменить таймер сна' }] : []),
       { role: 'separator' },
       { id: 'mini', label: mini ? 'Закрыть мини-плеер' : 'Мини-плеер' },
       { id: 'show', label: 'Открыть плеер' },
@@ -369,7 +370,7 @@ function updateTray() {
   if (!tray) return;
   const s = nowState || {};
   const tip = s.title ? `${s.title} — ${s.artist || ''}`.slice(0, 120) : 'Sonara';
-  const key = [tip, !!s.playing, !!mini].join('|');
+  const key = [tip, !!s.playing, !!mini, !!s.sleep].join('|');
   if (key === trayKey) return;
   trayKey = key;
   try { tray.setTooltip(tip); tray.setMenu(trayMenu()); } catch (e) { log('трей', e.message); }
@@ -378,7 +379,7 @@ function onTrayMenu(id) {
   if (id === 'show') return focusApp();
   if (id === 'quit') return shutdown('выход из трея');
   if (id === 'mini') return mini ? closeMini() : openMini();
-  if (['toggle', 'next', 'prev'].includes(id)) sseSend('main', 'cmd', { cmd: id });
+  if (['toggle', 'next', 'prev', 'sleepcancel'].includes(id)) sseSend('main', 'cmd', { cmd: id });
 }
 
 // ---------- мини-плеер: маленькое окно поверх всех ----------
