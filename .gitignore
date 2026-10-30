@@ -1,14 +1,15 @@
-# PowerShell module cache created by the media keys helper during test runs
+# зависимости и сборка
 node_modules/
 build/
 *.exe
 *.exe.bak
+# assets/mkhelper.exe подпадает под *.exe: его собирает tools/build.mjs из native/*.cs
 
-# PowerShell module cache created by the media keys helper during test runs
+# логи
 *.log
 npm-debug.log*
 
-# PowerShell module cache created by the media keys helper during test runs
+# данные пользователя (если запускать из этой папки)
 store.json
 config.json
 local-cache.json
@@ -17,7 +18,7 @@ sc-client.json
 sc-likes-*.json
 lyrics/
 
-# PowerShell module cache created by the media keys helper during test runs
+# секреты
 .env
 .env.*
 *.pem
@@ -27,5 +28,5 @@ lyrics/
 *token*
 *secret*
 
-# PowerShell module cache created by the media keys helper during test runs
+# кэш модулей PowerShell, который создавался при тестовых запусках помощника медиаклавиш
 Microsoft/
