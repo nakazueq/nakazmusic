@@ -1669,7 +1669,7 @@ function windowGuard(isNative) {
 }
 
 if (process.env.PLAYER_TEST) {
-  module.exports = { geniusExtract, cleanTitle, splitArtists, norm, decodeEntities };
+  module.exports = { geniusExtract, cleanTitle, splitArtists, norm, decodeEntities, redact, verNewer, verParts, readStore, writeJson };
 } else (async () => {
   log(`старт v${VERSION}`, IS_EXE ? 'exe' : 'node', process.version);
   if (RESTARTS) await new Promise((r) => setTimeout(r, 1800));   // перезапуск после зависшего окна: ждём, пока старый процесс освободит порт

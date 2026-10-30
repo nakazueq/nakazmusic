@@ -6,6 +6,7 @@
   "bin": "server.js",
   "scripts": {
     "start": "node server.js",
+    "test": "node --test tests/",
     "icon": "node tools/make-icon.mjs",
     "build": "node tools/build.mjs"
   },

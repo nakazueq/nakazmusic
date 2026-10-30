@@ -132,8 +132,21 @@ const ACCENTS = [
 // тонкая настройка вида (окно «Оформление»): всё хранится внутри ui и уезжает в store.json
 const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prevWall: null, auto: false, css: '', cssOn: true };
 const DEFAULT_UI = { preset: 'glass', mode: 'light', accent: '#007AFF', wall: 'mist', wallPrev: null, alpha: 45, blur: 40, lite: false, compact: false, tray: true };
-const ui = { ...DEFAULT_UI, ...LS.json('ui', {}) };
-ui.look = { ...DEFAULT_LOOK, ...(ui.look || {}) };
+// настройки из старой версии или повреждённого файла: недопустимые значения заменяем умолчаниями, лишнее не трогаем
+function sanitizeUi(u) {
+  const o = { ...DEFAULT_UI, ...(u && typeof u === 'object' && !Array.isArray(u) ? u : {}) };
+  const num = (v, lo, hi, d) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
+  o.alpha = num(o.alpha, 0, 100, DEFAULT_UI.alpha);
+  o.blur = num(o.blur, 0, 80, DEFAULT_UI.blur);
+  if (!['light', 'dark', 'auto'].includes(o.mode)) o.mode = DEFAULT_UI.mode;
+  if (typeof o.accent !== 'string' || !/^#[0-9a-f]{6}$/i.test(o.accent)) o.accent = DEFAULT_UI.accent;
+  for (const k of ['lite', 'compact', 'tray']) o[k] = typeof o[k] === 'boolean' ? o[k] : DEFAULT_UI[k];
+  if (o.look != null && (typeof o.look !== 'object' || Array.isArray(o.look))) o.look = {};
+  if (o.layout != null && (typeof o.layout !== 'object' || Array.isArray(o.layout))) o.layout = {};
+  return o;
+}
+const ui = sanitizeUi(LS.json('ui', {}));
+ui.look ={ ...DEFAULT_LOOK, ...(ui.look || {}) };
 ui.grad = normalizeGrad(ui.grad);
 // градиент из обложки: переключатель и последние цвета (3 hex), чтобы после запуска фон не прыгал, пока не заиграл трек
 ui.gradCover = !!ui.gradCover;
