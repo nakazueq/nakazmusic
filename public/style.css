@@ -1079,3 +1079,5 @@ html.lk-drag:not(.lk-drag-blur) .wall { filter: none !important; }
 .bk-msg.bad { color: #ff453a; }
 .folder .bk-restore-one { flex: none; height: 24px; padding: 0 10px; border: 0; border-radius: 999px; background: var(--field); font-size: 12px; font-weight: 600; }
 .folder .bk-restore-one:hover { background: var(--press); }
+/* очень узкое окно (режим через браузер): кнопки шапки переносятся, а не уезжают за край */
+@media (max-width: 520px) { .head-actions { flex-wrap: wrap; justify-content: flex-end; max-width: 100%; } }
