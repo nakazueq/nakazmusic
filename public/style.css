@@ -522,6 +522,11 @@ kbd { display: inline-block; min-width: 22px; padding: 1px 6px; border-radius: c
 .toast.out { opacity: 0; transform: translateY(6px); transition: opacity .25s, transform .25s; }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } }
 
+/* ---------- уведомление об обновлении ---------- */
+.upd-bar { position: fixed; z-index: 31; right: 16px; top: 16px; max-width: min(460px, calc(100vw - 32px)); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px 10px 16px; border-radius: calc(14px * var(--rs)); background: rgba(30, 30, 32, .92); color: #fff; font-size: 13px; font-weight: 500; box-shadow: 0 8px 28px rgba(0, 0, 0, .35); animation: toast-in .25s; }
+.upd-bar[hidden] { display: none; }
+.upd-bar .ib { color: #fff; }
+
 /* ---------- полосы прокрутки ---------- */
 ::-webkit-scrollbar { width: 12px; height: 12px; }
 ::-webkit-scrollbar-track { background: transparent; }

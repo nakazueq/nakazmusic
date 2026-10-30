@@ -559,6 +559,15 @@
         <div class="brand-icon big"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg></div>
         <div><b>Sonara</b> <span id="ver" class="muted"></span><div class="muted">Лайки Spotify и SoundCloud в одном окне</div></div>
       </div>
+      <h3>Обновления</h3>
+      <div class="setrow flat">
+        <label for="upd-on">Проверять обновления при запуске<small>Не чаще раза в сутки: плеер только смотрит последний релиз на GitHub. Ничего не скачивает и не отправляет, кроме обычного запроса страницы релиза</small></label>
+        <label class="switch"><input id="upd-on" type="checkbox" checked><span></span></label>
+      </div>
+      <div class="bk-actions">
+        <button id="upd-check" class="btn gray" type="button">Проверить сейчас</button>
+        <span id="upd-msg" class="hint"></span>
+      </div>
       <h3>Горячие клавиши</h3>
       <p class="hint">Все сочетания и их переназначение лежат на вкладке «Клавиши». Медиа-клавиши клавиатуры тоже работают.</p>
       <h3>Если что-то не работает</h3>
@@ -583,6 +592,11 @@
   </div>
 </div>
 
+<div id="upd-bar" class="upd-bar" hidden>
+  <span id="upd-text"></span>
+  <button id="upd-open" class="btn" type="button">Открыть страницу релиза</button>
+  <button id="upd-x" class="ib sm" type="button" title="Скрыть" aria-label="Скрыть">✕</button>
+</div>
 <div id="toasts" class="toasts"></div>
 <audio id="audio" preload="none"></audio>
 <script src="/app.js"></script>

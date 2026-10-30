@@ -1131,6 +1131,48 @@ async function searchTracks(src, q) {
 // ---------- резервные копии библиотеки ----------
 // Лайки и плейлисты живут в окне плеера, поэтому JSON копии собирает страница, а сюда присылает на запись.
 // Папка Документы\Sonara\backup; автокопии (файлы с -auto) храним последние 5, ручные не трогаем.
+// ---------- проверка обновлений ----------
+// Репозиторий GitHub с релизами задаётся ТОЛЬКО здесь, в формате «владелец/репозиторий».
+const UPDATE_REPO = 'OWNER/Sonara';
+const UPDATE_EVERY = 24 * 3600e3;
+const updateRepoOk = () => /^[\w.-]+\/[\w.-]+$/.test(UPDATE_REPO) && !/^OWNER\//.test(UPDATE_REPO);
+function verParts(v) {
+  const m = String(v || '').trim().replace(/^v/i, '').match(/^(\d+(?:\.\d+){0,3})/);
+  return m ? m[1].split('.').map(Number) : null;
+}
+function verNewer(a, b) {
+  const x = verParts(a), y = verParts(b);
+  if (!x || !y) return false;
+  for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d > 0; }
+  return false;
+}
+let updateBusy = false;
+// Обычный GET публичной страницы релиза: ни токенов, ни данных пользователя, в запросе только версия программы
+async function updateCheck(force) {
+  if (!updateRepoOk() || updateBusy) return;
+  if (!force && (config.updateCheck === false || Date.now() - (config.updateCheckAt || 0) < UPDATE_EVERY)) return;
+  updateBusy = true;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`, { headers: { 'User-Agent': `Sonara/${VERSION}`, Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error('GitHub ответил ' + r.status);
+    const j = await r.json();
+    const tag = String(j.tag_name || '');
+    const url = String(j.html_url || '');
+    if (!verParts(tag) || !url.startsWith(`https://github.com/${UPDATE_REPO}/`)) throw new Error('непонятный ответ GitHub');
+    config.updateCheckAt = Date.now();
+    config.updateLatest = { tag: tag.slice(0, 40), url };
+    delete config.updateError;
+  } catch (e) {
+    config.updateError = String(e.message || e).slice(0, 120);
+    config.updateCheckAt = Date.now() - UPDATE_EVERY + 3600e3;   // при сбое повторим через час
+    log('проверка обновлений:', config.updateError);
+  } finally { updateBusy = false; writeJson(CONFIG_FILE, config); }
+}
+function updateStatus() {
+  const l = config.updateLatest;
+  return { enabled: config.updateCheck !== false, repoSet: updateRepoOk(), current: VERSION, checkedAt: config.updateCheckAt || 0, error: config.updateError || '', latest: l && verNewer(l.tag, VERSION) ? l : null };
+}
+
 const BACKUP_KEEP = 5;
 const BACKUP_FILE_RE = /^sonara-backup-\d{4}-\d{2}-\d{2}_\d{4}(-auto)?\.json$/;
 function backupDir(sub) {
@@ -1361,6 +1403,14 @@ const server = http.createServer(async (req, res) => {
         if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', ['/select,' + file], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('проводник', e.message); } }
         return send(res, 200, { ok: true, path: file });
       }
+      if (p === '/api/app/update/status') return send(res, 200, updateStatus());
+      if (p === '/api/app/update/check' && req.method === 'POST') { await updateCheck(true); return send(res, 200, updateStatus()); }
+      if (p === '/api/app/update/open' && req.method === 'POST') {
+        const l = updateStatus().latest;
+        if (!l) return send(res, 404, { error: 'Нет новой версии' });
+        if (process.env.SONARA_NO_REVEAL !== '1') openExternal(l.url);
+        return send(res, 200, { ok: true, url: l.url });
+      }
       if (p === '/api/app/backup/status') {
         return send(res, 200, { dir: backupDir(), auto: config.autoBackup !== false, lastAt: config.backupAt || 0, keep: BACKUP_KEEP, files: backupList().slice(0, 12) });
       }
@@ -1401,6 +1451,7 @@ const server = http.createServer(async (req, res) => {
         const b = JSON.parse((await readBody(req)) || '{}');
         if (typeof b.closeToTray === 'boolean' && config.closeToTray !== b.closeToTray) { config.closeToTray = b.closeToTray; writeJson(CONFIG_FILE, config); }
         if (typeof b.autoBackup === 'boolean' && (config.autoBackup !== false) !== b.autoBackup) { config.autoBackup = b.autoBackup; writeJson(CONFIG_FILE, config); }
+        if (typeof b.updateCheck === 'boolean' && (config.updateCheck !== false) !== b.updateCheck) { config.updateCheck = b.updateCheck; writeJson(CONFIG_FILE, config); if (b.updateCheck) updateCheck(false); }
         if (typeof b.mediaKeys === 'boolean' && (config.mediaKeys !== false) !== b.mediaKeys) { config.mediaKeys = b.mediaKeys; writeJson(CONFIG_FILE, config); mediaKeys.starts = 0; mediaKeysApply(); }
         return send(res, 200, { ok: true });
       }
@@ -1552,6 +1603,7 @@ if (process.env.PLAYER_TEST) {
   }
   server.listen(PORT, HOST, () => {
     mediaKeysApply();
+    setTimeout(() => updateCheck(false), 8000).unref();
     log(`сервер: ${URL_APP}`);
     if (!IS_EXE && !process.env.PLAYER_NATIVE_TEST) return;
     if (startNative()) { log('режим: своё окно'); return; }

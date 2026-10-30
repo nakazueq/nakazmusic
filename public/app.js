@@ -3771,6 +3771,39 @@ seekEl.addEventListener('input', () => {
 seekEl.addEventListener('change', () => { state.seeking = false; seek((seekEl.value / 1000) * state.dur); });
 document.addEventListener('click', () => { if (sp.player) sp.player.activateElement().catch(() => {}); }, { capture: true });
 
+/* ===================== Проверка обновлений ===================== */
+// Сама проверка идёт на сервере (раз в сутки). Здесь только показ уведомления и кнопки.
+function updShow(s) {
+  const tag = s && s.latest && s.latest.tag;
+  const seen = LS.get('upd_seen');
+  $('upd-bar').hidden = !tag || seen === tag;
+  if (tag) $('upd-text').textContent = `Вышла новая версия ${tag} (у вас ${s.current})`;
+}
+async function updPoll() {
+  try { updShow(await api('/api/app/update/status', { headers: { 'X-Player': '1' } })); } catch {}
+}
+$('upd-open').addEventListener('click', () => { appCmd('update/open'); $('upd-bar').hidden = true; });
+$('upd-x').addEventListener('click', () => {
+  const t = $('upd-text').textContent.match(/версия (\S+)/);
+  if (t) LS.set('upd_seen', t[1]);
+  $('upd-bar').hidden = true;
+});
+$('upd-on').addEventListener('change', (e) => appCmd('settings', { updateCheck: e.target.checked }));
+$('upd-check').addEventListener('click', async () => {
+  const msg = $('upd-msg');
+  msg.textContent = 'Проверяю…';
+  try {
+    const s = await (await fetch('/api/app/update/check', { method: 'POST', headers: { 'X-Player': '1' } })).json();
+    if (!s.repoSet) msg.textContent = 'Репозиторий релизов пока не задан';
+    else if (s.error) msg.textContent = 'Не получилось проверить: ' + s.error;
+    else if (s.latest) { msg.textContent = `Есть новая версия ${s.latest.tag}`; LS.set('upd_seen', ''); updShow(s); }
+    else msg.textContent = `У вас последняя версия (${s.current})`;
+  } catch (e) { msg.textContent = 'Не получилось проверить: ' + e.message; }
+});
+api('/api/app/update/status', { headers: { 'X-Player': '1' } }).then((s) => { $('upd-on').checked = !!s.enabled; }).catch(() => {});
+setTimeout(updPoll, 14000);
+setInterval(updPoll, 6 * 3600e3);
+
 /* ===================== Копия библиотеки ===================== */
 const BK_FORMAT = 'sonara-backup';
 const BK_MAX_BYTES = 40e6;
