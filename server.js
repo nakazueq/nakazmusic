@@ -48,10 +48,23 @@ try {
 
 // ---------- лог в файл (консоли у exe нет) ----------
 try { if (fs.statSync(LOG_FILE).size > 512 * 1024) fs.renameSync(LOG_FILE, LOG_FILE + '.old'); } catch {}
+// в лог не должны попадать токены, пароли и cookies: вычищаем типичные формы (Bearer, access_token=…, Cookie: …, ключи в ссылках)
+function redact(s) {
+  return s
+    .replace(/(Bearer\s+)[\w.~+\/-]{8,}=*/gi, '$1***')
+    .replace(/((?:access_token|refresh_token|token|client_secret|password|passwd|pwd|api[_-]?key|key|sig|signature|cookie|authorization)["']?\s*[=:]\s*["']?)[^\s"'&,;}]{6,}/gi, '$1***')
+    .replace(/(Set-Cookie|Cookie)\s*:\s*[^\n]+/gi, '$1: ***');
+}
+let logWrites = 0;
 function log(...parts) {
-  const text = parts.map((p) => (p instanceof Error ? p.stack || p.message : typeof p === 'string' ? p : JSON.stringify(p))).join(' ');
-  const line = `[${new Date().toISOString()}] ${text}\n`;
-  try { fs.appendFileSync(LOG_FILE, line); } catch {}
+  let text;
+  try { text = parts.map((p) => (p instanceof Error ? p.stack || p.message : typeof p === 'string' ? p : JSON.stringify(p))).join(' '); } catch { text = '(не удалось записать сообщение)'; }
+  const line = `[${new Date().toISOString()}] ${redact(text).slice(0, 4000)}\n`;
+  try {
+    // ротация и во время работы, не только при старте: один файл не больше 512 КБ, плюс один старый
+    if (++logWrites % 50 === 0 && fs.statSync(LOG_FILE).size > 512 * 1024) fs.renameSync(LOG_FILE, LOG_FILE + '.old');
+    fs.appendFileSync(LOG_FILE, line);
+  } catch {}
   if (!IS_EXE) process.stdout.write(line);
 }
 process.on('uncaughtException', (e) => log('uncaughtException', e));
@@ -72,7 +85,20 @@ function trackKid(child) {
 }
 function killKids() { for (const c of liveKids) { try { c.kill(); } catch {} } liveKids.clear(); }
 process.on('exit', killKids);
-const config = readJson(CONFIG_FILE, {});
+// настройки страницы: если файл повреждён (не JSON, не объект), откладываем его в сторону и начинаем с чистого, а не падаем
+function readStore() {
+  let raw;
+  try { raw = fs.readFileSync(STORE_FILE, 'utf8'); } catch { return {}; }
+  if (!raw.trim()) return {};
+  try {
+    const v = JSON.parse(raw.replace(/^﻿/, ''));
+    if (v && typeof v === 'object' && !Array.isArray(v)) return v;
+  } catch {}
+  try { fs.renameSync(STORE_FILE, STORE_FILE + '.broken-' + Date.now()); log('store.json повреждён, отложен в сторону'); } catch {}
+  return {};
+}
+const readCfg = () => { const v = readJson(CONFIG_FILE, {}); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; };
+const config = readCfg();
 const discord = new DiscordPresence(log);
 discord.configure(config.discordOn, config.discordId);
 const localLib = new Library(path.join(DATA_DIR, 'local-cache.json'));
@@ -1266,7 +1292,7 @@ async function fetchArt(raw) {
   const type = String(r.headers.get('content-type') || '');
   if (!/^image\//i.test(type)) { const e = new Error('not an image'); e.status = 415; throw e; }
   const buf = Buffer.from(await r.arrayBuffer());
-  if (buf.length > 6 * 1024 * 1024) { const e = new Error('too large'); e.status = 413; throw e; }
+  if (buf.length > 3 * 1024 * 1024) { const e = new Error('too large'); e.status = 413; throw e; }
   const art = { type, buf };
   artCache.set(u.href, art);
   if (artCache.size > 40) artCache.delete(artCache.keys().next().value);
@@ -1280,7 +1306,7 @@ const MIME = {
 };
 const staticCache = new Map();
 function send(res, code, body, type = 'application/json; charset=utf-8') {
-  res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' });
+  res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY' });
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 }
 function readBody(req, limit = 1e6) {
@@ -1297,6 +1323,10 @@ const server = http.createServer(async (req, res) => {
   let u;
   try { u = new URL(req.url, URL_APP); } catch { return send(res, 400, { error: 'bad url' }); }
   const p = u.pathname;
+  // защита от DNS-rebinding и чужих сайтов: обслуживаем только запросы к своему адресу, и API не отвечает на cross-site запросы
+  const hostHdr = String(req.headers.host || '').toLowerCase();
+  if (hostHdr !== `127.0.0.1:${PORT}` && hostHdr !== `localhost:${PORT}`) return send(res, 403, { error: 'forbidden' });
+  if (p.startsWith('/api/') && !sameOrigin(req)) return send(res, 403, { error: 'forbidden' });
   if (!(p === '/api/ping' && u.searchParams.get('probe'))) touch();
 
   try {
@@ -1479,10 +1509,11 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { enabled: config.mediaKeys !== false, ...mediaKeys.status() });
       }
       if (p === '/api/app/store') {
-        if (req.method === 'GET') { res.setHeader('X-Safe-Css', SAFE_CSS ? '1' : '0'); return send(res, 200, readJson(STORE_FILE, {})); }
+        if (req.method === 'GET') { res.setHeader('X-Safe-Css', SAFE_CSS ? '1' : '0'); return send(res, 200, readStore()); }
         if (req.method !== 'POST') return send(res, 405, { error: 'method' });
         const patch = JSON.parse((await readBody(req)) || '{}');
-        const store = readJson(STORE_FILE, {});
+        if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return send(res, 400, { error: 'Некорректный запрос' });
+        const store = readStore();
         for (const [k, v] of Object.entries(patch)) {
           if (!STORE_KEYS.has(k)) continue;
           if (v == null) delete store[k]; else store[k] = String(v);
@@ -1613,10 +1644,35 @@ server.on('error', async (e) => {
   process.exit(1);
 });
 
+// Иногда окно не открывается (WebView2 завис при старте). Если за 10 секунд страница не обратилась к серверу ни разу,
+// перезапускаем программу (до двух раз), а если и это не помогло, открываем плеер в браузере.
+const RESTARTS = Number(process.env.SONARA_RESTARTS) || 0;
+function relaunch() {
+  log(`окно не появилось: перезапуск ${RESTARTS + 1} из 2`);
+  try {
+    spawn(process.execPath, IS_EXE ? process.argv.slice(2) : process.argv.slice(1), { detached: true, stdio: 'ignore', env: { ...process.env, SONARA_RESTARTS: String(RESTARTS + 1) } }).unref();
+  } catch (e) { log('перезапуск не вышел', e); return false; }
+  shuttingDown = true;
+  try { mediaKeys.stop(); } catch {}
+  killKids();
+  setTimeout(() => process.exit(0), 200);
+  return true;
+}
+function windowGuard(isNative) {
+  setTimeout(() => {
+    if ((lastSeen && !process.env.SONARA_TEST_RELAUNCH) || shuttingDown) return;
+    log('окно не появилось за 10 секунд');
+    if ((isNative || process.env.SONARA_TEST_RELAUNCH) && RESTARTS < 2 && (IS_EXE || process.env.SONARA_TEST_RELAUNCH)) { if (relaunch()) return; }
+    if (!isNative) { openWindow(); return; }
+    if (isNative && RESTARTS >= 2) { log('родное окно так и не открылось, открываю в браузере'); openWindow(); startWatchdog(); }
+  }, process.env.SONARA_TEST_RELAUNCH ? 3000 : 10000).unref();
+}
+
 if (process.env.PLAYER_TEST) {
   module.exports = { geniusExtract, cleanTitle, splitArtists, norm, decodeEntities };
 } else (async () => {
   log(`старт v${VERSION}`, IS_EXE ? 'exe' : 'node', process.version);
+  if (RESTARTS) await new Promise((r) => setTimeout(r, 1800));   // перезапуск после зависшего окна: ждём, пока старый процесс освободит порт
   if (await isAlreadyRunning()) {
     log('плеер уже запущен, показываю его окно');
     await new Promise((resolve) => {
@@ -1633,9 +1689,10 @@ if (process.env.PLAYER_TEST) {
     setTimeout(() => updateCheck(false), 8000).unref();
     log(`сервер: ${URL_APP}`);
     if (!IS_EXE && !process.env.PLAYER_NATIVE_TEST) return;
-    if (startNative()) { log('режим: своё окно'); return; }
+    if (startNative()) { log('режим: своё окно'); windowGuard(true); return; }
     log('режим: через браузер');
     openWindow();
     startWatchdog();
+    windowGuard(false);
   });
 })();

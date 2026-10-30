@@ -61,6 +61,7 @@ class DiscordPresence {
     this.buf = Buffer.concat([this.buf, d]);
     while (this.buf.length >= 8) {
       const op = this.buf.readInt32LE(0), len = this.buf.readInt32LE(4);
+      if (len < 0 || len > 1e6) { this.log('discord: странный ответ, отключаюсь'); this.disconnect(); this.retryAt = Date.now() + 60000; return; }
       if (this.buf.length < 8 + len) break;
       let msg = {};
       try { msg = JSON.parse(this.buf.toString('utf8', 8, 8 + len)); } catch {}

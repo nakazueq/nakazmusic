@@ -65,6 +65,7 @@ class MediaKeys {
       c = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', Buffer.from(PS, 'utf16le').toString('base64')], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (e) { this.log('медиаклавиши не запустились', e.message); return; }
     this.child = c;
+    process.once('exit', () => { try { c.kill(); } catch {} });   // при выходе помощник не должен остаться висеть
     let buf = '';
     c.stdout.setEncoding('utf8');
     c.stdout.on('data', (d) => {

@@ -2346,6 +2346,11 @@ function dialog({ title, text = '', value = null, ok = 'OK', danger = false }) {
 /* ===================== Плейлисты ===================== */
 let playlists = LS.json('playlists', []);
 if (!Array.isArray(playlists)) playlists = [];
+// после сбоя или правки руками в плейлистах могло оказаться что угодно: оставляем только годное, чтобы список не ломал отрисовку
+playlists = playlists.filter((p) => p && typeof p === 'object' && p.id != null && Array.isArray(p.tracks)).map((p) => ({
+  ...p, id: String(p.id), name: String(p.name == null ? 'Плейлист' : p.name).slice(0, 60) || 'Плейлист',
+  tracks: p.tracks.filter((t) => t && typeof t === 'object' && ['sp', 'sc', 'yt', 'local'].includes(t.src) && t.id != null).map((t) => ({ ...t, id: String(t.id), title: String(t.title == null ? 'Без названия' : t.title) || 'Без названия', artist: String(t.artist == null ? '' : t.artist) })),
+}));
 const plGet = (id) => playlists.find((p) => p.id === id) || null;
 function savePlaylists() { LS.set('playlists', JSON.stringify(playlists)); renderSidebarPlaylists(); }
 function plSlim(t) {
