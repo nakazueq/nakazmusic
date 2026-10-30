@@ -1780,6 +1780,7 @@ function renderHead() {
   $('act-shuffle').disabled = !n || state.view === 'radio';
   $('act-refresh').classList.toggle('spin', !!loading);
   $('act-refresh').hidden = isPl;
+  $('act-m3u').hidden = !isPl;
   $('act-rename').hidden = !isPl;
   $('act-delete').hidden = !isPl;
   $('act-refresh').title = state.view === 'recs' ? 'Подобрать заново' : state.view === 'radio' ? 'Подгрузить ещё' : 'Обновить лайки';
@@ -2747,6 +2748,7 @@ function openSettings(tab = 'look') { $('settings').hidden = false; setTab(tab);
 function closeSettings() { $('settings').hidden = true; }
 function setTab(tab) {
   if (tab === 'keys') { renderKeys(); renderMediaKeysStatus(); }
+  if (tab === 'backup') backupRefresh();
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
   document.querySelectorAll('.sheet section').forEach((s) => { s.hidden = s.dataset.pane !== tab; });
 }
@@ -3768,6 +3770,224 @@ seekEl.addEventListener('input', () => {
 });
 seekEl.addEventListener('change', () => { state.seeking = false; seek((seekEl.value / 1000) * state.dur); });
 document.addEventListener('click', () => { if (sp.player) sp.player.activateElement().catch(() => {}); }, { capture: true });
+
+/* ===================== Копия библиотеки ===================== */
+const BK_FORMAT = 'sonara-backup';
+const BK_MAX_BYTES = 40e6;
+const BK_ID_RE = { sp: /^[A-Za-z0-9]{10,30}$/, sc: /^\d{1,20}$/, yt: /^[\w-]{11}$/, local: /^[\w-]{1,80}$/ };
+const BK_URL_HOSTS = new Set(['open.spotify.com', 'music.youtube.com', 'www.youtube.com', 'youtube.com', 'soundcloud.com', 'www.soundcloud.com']);
+const BK_COVER_RE = /^https:\/\/([\w-]+\.)*(scdn\.co|spotifycdn\.com|sndcdn\.com|ytimg\.com|ggpht\.com|googleusercontent\.com)\/[^\s"'<>]{1,380}$/i;
+const BK_LIKE_NAMES = { sp: 'Лайки Spotify (копия)', sc: 'Лайки SoundCloud (копия)', yt: 'Лайки YouTube Music (копия)' };
+const bkClean = (s, max) => String(s).replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, max);
+const hdr = { 'X-Player': '1' };
+function bkIso(at) { return at > 0 ? new Date(at).toISOString() : undefined; }
+// трек в файле копии: только нужные поля, без обложек-картинок и прочего
+function bkTrackOut(t, src) {
+  const s = src || t.src;
+  const o = { src: s, id: String(t.id), title: String(t.title || ''), artist: String(t.artist || '') };
+  if (t.album) o.album = String(t.album);
+  const url = s === 'sp' ? `https://open.spotify.com/track/${t.id}` : s === 'yt' ? `https://music.youtube.com/watch?v=${t.id}` : s === 'sc' ? t.url : '';
+  if (url && /^https:\/\//.test(url)) o.url = url;
+  if (s === 'sp') o.uri = `spotify:track:${t.id}`;
+  if (t.duration > 0) o.duration = Math.round(t.duration);
+  const added = bkIso(t.at);
+  if (added) o.added = added;
+  const cv = t.art || t.cover || '';
+  if (BK_COVER_RE.test(cv)) o.cover = cv;
+  return o;
+}
+function buildBackup() {
+  const doc = {
+    format: BK_FORMAT, version: 1, createdAt: new Date().toISOString(), app: 'Sonara ' + (appInfo.version || ''),
+    likes: { sp: state.lib.sp.map((t) => bkTrackOut(t, 'sp')), sc: state.lib.sc.map((t) => bkTrackOut(t, 'sc')), yt: state.lib.yt.map((t) => bkTrackOut(t, 'yt')) },
+    playlists: playlists.map((p) => ({ name: p.name, tracks: p.tracks.filter((t) => BK_ID_RE[t.src] && t.id != null).map((t) => bkTrackOut(t)) })),
+    connections: {},
+  };
+  const scUser = LS.get('sc_user');
+  if (scUser && /^[\w\-.]{1,100}$/.test(scUser)) doc.connections.sc_user = scUser;
+  if (ytLists.length) doc.connections.yt_lists = ytLists.map((l) => ({ id: l.id, name: l.name || '', cookies: !!l.cookies }));
+  const counts = { sp: doc.likes.sp.length, sc: doc.likes.sc.length, yt: doc.likes.yt.length, playlists: doc.playlists.length, plTracks: doc.playlists.reduce((a, p) => a + p.tracks.length, 0) };
+  counts.total = counts.sp + counts.sc + counts.yt + counts.playlists;
+  return { doc, json: JSON.stringify(doc), counts };
+}
+function bkValidateTrack(t, where, only) {
+  const bad = (m) => ({ error: `${where}: ${m}` });
+  if (!t || typeof t !== 'object' || Array.isArray(t)) return bad('ожидается объект');
+  for (const k of Object.keys(t)) if (!['src', 'id', 'title', 'artist', 'album', 'url', 'uri', 'duration', 'added', 'cover'].includes(k)) return bad(`неизвестное поле «${k}»`);
+  if (typeof t.src !== 'string' || !BK_ID_RE[t.src] || (only && t.src !== only)) return bad('источник должен быть sp, sc, yt' + (only ? '' : ' или local') + (only ? ` (здесь ${only})` : ''));
+  if (typeof t.id !== 'string' || !BK_ID_RE[t.src].test(t.id)) return bad('id трека не подходит к источнику');
+  if (typeof t.title !== 'string' || !t.title.trim() || t.title.length > 300) return bad('название от 1 до 300 символов');
+  if (typeof t.artist !== 'string' || t.artist.length > 300) return bad('артист до 300 символов');
+  const o = { src: t.src, id: t.id, title: bkClean(t.title, 300), artist: bkClean(t.artist, 300) };
+  if ('album' in t) { if (typeof t.album !== 'string' || t.album.length > 300) return bad('альбом до 300 символов'); if (t.album) o.album = bkClean(t.album, 300); }
+  if ('url' in t) {
+    let u = null;
+    try { u = typeof t.url === 'string' && t.url.length <= 600 ? new URL(t.url) : null; } catch {}
+    if (!u || u.protocol !== 'https:' || !BK_URL_HOSTS.has(u.hostname) || u.username || u.password) return bad('ссылка должна быть https на Spotify, SoundCloud или YouTube');
+    o.url = u.href;
+  }
+  if ('uri' in t) { if (t.src !== 'sp' || typeof t.uri !== 'string' || t.uri !== `spotify:track:${t.id}`) return bad('uri подходит только Spotify и должен совпадать с id'); o.uri = t.uri; }
+  if ('duration' in t) { if (!isNum(t.duration, 0, 36e6)) return bad('длительность: число миллисекунд'); o.duration = Math.round(t.duration); }
+  if ('added' in t) { if (typeof t.added !== 'string' || !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(t.added) || !Number.isFinite(Date.parse(t.added))) return bad('дата в формате ISO'); o.added = t.added; }
+  if ('cover' in t) { if (typeof t.cover !== 'string' || !BK_COVER_RE.test(t.cover)) return bad('обложка: https-ссылка на CDN Spotify, SoundCloud или YouTube'); o.cover = t.cover; }
+  return { track: o };
+}
+// файл копии: только известные поля и допустимые значения, иначе отказ с понятной причиной (как у импорта тем)
+function validateBackup(text) {
+  if (text.length > BK_MAX_BYTES) return { error: 'Файл слишком большой для копии библиотеки' };
+  let d;
+  try { d = JSON.parse(text.replace(/^﻿/, '')); } catch { return { error: 'Файл повреждён: это не JSON' }; }
+  if (!d || typeof d !== 'object' || Array.isArray(d) || d.format !== BK_FORMAT) return { error: 'Это не копия библиотеки Sonara' };
+  if (d.version !== 1) return { error: 'Версия копии не поддерживается' };
+  for (const k of Object.keys(d)) if (!['format', 'version', 'createdAt', 'app', 'likes', 'playlists', 'connections'].includes(k)) return { error: `В файле есть лишнее поле «${k}»` };
+  if (typeof d.createdAt !== 'string' || !Number.isFinite(Date.parse(d.createdAt))) return { error: 'У копии нет корректной даты создания' };
+  if ('app' in d && (typeof d.app !== 'string' || d.app.length > 40)) return { error: 'Поле app: строка до 40 символов' };
+  const out = { createdAt: d.createdAt, likes: { sp: [], sc: [], yt: [] }, playlists: [], connections: {} };
+  if ('likes' in d) {
+    if (!d.likes || typeof d.likes !== 'object' || Array.isArray(d.likes)) return { error: 'likes: ожидается объект' };
+    for (const [k, list] of Object.entries(d.likes)) {
+      if (!['sp', 'sc', 'yt'].includes(k)) return { error: `likes: неизвестный источник «${k}»` };
+      if (!Array.isArray(list) || list.length > 60000) return { error: `likes.${k}: ожидается список до 60000 треков` };
+      for (let i = 0; i < list.length; i++) { const r = bkValidateTrack(list[i], `likes.${k}[${i}]`, k); if (r.error) return r; out.likes[k].push(r.track); }
+    }
+  }
+  if ('playlists' in d) {
+    if (!Array.isArray(d.playlists) || d.playlists.length > 300) return { error: 'playlists: ожидается список до 300 плейлистов' };
+    for (let i = 0; i < d.playlists.length; i++) {
+      const p = d.playlists[i];
+      if (!p || typeof p !== 'object' || Array.isArray(p)) return { error: `playlists[${i}]: ожидается объект` };
+      for (const k of Object.keys(p)) if (k !== 'name' && k !== 'tracks') return { error: `playlists[${i}]: неизвестное поле «${k}»` };
+      if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > 60) return { error: `playlists[${i}]: название от 1 до 60 символов` };
+      if (!Array.isArray(p.tracks) || p.tracks.length > 30000) return { error: `playlists[${i}]: треков не больше 30000` };
+      const tracks = [];
+      for (let j = 0; j < p.tracks.length; j++) { const r = bkValidateTrack(p.tracks[j], `playlists[${i}].tracks[${j}]`); if (r.error) return r; tracks.push(r.track); }
+      out.playlists.push({ name: bkClean(p.name, 60), tracks });
+    }
+  }
+  if ('connections' in d) {
+    const c = d.connections;
+    if (!c || typeof c !== 'object' || Array.isArray(c)) return { error: 'connections: ожидается объект' };
+    for (const k of Object.keys(c)) if (k !== 'sc_user' && k !== 'yt_lists') return { error: `connections: неизвестное поле «${k}»` };
+    if ('sc_user' in c) { if (typeof c.sc_user !== 'string' || !/^[\w\-.]{1,100}$/.test(c.sc_user)) return { error: 'connections.sc_user: ник SoundCloud' }; out.connections.sc_user = c.sc_user; }
+    if ('yt_lists' in c) {
+      if (!Array.isArray(c.yt_lists) || c.yt_lists.length > 12) return { error: 'connections.yt_lists: не больше 12 плейлистов' };
+      out.connections.yt_lists = [];
+      for (const l of c.yt_lists) {
+        if (!l || typeof l !== 'object' || Array.isArray(l)) return { error: 'connections.yt_lists: ожидается объект' };
+        for (const k of Object.keys(l)) if (!['id', 'name', 'cookies'].includes(k)) return { error: `connections.yt_lists: неизвестное поле «${k}»` };
+        if (typeof l.id !== 'string' || !/^[\w-]{2,60}$/.test(l.id)) return { error: 'connections.yt_lists: id плейлиста' };
+        if ('name' in l && (typeof l.name !== 'string' || l.name.length > 80)) return { error: 'connections.yt_lists: название до 80 символов' };
+        if ('cookies' in l && typeof l.cookies !== 'boolean') return { error: 'connections.yt_lists: cookies true или false' };
+        out.connections.yt_lists.push({ id: l.id, name: bkClean(l.name || '', 80), cookies: !!l.cookies });
+      }
+    }
+  }
+  const n = out.likes.sp.length + out.likes.sc.length + out.likes.yt.length + out.playlists.length;
+  if (!n) return { error: 'В копии нет ни лайков, ни плейлистов' };
+  return { data: out };
+}
+// трек из копии -> запись плейлиста: обложки у YouTube восстанавливаем по id
+function bkToSlim(t) {
+  const o = { src: t.src, id: t.id, title: t.title, artist: t.artist };
+  if (t.album) o.album = t.album;
+  if (t.uri) o.uri = t.uri;
+  if (t.url) o.url = t.url;
+  if (t.duration) o.duration = t.duration;
+  const cv = t.cover || (t.src === 'yt' ? `https://i.ytimg.com/vi/${t.id}/mqdefault.jpg` : '');
+  if (cv) { o.cover = cv; o.art = cv; }
+  return o;
+}
+function bkMsg(text, bad) { const el = $('bk-msg'); el.textContent = text || ''; el.hidden = !text; el.classList.toggle('bad', !!bad); }
+const bkFmtDate = (ms) => new Date(ms).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const bkFmtSize = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + ' МБ' : Math.max(1, Math.round(b / 1024)) + ' КБ');
+async function backupRefresh() {
+  try {
+    const s = await api('/api/app/backup/status', { headers: hdr });
+    $('bk-auto').checked = !!s.auto;
+    $('bk-state').textContent = s.lastAt ? 'Последняя: ' + bkFmtDate(s.lastAt) : 'Копий ещё нет';
+    $('bk-state').className = 'state' + (s.lastAt ? ' ok' : '');
+    const box = $('bk-files');
+    box.replaceChildren(...s.files.map((f) => {
+      const d = document.createElement('div');
+      d.className = 'folder';
+      d.innerHTML = '<span></span><button class="bk-restore-one" type="button">Восстановить</button>';
+      d.querySelector('span').textContent = `${bkFmtDate(f.at)} · ${f.auto ? 'авто' : 'вручную'} · ${bkFmtSize(f.size)}`;
+      d.querySelector('span').title = f.name;
+      d.querySelector('button').addEventListener('click', async () => {
+        try { restoreFlow(await (await fetch('/api/app/backup/file?name=' + encodeURIComponent(f.name), { headers: hdr })).text()); } catch (e) { bkMsg('Не получилось прочитать файл: ' + e.message, true); }
+      });
+      return d;
+    }));
+    if (!s.files.length) box.innerHTML = '<div class="hint">Пока пусто</div>';
+  } catch (e) { $('bk-state').textContent = 'Недоступно'; }
+}
+async function backupSave(auto) {
+  const b = buildBackup();
+  if (!b.counts.total) { if (!auto) bkMsg('Пока нечего сохранять: нет ни лайков, ни плейлистов', true); return null; }
+  const r = await api('/api/app/backup/save', { method: 'POST', headers: { ...hdr, 'Content-Type': 'application/json' }, body: JSON.stringify({ json: b.json, auto }) });
+  const what = `Spotify ${b.counts.sp}, SoundCloud ${b.counts.sc}, YouTube Music ${b.counts.yt}, плейлистов ${b.counts.playlists}`;
+  if (auto) toast('Автокопия библиотеки сохранена');
+  else bkMsg(`Копия сохранена: ${r.dir}\\${r.name}. В ней ${what}.`, false);
+  backupRefresh();
+  return r;
+}
+// раз в неделю (и при запуске, если пропустили), если автокопия включена и в библиотеке что-то есть
+async function backupAutoCheck() {
+  try {
+    const s = await api('/api/app/backup/status', { headers: hdr });
+    if (!s.auto || Date.now() - (s.lastAt || 0) < 7 * 86400e3) return;
+    await backupSave(true);
+  } catch (e) { console.warn('автокопия', e); }
+}
+async function restoreFlow(text) {
+  const v = validateBackup(text);
+  if (v.error) { bkMsg('Копия не принята: ' + v.error, true); toast('Файл копии не подошёл'); return; }
+  const d = v.data;
+  const plTracks = d.playlists.reduce((a, p) => a + p.tracks.length, 0);
+  const lines = [`Копия от ${bkFmtDate(Date.parse(d.createdAt))}.`, `Лайки: Spotify ${d.likes.sp.length}, SoundCloud ${d.likes.sc.length}, YouTube Music ${d.likes.yt.length}.`, `Плейлистов: ${d.playlists.length} (треков ${plTracks}).`,
+    'Ничего не удалится: плейлисты с тем же названием дополнятся, остальные появятся новыми, лайки станут плейлистами «Лайки … (копия)».'];
+  const ok = await dialog({ title: 'Восстановить из копии?', text: lines.join('\n'), ok: 'Восстановить' });
+  if (!ok) return;
+  const st = { created: 0, merged: 0, added: 0 };
+  const fill = (name, list) => {
+    let p = playlists.find((x) => x.name.toLowerCase() === name.toLowerCase());
+    if (!p) { p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name, tracks: [] }; playlists.push(p); st.created++; } else st.merged++;
+    const have = new Set(p.tracks.map((t) => t.src + ':' + t.id));
+    for (const t of list) { const k = t.src + ':' + t.id; if (have.has(k)) continue; have.add(k); p.tracks.push(bkToSlim(t)); st.added++; }
+  };
+  for (const p of d.playlists) fill(p.name, p.tracks);
+  for (const k of ['sp', 'sc', 'yt']) if (d.likes[k].length) fill(BK_LIKE_NAMES[k], d.likes[k]);
+  savePlaylists();
+  // подключения возвращаем только если они не заданы: чужие настройки не перезаписываем
+  const c = d.connections;
+  if (c.sc_user && !LS.get('sc_user')) { LS.set('sc_user', c.sc_user); $('sc-user').value = c.sc_user; scLoadLikes(false); }
+  if (c.yt_lists) {
+    let added = 0;
+    for (const l of c.yt_lists) if (ytLists.length < 12 && !ytLists.some((x) => x.id === l.id)) { ytLists.push({ id: l.id, name: l.name, cookies: l.cookies, n: 0 }); added++; }
+    if (added) { saveYtLists(); ytLoadAll(false); }
+  }
+  if (state.view.startsWith('pl:')) render();
+  bkMsg(`Восстановлено: новых плейлистов ${st.created}, дополнено ${st.merged}, добавлено треков ${st.added}.`, false);
+  toast('Копия восстановлена');
+}
+async function exportM3u(list) {
+  const pls = list.filter((p) => p.tracks.length).map((p) => ({ name: p.name, tracks: p.tracks.map((t) => ({ src: t.src, id: t.id, title: t.title, artist: t.artist, duration: t.duration, url: t.url })) }));
+  if (!pls.length) { toast('В плейлисте нет треков'); bkMsg('Нет плейлистов с треками для экспорта', true); return; }
+  try {
+    const r = await api('/api/app/backup/m3u', { method: 'POST', headers: { ...hdr, 'Content-Type': 'application/json' }, body: JSON.stringify({ playlists: pls }) });
+    bkMsg(`M3U сохранено: файлов ${r.files}, треков ${r.tracks}. Папка: ${r.dir}`, false);
+    toast(`M3U: файлов ${r.files}, треков ${r.tracks}`, 5000);
+  } catch (e) { bkMsg('Не получилось выгрузить M3U: ' + e.message, true); toast('M3U: ' + e.message); }
+}
+$('bk-save').addEventListener('click', async () => { try { await backupSave(false); } catch (e) { bkMsg('Не получилось сохранить: ' + e.message, true); } });
+$('bk-restore').addEventListener('click', () => $('bk-file').click());
+$('bk-file').addEventListener('change', async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) restoreFlow(await f.text()); });
+$('bk-auto').addEventListener('change', (e) => appCmd('settings', { autoBackup: e.target.checked }));
+$('bk-open').addEventListener('click', () => appCmd('backup/reveal'));
+$('bk-m3u').addEventListener('click', () => exportM3u(playlists));
+$('act-m3u').addEventListener('click', () => { const p = curPl(); if (p) exportM3u([p]); });
+setTimeout(backupAutoCheck, 25000);
+setInterval(backupAutoCheck, 6 * 3600e3);
 
 /* ===================== Таймер сна ===================== */
 // mode 'time': пауза через заданное время; mode 'track': пауза в конце играющего сейчас трека (вместо следующего).

@@ -135,6 +135,7 @@
           <div class="head-actions">
             <button id="act-play" class="pill accent"><svg viewBox="0 0 24 24"><path d="M8 5.6v12.8a1 1 0 0 0 1.53.85l10.2-6.4a1 1 0 0 0 0-1.7L9.53 4.75A1 1 0 0 0 8 5.6z" fill="currentColor"/></svg>Слушать</button>
             <button id="act-shuffle" class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3c2 0 3.2.9 4.3 2.6l2.4 4.8C13.8 16.1 15 17 17 17h4M3 17h3c1.2 0 2.2-.4 3-1.1M14 8.1c.8-.7 1.8-1.1 3-1.1h4M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5"/></svg>Перемешать</button>
+            <button id="act-m3u" class="pill" title="Выгрузить этот плейлист в файл M3U" hidden>M3U</button>
             <button id="act-rename" class="pill icon-only" title="Переименовать" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg></button>
             <button id="act-delete" class="pill icon-only" title="Удалить плейлист" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/></svg></button>
             <button id="act-refresh" class="pill icon-only" title="Обновить"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5A8 8 0 1 1 17.7 6M20 4v5h-5"/></svg></button>
@@ -382,6 +383,7 @@
         <button data-tab="look" class="on">Оформление</button>
         <button data-tab="acc">Аккаунты</button>
         <button data-tab="keys">Клавиши</button>
+        <button data-tab="backup">Копии</button>
         <button data-tab="about">О программе</button>
       </div>
       <button class="x" id="close-settings" title="Закрыть">
@@ -526,20 +528,39 @@
       <div id="kb-global-state" class="kb-global-state"></div>
     </section>
 
+    <section data-pane="backup" hidden>
+      <div class="card">
+        <div class="card-head"><b>Копия библиотеки</b><span id="bk-state" class="state"></span></div>
+        <p class="hint">Лайки Spotify, SoundCloud и YouTube Music и все плейлисты одним файлом JSON: название, артист, источник, ссылка или id и дата. Файлы лежат в Документы\Sonara\backup.</p>
+        <div class="field-row bk-actions">
+          <button id="bk-save" class="btn" type="button">Сохранить копию библиотеки</button>
+          <button id="bk-restore" class="btn gray" type="button">Восстановить из копии…</button>
+          <input id="bk-file" type="file" accept=".json,application/json" hidden>
+        </div>
+        <div class="setrow flat">
+          <label for="bk-auto">Автокопия раз в неделю<small>Хранятся последние 5 автоматических копий, копии, сохранённые вручную, не удаляются</small></label>
+          <label class="switch"><input id="bk-auto" type="checkbox" checked><span></span></label>
+        </div>
+        <div id="bk-msg" class="bk-msg" hidden></div>
+        <h3>Последние копии</h3>
+        <div id="bk-files" class="folders"></div>
+        <button id="bk-open" class="btn gray bk-open" type="button">Открыть папку с копиями</button>
+        <p class="hint">Восстановление ничего не удаляет и не меняет в аккаунтах: плейлисты с тем же названием дополняются недостающими треками, остальные создаются заново, а лайки каждого сервиса появляются отдельными плейлистами «Лайки … (копия)». Сами лайки в Spotify и SoundCloud плеер вернуть не может, потому что не имеет права их менять.</p>
+      </div>
+      <div class="card">
+        <div class="card-head"><b>Плейлисты в M3U</b></div>
+        <p class="hint">Каждый плейлист отдельным файлом .m3u8 в Документы\Sonara\backup\m3u: ссылки на треки Spotify, SoundCloud и YouTube Music, а для файлов с компа путь к файлу. Один плейлист можно выгрузить кнопкой «M3U» в его шапке.</p>
+        <button id="bk-m3u" class="btn" type="button">Экспортировать все плейлисты в M3U</button>
+      </div>
+    </section>
+
     <section data-pane="about" hidden>
       <div class="about">
         <div class="brand-icon big"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg></div>
         <div><b>Sonara</b> <span id="ver" class="muted"></span><div class="muted">Лайки Spotify и SoundCloud в одном окне</div></div>
       </div>
       <h3>Горячие клавиши</h3>
-      <div class="keys">
-        <div><kbd>Пробел</kbd> пауза / играть</div>
-        <div><kbd>Ctrl</kbd> + <kbd>→</kbd> следующий трек</div>
-        <div><kbd>Ctrl</kbd> + <kbd>←</kbd> предыдущий</div>
-        <div><kbd>Ctrl</kbd> + <kbd>F</kbd> поиск</div>
-        <div><kbd>L</kbd> текст песни на весь экран</div>
-        <div>Медиа-клавиши клавиатуры тоже работают</div>
-      </div>
+      <p class="hint">Все сочетания и их переназначение лежат на вкладке «Клавиши». Медиа-клавиши клавиатуры тоже работают.</p>
       <h3>Если что-то не работает</h3>
       <p class="hint">Лог программы лежит тут: <code id="log-path"></code></p>
     </section>

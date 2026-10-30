@@ -1128,6 +1128,66 @@ async function searchTracks(src, q) {
   return tracks;
 }
 
+// ---------- резервные копии библиотеки ----------
+// Лайки и плейлисты живут в окне плеера, поэтому JSON копии собирает страница, а сюда присылает на запись.
+// Папка Документы\Sonara\backup; автокопии (файлы с -auto) храним последние 5, ручные не трогаем.
+const BACKUP_KEEP = 5;
+const BACKUP_FILE_RE = /^sonara-backup-\d{4}-\d{2}-\d{2}_\d{4}(-auto)?\.json$/;
+function backupDir(sub) {
+  let dir = path.join(require('os').homedir(), 'Documents', 'Sonara', 'backup');
+  try { fs.mkdirSync(dir, { recursive: true }); } catch { dir = path.join(DATA_DIR, 'backup'); fs.mkdirSync(dir, { recursive: true }); }
+  if (sub) { dir = path.join(dir, sub); fs.mkdirSync(dir, { recursive: true }); }
+  return dir;
+}
+function backupList() {
+  const dir = backupDir();
+  return fs.readdirSync(dir).filter((f) => BACKUP_FILE_RE.test(f)).map((f) => {
+    const st = fs.statSync(path.join(dir, f));
+    return { name: f, size: st.size, at: Math.round(st.mtimeMs), auto: /-auto\.json$/.test(f) };
+  }).sort((a, b) => b.at - a.at);
+}
+function backupSave(json, auto) {
+  if (typeof json !== 'string' || json.length > 40e6) throw ytFail('Копия слишком большая', 413);
+  let doc = null;
+  try { doc = JSON.parse(json); } catch {}
+  if (!doc || doc.format !== 'sonara-backup') throw ytFail('Это не копия библиотеки Sonara', 400);
+  const d = new Date(), p2 = (n) => String(n).padStart(2, '0');
+  const stamp = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}`;
+  const dir = backupDir();
+  const name = `sonara-backup-${stamp}${auto ? '-auto' : ''}.json`;
+  fs.writeFileSync(path.join(dir, name), json);
+  config.backupAt = Date.now();
+  writeJson(CONFIG_FILE, config);
+  if (auto) for (const f of backupList().filter((x) => x.auto).slice(BACKUP_KEEP)) { try { fs.unlinkSync(path.join(dir, f.name)); } catch (e) { log('старую копию не удалил', f.name, e.message); } }
+  return { name, dir };
+}
+const m3uSafe = (s) => String(s || '').replace(/[\r\n]+/g, ' ').trim();
+function m3uWrite(playlists) {
+  const dir = backupDir('m3u');
+  const files = [];
+  let tracks = 0;
+  for (const pl of playlists.slice(0, 300)) {
+    const base = String(pl.name || '').replace(/[^\p{L}\p{N} _.()-]+/gu, '').trim().slice(0, 60) || 'playlist';
+    let file = path.join(dir, base + '.m3u8');
+    for (let i = 2; files.includes(file) && i < 100; i++) file = path.join(dir, `${base} (${i}).m3u8`);
+    const lines = ['#EXTM3U', '#PLAYLIST:' + m3uSafe(pl.name)];
+    for (const t of (Array.isArray(pl.tracks) ? pl.tracks : []).slice(0, 50000)) {
+      let loc = '';
+      if (t.src === 'sp' && /^[A-Za-z0-9]{10,30}$/.test(t.id || '')) loc = `https://open.spotify.com/track/${t.id}`;
+      else if (t.src === 'yt' && /^[\w-]{11}$/.test(t.id || '')) loc = `https://music.youtube.com/watch?v=${t.id}`;
+      else if (t.src === 'sc' && /^https:\/\/(www\.)?soundcloud\.com\//i.test(t.url || '')) loc = t.url;
+      else if (t.src === 'local') loc = localLib.file(String(t.id || '')) || '';
+      if (!loc || /[\r\n]/.test(loc)) continue;
+      const sec = Math.round((Number(t.duration) || 0) / 1000);
+      lines.push(`#EXTINF:${sec > 0 ? sec : -1},${m3uSafe([t.artist, t.title].filter(Boolean).join(' - '))}`, loc);
+      tracks++;
+    }
+    fs.writeFileSync(file, lines.join('\r\n') + '\r\n', 'utf8');
+    files.push(file);
+  }
+  return { dir, files: files.length, tracks };
+}
+
 // ---------- обложки для подбора цветов ----------
 // Страница читает пиксели обложки через canvas, а картинки Spotify и SoundCloud чужие и без CORS,
 // поэтому отдаём их с нашего адреса. Только https и только хосты CDN обложек, остальное не качаем.
@@ -1161,10 +1221,10 @@ function send(res, code, body, type = 'application/json; charset=utf-8') {
   res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store' });
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 }
-function readBody(req) {
+function readBody(req, limit = 1e6) {
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
-    req.on('data', (c) => { size += c.length; if (size > 1e6) { reject(new Error('слишком большой запрос')); req.destroy(); } else chunks.push(c); });
+    req.on('data', (c) => { size += c.length; if (size > limit) { reject(new Error('слишком большой запрос')); req.destroy(); } else chunks.push(c); });
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
@@ -1301,6 +1361,30 @@ const server = http.createServer(async (req, res) => {
         if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', ['/select,' + file], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('проводник', e.message); } }
         return send(res, 200, { ok: true, path: file });
       }
+      if (p === '/api/app/backup/status') {
+        return send(res, 200, { dir: backupDir(), auto: config.autoBackup !== false, lastAt: config.backupAt || 0, keep: BACKUP_KEEP, files: backupList().slice(0, 12) });
+      }
+      if (p === '/api/app/backup/save' && req.method === 'POST') {
+        const b = JSON.parse((await readBody(req, 45e6)) || '{}');
+        return send(res, 200, backupSave(b.json, !!b.auto));
+      }
+      if (p === '/api/app/backup/file') {
+        const name = String(u.searchParams.get('name') || '');
+        if (!BACKUP_FILE_RE.test(name)) return send(res, 400, { error: 'Неверное имя файла' });
+        const file = path.join(backupDir(), name);
+        if (!fs.existsSync(file) || fs.statSync(file).size > 40e6) return send(res, 404, { error: 'Файл не найден' });
+        return send(res, 200, fs.readFileSync(file, 'utf8'), 'application/json; charset=utf-8');
+      }
+      if (p === '/api/app/backup/m3u' && req.method === 'POST') {
+        const b = JSON.parse((await readBody(req, 45e6)) || '{}');
+        if (!Array.isArray(b.playlists) || !b.playlists.length) return send(res, 400, { error: 'Нет плейлистов для экспорта' });
+        return send(res, 200, m3uWrite(b.playlists));
+      }
+      if (p === '/api/app/backup/reveal' && req.method === 'POST') {
+        const dir = backupDir();
+        if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', [dir], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('проводник', e.message); } }
+        return send(res, 200, { ok: true, dir });
+      }
       if (p === '/api/app/ytdlp/install' && req.method === 'POST') return send(res, 200, await ytdlpInstall());
       if (p === '/api/app/art') {
         const a = await fetchArt(u.searchParams.get('u'));
@@ -1316,6 +1400,7 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/app/settings' && req.method === 'POST') {
         const b = JSON.parse((await readBody(req)) || '{}');
         if (typeof b.closeToTray === 'boolean' && config.closeToTray !== b.closeToTray) { config.closeToTray = b.closeToTray; writeJson(CONFIG_FILE, config); }
+        if (typeof b.autoBackup === 'boolean' && (config.autoBackup !== false) !== b.autoBackup) { config.autoBackup = b.autoBackup; writeJson(CONFIG_FILE, config); }
         if (typeof b.mediaKeys === 'boolean' && (config.mediaKeys !== false) !== b.mediaKeys) { config.mediaKeys = b.mediaKeys; writeJson(CONFIG_FILE, config); mediaKeys.starts = 0; mediaKeysApply(); }
         return send(res, 200, { ok: true });
       }
