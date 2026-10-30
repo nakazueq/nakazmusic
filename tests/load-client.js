@@ -4,6 +4,8 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const core = require('../public/locales/core.js');
+const i18n = core.create({ ru: require('../public/locales/ru.js'), en: require('../public/locales/en.js') }, 'ru');
 
 const SRC = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8').split('\n');
 
@@ -21,7 +23,7 @@ function declaration(name) {
 }
 
 function load(names, extra = {}) {
-  const ctx = vm.createContext({ console, Date, Math, JSON, Object, Array, Number, String, Boolean, URL, RegExp, Set, Map, ...extra });
+  const ctx = vm.createContext({ T: i18n.t, I18N: i18n, console, Date, Math, JSON, Object, Array, Number, String, Boolean, URL, RegExp, Set, Map, ...extra });
   vm.runInContext([...new Set(names.map(declaration))].join('\n'), ctx);   // одна строка может объявлять несколько имён сразу
   return vm.runInContext('({' + names.join(',') + '})', ctx);
 }

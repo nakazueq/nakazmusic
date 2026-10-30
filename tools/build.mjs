@@ -72,17 +72,17 @@ function patch(basePath, icoPath, outPath) {
 function buildMediaHelper() {
   const csc = ['Framework64', 'Framework'].map((f) => join(process.env.WINDIR || 'C:\\Windows', 'Microsoft.NET', f, 'v4.0.30319', 'csc.exe')).find(existsSync);
   const out = join(root, 'assets', 'mkhelper.exe');
-  if (!csc) { console.warn('csc.exe не найден: медиаклавиши будут работать через PowerShell'); return; }
+  if (!csc) { console.warn('csc.exe not found: media keys will work through PowerShell'); return; }
   execFileSync(csc, ['/nologo', '/target:exe', '/optimize+', '/debug-', '/reference:System.Windows.Forms.dll', '/out:' + out, join(root, 'native', 'MediaKeys.cs'), join(root, 'native', 'AssemblyInfo.cs')], { stdio: 'inherit' });
-  console.log('помощник медиаклавиш: %s', out);
+  console.log('media keys helper: %s', out);
 }
 
 mkdirSync(buildDir, { recursive: true });
 buildMediaHelper();
-console.log('1/3 иконка из SVG');
+console.log('1/3 icon from SVG');
 const ico = await makeIcons();
 
-console.log('2/3 иконка и версия %s в базовый бинарник', pkgJson.version);
+console.log('2/3 icon and version %s into the base binary', pkgJson.version);
 const patched = join(buildDir, 'node-base-win-x64.exe');
 patch(findBase(), ico, patched);
 
@@ -95,7 +95,7 @@ function setGuiSubsystem(file) {
     const pe = head.readUInt32LE(0);
     const sig = Buffer.alloc(4);
     readSync(fd, sig, 0, 4, pe);
-    if (sig.toString('latin1') !== 'PE\0\0') throw new Error('не PE-файл: ' + file);
+    if (sig.toString('latin1') !== 'PE\0\0') throw new Error('not a PE file: ' + file);
     const sub = Buffer.alloc(2);
     sub.writeUInt16LE(2);   // IMAGE_SUBSYSTEM_WINDOWS_GUI (было 3, консоль)
     writeSync(fd, sub, 0, 2, pe + 24 + 68);
@@ -105,4 +105,4 @@ function setGuiSubsystem(file) {
 console.log('3/3 pkg -> %s', outExe);
 run(['.', '--targets', TARGET, '--output', outExe], { PKG_NODE_PATH: patched });
 setGuiSubsystem(outExe);
-console.log('\nГотово: %s v%s', outExe, pkgJson.version);
+console.log('\nDone: %s v%s', outExe, pkgJson.version);

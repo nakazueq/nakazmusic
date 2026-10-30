@@ -57,17 +57,17 @@ const ICONS = {
 
 /* ===================== Оформление ===================== */
 const WALLS = {
-  mist: { name: 'Туман', css: 'radial-gradient(55% 60% at 12% 18%, #cdd6e4 0%, transparent 70%), radial-gradient(50% 55% at 88% 12%, #e3d8e7 0%, transparent 70%), radial-gradient(60% 60% at 82% 92%, #d0dbe6 0%, transparent 70%), radial-gradient(50% 55% at 8% 88%, #e7e0d4 0%, transparent 70%), linear-gradient(160deg, #e9eaee, #dadde4)' },
-  silver: { name: 'Серебро', css: 'radial-gradient(60% 60% at 20% 15%, #f6f6f8 0%, transparent 70%), radial-gradient(55% 60% at 85% 85%, #c2c5cd 0%, transparent 70%), radial-gradient(40% 45% at 75% 20%, #dcdde2 0%, transparent 70%), linear-gradient(150deg, #e6e7eb, #cdd0d6)' },
-  ocean: { name: 'Океан', css: 'radial-gradient(55% 60% at 15% 20%, #b9d3f0 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #cbe7f1 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #d3d2f2 0%, transparent 70%), linear-gradient(160deg, #e3ebf5, #d2dff0)' },
-  sakura: { name: 'Сакура', css: 'radial-gradient(55% 60% at 15% 20%, #f6d4e2 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #eadff3 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #fbe4d8 0%, transparent 70%), linear-gradient(160deg, #f6eef2, #efe3ea)' },
-  mint: { name: 'Мята', css: 'radial-gradient(55% 60% at 15% 20%, #cbe9dc 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #d7ecf1 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #e5f1d6 0%, transparent 70%), linear-gradient(160deg, #ecf3ef, #dfece6)' },
-  night: { name: 'Ночь', css: 'radial-gradient(55% 60% at 15% 20%, #3b3272 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #173e64 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #4a2352 0%, transparent 70%), linear-gradient(160deg, #13141f, #1b1d2b)' },
-  sunset: { name: 'Закат', css: 'radial-gradient(55% 60% at 15% 20%, #7a2e50 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #8a4b22 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #352d6c 0%, transparent 70%), linear-gradient(160deg, #1f1520, #191526)' },
-  plain: { name: 'Однотонный' },
-  gradient: { name: 'Градиент' },
-  cover: { name: 'Обложка' },
-  custom: { name: 'Своя' },
+  mist: { get name() { return T('a.const.1'); }, css: 'radial-gradient(55% 60% at 12% 18%, #cdd6e4 0%, transparent 70%), radial-gradient(50% 55% at 88% 12%, #e3d8e7 0%, transparent 70%), radial-gradient(60% 60% at 82% 92%, #d0dbe6 0%, transparent 70%), radial-gradient(50% 55% at 8% 88%, #e7e0d4 0%, transparent 70%), linear-gradient(160deg, #e9eaee, #dadde4)' },
+  silver: { get name() { return T('a.const.2'); }, css: 'radial-gradient(60% 60% at 20% 15%, #f6f6f8 0%, transparent 70%), radial-gradient(55% 60% at 85% 85%, #c2c5cd 0%, transparent 70%), radial-gradient(40% 45% at 75% 20%, #dcdde2 0%, transparent 70%), linear-gradient(150deg, #e6e7eb, #cdd0d6)' },
+  ocean: { get name() { return T('a.const.3'); }, css: 'radial-gradient(55% 60% at 15% 20%, #b9d3f0 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #cbe7f1 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #d3d2f2 0%, transparent 70%), linear-gradient(160deg, #e3ebf5, #d2dff0)' },
+  sakura: { get name() { return T('a.const.4'); }, css: 'radial-gradient(55% 60% at 15% 20%, #f6d4e2 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #eadff3 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #fbe4d8 0%, transparent 70%), linear-gradient(160deg, #f6eef2, #efe3ea)' },
+  mint: { get name() { return T('a.const.5'); }, css: 'radial-gradient(55% 60% at 15% 20%, #cbe9dc 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #d7ecf1 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #e5f1d6 0%, transparent 70%), linear-gradient(160deg, #ecf3ef, #dfece6)' },
+  night: { get name() { return T('a.const.6'); }, css: 'radial-gradient(55% 60% at 15% 20%, #3b3272 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #173e64 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #4a2352 0%, transparent 70%), linear-gradient(160deg, #13141f, #1b1d2b)' },
+  sunset: { get name() { return T('a.const.7'); }, css: 'radial-gradient(55% 60% at 15% 20%, #7a2e50 0%, transparent 70%), radial-gradient(50% 55% at 85% 15%, #8a4b22 0%, transparent 70%), radial-gradient(55% 60% at 80% 90%, #352d6c 0%, transparent 70%), linear-gradient(160deg, #1f1520, #191526)' },
+  plain: { get name() { return T('a.const.8'); } },
+  gradient: { get name() { return T('a.const.9'); } },
+  cover: { get name() { return T('a.const.10'); } },
+  custom: { get name() { return T('a.const.11'); } },
 };
 const DARK_WALLS = new Set(['night', 'sunset']);
 // особые режимы фона: при переходе в них запоминаем обычный фон из темы, чтобы вернуться к нему
@@ -75,17 +75,17 @@ const SPECIAL_WALLS = new Set(['plain', 'custom', 'gradient']);
 
 /* ---------- свой градиент для фона ---------- */
 const GRAD_TYPES = ['linear', 'radial', 'conic'];
-const GRAD_TYPE_NAMES = { linear: 'Линейный', radial: 'Радиальный', conic: 'Конический' };
+const GRAD_TYPE_NAMES = { get linear() { return T('a.const.12'); }, get radial() { return T('a.const.13'); }, get conic() { return T('a.const.14'); } };
 const GRAD_MIN_STOPS = 2, GRAD_MAX_STOPS = 5;
 const GRAD_PRESETS = [
-  { id: 'sunset', name: 'Закат', type: 'linear', angle: 160, stops: [['#2b1055', 0], ['#b3365f', 50], ['#ff9a5a', 100]] },
-  { id: 'ocean', name: 'Океан', type: 'linear', angle: 150, stops: [['#0b3c5d', 0], ['#1d7a9c', 55], ['#8fd6e8', 100]] },
-  { id: 'neon', name: 'Неон', type: 'linear', angle: 135, stops: [['#12002f', 0], ['#7a1cff', 45], ['#ff2fb3', 75], ['#00e5ff', 100]] },
-  { id: 'forest', name: 'Лес', type: 'linear', angle: 160, stops: [['#0b2a1c', 0], ['#1f6b43', 55], ['#a8d06a', 100]] },
-  { id: 'graphite', name: 'Графит', type: 'linear', angle: 160, stops: [['#16171b', 0], ['#2c2e35', 60], ['#4a4d57', 100]] },
-  { id: 'dawn', name: 'Рассвет', type: 'radial', angle: 0, stops: [['#ffd9a0', 0], ['#ff8fb1', 50], ['#6a5acd', 100]] },
-  { id: 'lavender', name: 'Лаванда', type: 'linear', angle: 120, stops: [['#e9e4f7', 0], ['#c9b8ee', 55], ['#f3c6e2', 100]] },
-  { id: 'fire', name: 'Огонь', type: 'conic', angle: 0, stops: [['#ff3b30', 0], ['#ff9500', 35], ['#ffcc00', 65], ['#ff3b30', 100]] },
+  { id: 'sunset', get name() { return T('a.const.15'); }, type: 'linear', angle: 160, stops: [['#2b1055', 0], ['#b3365f', 50], ['#ff9a5a', 100]] },
+  { id: 'ocean', get name() { return T('a.const.16'); }, type: 'linear', angle: 150, stops: [['#0b3c5d', 0], ['#1d7a9c', 55], ['#8fd6e8', 100]] },
+  { id: 'neon', get name() { return T('a.const.17'); }, type: 'linear', angle: 135, stops: [['#12002f', 0], ['#7a1cff', 45], ['#ff2fb3', 75], ['#00e5ff', 100]] },
+  { id: 'forest', get name() { return T('a.const.18'); }, type: 'linear', angle: 160, stops: [['#0b2a1c', 0], ['#1f6b43', 55], ['#a8d06a', 100]] },
+  { id: 'graphite', get name() { return T('a.const.19'); }, type: 'linear', angle: 160, stops: [['#16171b', 0], ['#2c2e35', 60], ['#4a4d57', 100]] },
+  { id: 'dawn', get name() { return T('a.const.20'); }, type: 'radial', angle: 0, stops: [['#ffd9a0', 0], ['#ff8fb1', 50], ['#6a5acd', 100]] },
+  { id: 'lavender', get name() { return T('a.const.21'); }, type: 'linear', angle: 120, stops: [['#e9e4f7', 0], ['#c9b8ee', 55], ['#f3c6e2', 100]] },
+  { id: 'fire', get name() { return T('a.const.22'); }, type: 'conic', angle: 0, stops: [['#ff3b30', 0], ['#ff9500', 35], ['#ffcc00', 65], ['#ff3b30', 100]] },
 ];
 const gradFromPreset = (p) => ({ type: p.type, angle: p.angle, stops: p.stops.map(([c, q]) => ({ c, p: q })) });
 const GRAD_DEFAULT = { type: 'linear', angle: 135, stops: [{ c: '#3a1c3f', p: 0 }, { c: '#b33a5b', p: 55 }, { c: '#f0a35e', p: 100 }] };
@@ -116,18 +116,18 @@ function gradCss(g, bar) {
 const PV_LIGHT =['rgba(236,237,241,.78)', 'rgba(251,251,253,.88)'];
 const PV_DARK = ['rgba(38,38,42,.8)', 'rgba(26,26,29,.86)'];
 const PRESETS = [
-  { id: 'glass', name: 'Стекло', mode: 'light', accent: '#007AFF', wall: 'mist', alpha: 45 },
-  { id: 'graphite', name: 'Графит', mode: 'light', accent: '#8E8E93', wall: 'silver', alpha: 40 },
-  { id: 'ocean', name: 'Океан', mode: 'light', accent: '#30B0C7', wall: 'ocean', alpha: 50 },
-  { id: 'sakura', name: 'Сакура', mode: 'light', accent: '#FF2D55', wall: 'sakura', alpha: 50 },
-  { id: 'mint', name: 'Мята', mode: 'light', accent: '#34C759', wall: 'mint', alpha: 50 },
-  { id: 'night', name: 'Ночь', mode: 'dark', accent: '#0A84FF', wall: 'night', alpha: 50 },
-  { id: 'sunset', name: 'Закат', mode: 'dark', accent: '#FF9F0A', wall: 'sunset', alpha: 50 },
-  { id: 'cover', name: 'Обложка', mode: 'dark', accent: '#FA2D48', wall: 'cover', alpha: 55 },
+  { id: 'glass', get name() { return T('a.const.23'); }, mode: 'light', accent: '#007AFF', wall: 'mist', alpha: 45 },
+  { id: 'graphite', get name() { return T('a.const.24'); }, mode: 'light', accent: '#8E8E93', wall: 'silver', alpha: 40 },
+  { id: 'ocean', get name() { return T('a.const.25'); }, mode: 'light', accent: '#30B0C7', wall: 'ocean', alpha: 50 },
+  { id: 'sakura', get name() { return T('a.const.26'); }, mode: 'light', accent: '#FF2D55', wall: 'sakura', alpha: 50 },
+  { id: 'mint', get name() { return T('a.const.27'); }, mode: 'light', accent: '#34C759', wall: 'mint', alpha: 50 },
+  { id: 'night', get name() { return T('a.const.28'); }, mode: 'dark', accent: '#0A84FF', wall: 'night', alpha: 50 },
+  { id: 'sunset', get name() { return T('a.const.29'); }, mode: 'dark', accent: '#FF9F0A', wall: 'sunset', alpha: 50 },
+  { id: 'cover', get name() { return T('a.const.30'); }, mode: 'dark', accent: '#FA2D48', wall: 'cover', alpha: 55 },
 ];
 const ACCENTS = [
-  ['Синий', '#007AFF'], ['Фиолетовый', '#AF52DE'], ['Розовый', '#FF2D55'], ['Красный', '#FF3B30'],
-  ['Оранжевый', '#FF9500'], ['Жёлтый', '#FFCC00'], ['Зелёный', '#34C759'], ['Бирюзовый', '#30B0C7'], ['Графит', '#8E8E93'],
+  ['@a.accent.blue', '#007AFF'], ['@a.accent.purple', '#AF52DE'], ['@a.accent.pink', '#FF2D55'], ['@a.accent.red', '#FF3B30'],
+  ['@a.accent.orange', '#FF9500'], ['@a.accent.yellow', '#FFCC00'], ['@a.accent.green', '#34C759'], ['@a.accent.teal', '#30B0C7'], ['@a.accent.graphite', '#8E8E93'],
 ];
 // тонкая настройка вида (окно «Оформление»): всё хранится внутри ui и уезжает в store.json
 const DEFAULT_LOOK = { bg: null, text: null, font: '', rs: 100, cover: 100, prevWall: null, auto: false, css: '', cssOn: true };
@@ -158,12 +158,12 @@ ui.layout = { ...DEFAULT_LAYOUT, ...(ui.layout || {}) };
 const denseUI = () => !!ui.compact || ui.layout.mode === 'compact';
 // блоки интерфейса: порядок сайдбара и список выключенных. Навигация всегда включена, «Список треков» живёт в основной области
 const BLOCKS = {
-  search: { name: 'Поиск', desc: 'Строка поиска по библиотеке', side: true, sel: '.search' },
-  nav: { name: 'Навигация', desc: 'Библиотека и плейлисты, всегда включена', side: true, sel: '#side-nav', locked: true },
-  cover: { name: 'Обложка', desc: 'Большая обложка текущего трека', side: true, sel: '#side-cover' },
-  queue: { name: 'Очередь', desc: 'Что будет играть дальше', side: true, sel: '#blk-queue' },
-  lyrics: { name: 'Текст песни', desc: 'Текущая строка текста в сайдбаре', side: true, sel: '#blk-lyrics' },
-  list: { name: 'Список треков', desc: 'Список в основной области окна', side: false },
+  search: { get name() { return T('a.const.31'); }, get desc() { return T('a.const.32'); }, side: true, sel: '.search' },
+  nav: { get name() { return T('a.const.33'); }, get desc() { return T('a.const.34'); }, side: true, sel: '#side-nav', locked: true },
+  cover: { get name() { return T('a.const.35'); }, get desc() { return T('a.const.36'); }, side: true, sel: '#side-cover' },
+  queue: { get name() { return T('a.const.37'); }, get desc() { return T('a.const.38'); }, side: true, sel: '#blk-queue' },
+  lyrics: { get name() { return T('a.const.39'); }, get desc() { return T('a.const.40'); }, side: true, sel: '#blk-lyrics' },
+  list: { get name() { return T('a.const.41'); }, get desc() { return T('a.const.42'); }, side: false },
 };
 const DEFAULT_BLOCKS = { order: ['search', 'nav', 'cover', 'queue', 'lyrics'], off: ['queue', 'lyrics'] };
 function normalizeBlocks(b) {
@@ -304,15 +304,15 @@ function mixHex(a, b, t) {
   return '#' + [0, 1, 2].map((i) => Math.round(p(a, i) + (p(b, i) - p(a, i)) * t).toString(16).padStart(2, '0')).join('');
 }
 const FONTS = [
-  ['', 'По умолчанию'],
+  ['', '@a.font.default'],
   ['"Segoe UI"', 'Segoe UI'],
   ['Bahnschrift', 'Bahnschrift'],
   ['Calibri', 'Calibri'],
   ['Verdana', 'Verdana'],
   ['"Trebuchet MS"', 'Trebuchet MS'],
-  ['Georgia, serif', 'Georgia (с засечками)'],
-  ['Cambria, serif', 'Cambria (с засечками)'],
-  ['Consolas, "Cascadia Mono", monospace', 'Consolas (моноширинный)'],
+  ['Georgia, serif', '@a.font.georgia'],
+  ['Cambria, serif', '@a.font.cambria'],
+  ['Consolas, "Cascadia Mono", monospace', '@a.font.consolas'],
   ['"Comic Sans MS"', 'Comic Sans'],
 ];
 const fontStack = (f) => (f ? `${f}, system-ui, sans-serif` : '');
@@ -402,7 +402,7 @@ async function artColors(url) {
   // чужие картинки читаем через сервер плеера (там нет CORS), свои и локальные напрямую
   const remote = /^https?:/i.test(url) && new URL(url).origin !== location.origin;
   const r = await fetch(remote ? '/api/app/art?u=' + encodeURIComponent(url) : url, { headers: { 'X-Player': '1' } });
-  if (!r.ok) throw new Error('обложка ' + r.status);
+  if (!r.ok) throw new Error(T('a.artColors.1') + r.status);
   const bmp = await createImageBitmap(await r.blob());
   const c = document.createElement('canvas');
   c.width = c.height = 40;
@@ -495,16 +495,16 @@ async function autoCover() {
 const CSS_MAX = 20000;
 // возвращает текст проблемы или '' если CSS безопасен: без @import, внешних url(), HTML и старых IE-приёмов
 function cssProblem(css) {
-  if (css.length > CSS_MAX) return `CSS длиннее ${CSS_MAX} символов`;
+  if (css.length > CSS_MAX) return T('a.cssProblem.1', { CSS_MAX: CSS_MAX });
   // раскрываем экранирование и убираем комментарии, чтобы u\72l( и /**/ не обходили проверку
   const flat = css.replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\\([0-9a-f]{1,6})\s?/gi, (m, h) => { try { return String.fromCodePoint(parseInt(h, 16)); } catch { return ''; } })
     .replace(/\\(.)/g, '$1');
-  if (/@import/i.test(flat)) return '@import не поддерживается';
-  if (/<\s*\/?\s*(style|script)|<!--/i.test(flat)) return 'в CSS не должно быть HTML';
-  if (/expression\s*\(|javascript:|vbscript:|behavior\s*:|-moz-binding/i.test(flat)) return 'в CSS есть запрещённая конструкция';
+  if (/@import/i.test(flat)) return T('a.cssProblem.2');
+  if (/<\s*\/?\s*(style|script)|<!--/i.test(flat)) return T('a.cssProblem.3');
+  if (/expression\s*\(|javascript:|vbscript:|behavior\s*:|-moz-binding/i.test(flat)) return T('a.cssProblem.4');
   for (const m of flat.matchAll(/url\(\s*([^)]*)\)/gi)) {
-    if (!/^["']?\s*data:image\//i.test(m[1])) return 'url() разрешён только для data:image (внешние ссылки запрещены)';
+    if (!/^["']?\s*data:image\//i.test(m[1])) return T('a.cssProblem.5');
   }
   return '';
 }
@@ -533,10 +533,10 @@ function showCssRescue() {
     box.id = 'css-rescue';
     box.style.cssText = 'all:initial!important;position:fixed!important;right:14px!important;top:14px!important;z-index:2147483647!important;display:flex!important;align-items:center!important;gap:10px!important;padding:8px 8px 8px 14px!important;border-radius:12px!important;background:#1d1d1f!important;color:#fff!important;font:13px system-ui,sans-serif!important;box-shadow:0 8px 30px rgba(0,0,0,.4)!important;opacity:1!important;visibility:visible!important;transform:none!important;pointer-events:auto!important;';
     const txt = document.createElement('span');
-    txt.textContent = 'Свой CSS включён · Ctrl+Shift+K';
+    txt.textContent = T('a.showCssRescue.1');
     txt.style.cssText = 'all:initial!important;color:#fff!important;font:13px system-ui,sans-serif!important;';
     const b = document.createElement('button');
-    b.textContent = 'Отключить';
+    b.textContent = T('a.showCssRescue.2');
     b.style.cssText = 'all:initial!important;cursor:pointer!important;padding:5px 12px!important;border-radius:8px!important;background:#ff453a!important;color:#fff!important;font:600 13px system-ui,sans-serif!important;';
     b.addEventListener('click', () => toggleUserCss(false));
     box.append(txt, b);
@@ -548,7 +548,7 @@ function toggleUserCss(on) {
   ui.look.cssOn = on === undefined ? ui.look.cssOn === false : on;
   saveUI(); applyUI();
   if (ui.look.cssOn) showCssRescue(); else document.getElementById('css-rescue')?.remove();
-  toast(window.__safeCss ? 'Запуск с --safe-css: свой CSS отключён' : ui.look.cssOn ? 'Свой CSS включён' : 'Свой CSS отключён');
+  toast(window.__safeCss ? T('a.toggleUserCss.1') : ui.look.cssOn ? T('a.toggleUserCss.2') : T('a.toggleUserCss.3'));
 }
 // Ctrl+Shift+K работает всегда, даже если CSS спрятал интерфейс
 window.addEventListener('keydown', (e) => {
@@ -770,18 +770,19 @@ function fmt(ms) {
 }
 function fmtTotal(ms) {
   const min = Math.round(ms / 60000);
-  if (min < 60) return `${min} мин`;
+  if (min < 60) return T('a.fmtTotal.1', { min: min });
   const h = Math.floor(min / 60);
-  return `${h} ч ${min % 60} мин`;
+  return T('a.fmtTotal.2', { h: h, p2: min % 60 });
 }
 function plural(n, forms) {
+  if (I18N.lang === 'en') return n === 1 ? forms[0] : forms[2];   // у английского две формы: единственное и множественное (первая и последняя в списке)
   const a = Math.abs(n) % 100, b = a % 10;
   if (a > 10 && a < 20) return forms[2];
   if (b > 1 && b < 5) return forms[1];
   if (b === 1) return forms[0];
   return forms[2];
 }
-const TRACKS = ['трек', 'трека', 'треков'];
+const trackForms = () => [T('a.track.one'), T('a.track.few'), T('a.track.many')];
 function norm(s) {
   return String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
     .replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/\b(feat|ft)\b.*$/, ' ')
@@ -809,23 +810,24 @@ function toast(msg, ms = 3800) {
   while (box.children.length > 3) box.firstChild.remove();
   setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 300); }, ms);
 }
+const lbl = (s) => (typeof s === 'string' && s[0] === '@' ? T(s.slice(1)) : s);
 const NET_RE = /failed to fetch|networkerror|load failed|fetch failed|network request failed|timeout|timed out/i;
-const NET_MSG = 'Нет связи с интернетом или сайт не отвечает. Проверь подключение и попробуй ещё раз';
-const errText = (e) => (e && NET_RE.test(String(e.message)) ? NET_MSG : (e && e.message) || 'Что-то пошло не так');
+const netMsg = () => T('a.net.msg');
+const errText = (e) => (e && NET_RE.test(String(e.message)) ? netMsg() : (e && e.message) || T('a.errText.1'));
 // сбои, до которых не дошёл свой обработчик: тихо в консоль, а про сеть говорим по-человечески
 window.addEventListener('unhandledrejection', (ev) => {
   const e = ev.reason;
-  console.warn('необработанная ошибка', e);
+  console.warn(T('a.on_window_unhandledrejection.1'), e);
   ev.preventDefault();
-  if (e && NET_RE.test(String(e.message))) toast(NET_MSG);
+  if (e && NET_RE.test(String(e.message))) toast(netMsg());
 });
 async function api(url, opts) {
   let r;
   try { r = await fetch(url, opts); }
-  catch (e) { if (e && e.name === 'AbortError') throw e; throw new Error(NET_RE.test(String(e && e.message)) ? 'Плеер не отвечает: попробуй перезапустить Sonara' : errText(e)); }
+  catch (e) { if (e && e.name === 'AbortError') throw e; throw new Error(NET_RE.test(String(e && e.message)) ? T('a.api.1') : errText(e)); }
   let j = null;
   try { j = await r.json(); } catch {}
-  if (!r.ok) { const e = new Error((j && j.error) || `Ошибка ${r.status}`); e.status = r.status; throw e; }
+  if (!r.ok) { const e = new Error((j && j.error) || T('a.api.2', { status: r.status })); e.status = r.status; throw e; }
   return j;
 }
 function loadScript(src) {
@@ -833,7 +835,7 @@ function loadScript(src) {
     const s = document.createElement('script');
     s.src = src;
     s.onload = resolve;
-    s.onerror = () => reject(new Error('Не загрузился ' + src));
+    s.onerror = () => reject(new Error(T('a.onerror.1') + src));
     document.head.appendChild(s);
   });
 }
@@ -846,7 +848,7 @@ function setFill(el) {
 /* ===================== Spotify: вход ===================== */
 const REDIRECT_URI = location.origin + '/callback';
 const SP_SCOPES = 'streaming user-read-email user-read-private user-library-read user-read-playback-state user-modify-playback-state';
-const WIDEVINE_MSG = 'Spotify не может играть в этом браузере. В Brave открой brave://settings/extensions, включи Widevine и перезапусти браузер.';
+const widevineMsg = () => T('a.widevine.msg');
 let leavingForAuth = false;
 
 function b64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
@@ -854,7 +856,7 @@ function randomString(n = 64) { const a = new Uint8Array(n); crypto.getRandomVal
 
 async function spLogin() {
   const clientId = $('sp-client').value.trim();
-  if (!/^[0-9a-f]{32}$/i.test(clientId)) { setAccState('sp', 'Client ID выглядит неправильно (32 символа)', 'err'); return; }
+  if (!/^[0-9a-f]{32}$/i.test(clientId)) { setAccState('sp', T('a.spLogin.1'), 'err'); return; }
   LS.set('sp_client_id', clientId);
   const verifier = randomString(96);
   LS.set('sp_verifier', verifier);
@@ -875,26 +877,26 @@ async function spTokenRequest(body) {
 async function spHandleCallback() {
   const q = new URLSearchParams(location.search);
   history.replaceState({}, '', '/');
-  if (q.get('error')) { toast('Spotify: вход отменён'); return; }
+  if (q.get('error')) { toast(T('a.spHandleCallback.1')); return; }
   if (!q.get('code')) return;
   try {
     await spTokenRequest({ client_id: LS.get('sp_client_id'), grant_type: 'authorization_code', code: q.get('code'), redirect_uri: REDIRECT_URI, code_verifier: LS.get('sp_verifier') });
     LS.del('sp_verifier');
-    toast('Spotify подключён');
-  } catch (e) { toast('Не получилось войти в Spotify: ' + e.message); }
+    toast(T('a.spHandleCallback.2'));
+  } catch (e) { toast(T('a.spHandleCallback.3') + e.message); }
 }
 let refreshing = null;
 async function spRefresh() {
   if (refreshing) return refreshing;
   const t = LS.json('sp_token', {});
-  if (!t.refresh) throw fatal('Войди в Spotify в настройках');
+  if (!t.refresh) throw fatal(T('a.spRefresh.1'));
   refreshing = spTokenRequest({ client_id: LS.get('sp_client_id'), grant_type: 'refresh_token', refresh_token: t.refresh })
     .finally(() => { refreshing = null; });
   return refreshing;
 }
 async function spToken() {
   const t = LS.json('sp_token', {});
-  if (!t.access) throw fatal('Spotify не подключён');
+  if (!t.access) throw fatal(T('a.spToken.1'));
   if (Date.now() < t.exp - 60000) return t.access;
   await spRefresh();
   return LS.json('sp_token', {}).access;
@@ -933,7 +935,7 @@ function spMap(t, addedAt) {
 async function spLoadLikes() {
   if (state.loading.sp) return;
   state.loading.sp = true;
-  setAccState('sp', 'Загружаю лайки…');
+  setAccState('sp', T('a.spLoadLikes.1'));
   renderHead(); renderEmpty();
   try {
     const out = [];
@@ -957,11 +959,11 @@ async function spLoadLikes() {
         if (t && t.id && !t.is_local) out.push(spMap(t, it.added_at));
       }
       url = j && j.next;
-      if (url) setAccState('sp', `Загружено ${out.length}…`);
+      if (url) setAccState('sp', T('a.spLoadLikes.2', { length: out.length }));
     }
     state.lib.sp = out;
     LS.set('sp_lib', JSON.stringify(out));
-    setAccState('sp', `${out.length} ${plural(out.length, TRACKS)}`, 'ok');
+    setAccState('sp', `${out.length} ${plural(out.length, trackForms())}`, 'ok');
     rebuildAll();
   } catch (e) {
     setAccState('sp', e.message, 'err');
@@ -989,7 +991,7 @@ function spLogout() {
   if (sp.player) { try { sp.player.disconnect(); } catch {} }
   sp.player = null; sp.device = null; sp.ready = null;
   if (state.cur && state.cur.src === 'sp') { state.cur = null; state.playing = false; updatePlayer(); }
-  setAccState('sp', 'Не подключён');
+  setAccState('sp', T('a.spLogout.1'));
   rebuildAll();
   syncAccounts();
 }
@@ -999,7 +1001,7 @@ const sp = { player: null, device: null, ready: null, last: { pos: 0, at: 0 }, e
 function spInit() {
   if (sp.ready) return sp.ready;
   sp.ready = new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(fatal('Spotify-плеер не запустился. Проверь интернет и Widevine.')), 20000);
+    const timer = setTimeout(() => reject(fatal(T('a.spInit.1'))), 20000);
     const fail = (e) => { clearTimeout(timer); reject(e); };
     window.onSpotifyWebPlaybackSDKReady = () => {
       const p = new Spotify.Player({
@@ -1009,16 +1011,16 @@ function spInit() {
       });
       p.addListener('ready', ({ device_id }) => { sp.device = device_id; clearTimeout(timer); resolve(p); });
       p.addListener('not_ready', () => { sp.device = null; });
-      p.addListener('initialization_error', () => { const e = fatal(WIDEVINE_MSG); e.widevine = true; fail(e); });
-      p.addListener('authentication_error', () => fail(fatal('Spotify: войди заново в настройках')));
-      p.addListener('account_error', () => { spPremium = false; fail(fatal('Spotify: для плеера нужен Premium')); });
+      p.addListener('initialization_error', () => { const e = fatal(widevineMsg()); e.widevine = true; fail(e); });
+      p.addListener('authentication_error', () => fail(fatal(T('a.onSpotifyWebPlaybackSDKReady.1'))));
+      p.addListener('account_error', () => { spPremium = false; fail(fatal(T('a.onSpotifyWebPlaybackSDKReady.2'))); });
       p.addListener('playback_error', ({ message }) => { if (state.cur && state.cur.src === 'sp') toast('Spotify: ' + message); });
       p.addListener('player_state_changed', spOnState);
       sp.player = p;
-      p.connect().then((ok) => { if (!ok) fail(fatal(WIDEVINE_MSG)); });
+      p.connect().then((ok) => { if (!ok) fail(fatal(widevineMsg())); });
     };
     if (window.Spotify && window.Spotify.Player) window.onSpotifyWebPlaybackSDKReady();
-    else loadScript('https://sdk.scdn.co/spotify-player.js').catch(() => fail(fatal('Не загрузился Spotify. Есть интернет?')));
+    else loadScript('https://sdk.scdn.co/spotify-player.js').catch(() => fail(fatal(T('a.spInit.2'))));
   });
   sp.ready.catch(() => { sp.ready = null; });
   return sp.ready;
@@ -1053,7 +1055,7 @@ async function spPlay(t, token) {
       break;
     } catch (e) {
       if ((e.status === 404 || e.status === 502) && i < 3) { await sleep(1000); continue; }
-      if (e.status === 403) throw fatal('Spotify не даёт включить трек (нужен Premium на аккаунте).');
+      if (e.status === 403) throw fatal(T('a.spPlay.1'));
       throw e;
     }
   }
@@ -1089,7 +1091,7 @@ function spcPick(list) {
 async function spcEnsureDevice(token) {
   let d = spcPick(await spcDevices());
   if (d) return d;
-  toast('Запускаю Spotify…');
+  toast(T('a.spcEnsureDevice.1'));
   appCmd('spotify-launch');
   for (let i = 0; i < 25; i++) {
     await sleep(1000);
@@ -1101,7 +1103,7 @@ async function spcEnsureDevice(token) {
       return d;
     }
   }
-  throw fatal('Не вижу приложение Spotify. Открой его и войди в тот же аккаунт, что и тут.');
+  throw fatal(T('a.spcEnsureDevice.2'));
 }
 function spcQuery(q) { return spc.device ? `${q}${q.includes('?') ? '&' : '?'}device_id=${encodeURIComponent(spc.device)}` : q; }
 // служебные ошибки Spotify (ещё не загрузился, нет активного трека) не показываем
@@ -1156,7 +1158,7 @@ async function spcPlay(t, token) {
       await spApi('/me/player', { method: 'PUT', body: JSON.stringify({ device_ids: [d.id], play: false }) }).catch(() => {});
       await sleep(900);
       await spApi(spcQuery('/me/player/play'), { method: 'PUT', body });
-    } else if (e.status === 403) throw fatal('Spotify не даёт включить трек (нужен Premium на аккаунте).');
+    } else if (e.status === 403) throw fatal(T('a.spcPlay.1'));
     else throw e;
   }
   if (token !== state.token) return;
@@ -1212,7 +1214,7 @@ async function spcPoll() {
     spc.waits++;
     if (spc.waits > 14) {
       state.playing = false; updatePlayer();
-      toast('Spotify не отвечает. Проверь, что приложение Spotify открыто и в нём выполнен вход.');
+      toast(T('a.spcPoll.1'));
       return;
     }
     if (spc.waits === 2 || spc.waits === 5 || spc.waits === 9) await spcRetry(spc.waits >= 5);
@@ -1273,7 +1275,7 @@ async function scPlay(t, token) {
     return scWidgetPlay(t, token);
   }
   if (token !== state.token) return;
-  if (info.snipped) toast('SoundCloud отдаёт только отрывок этого трека');
+  if (info.snipped) toast(T('a.scPlay.1'));
   hlsCleanup();
   audio.pause();
   if (info.protocol === 'hls' && !audio.canPlayType('application/vnd.apple.mpegurl')) {
@@ -1315,8 +1317,8 @@ audio.addEventListener('ended', () => { if (isScAudio()) next(true); });
 audio.addEventListener('error', () => {
   if (!isScAudio() || hls || !audio.getAttribute('src')) return;
   const token = state.token;
-  if (state.cur.src === 'local') { playFailed(new Error('Не получилось открыть файл: формат не поддерживается или файл перемещён'), token); return; }
-  if (state.cur.src === 'yt') { playFailed(new Error('YouTube не отдал звук этого трека: он может быть недоступен в твоей стране или удалён'), token); return; }
+  if (state.cur.src === 'local') { playFailed(new Error(T('a.on_audio_error.1')), token); return; }
+  if (state.cur.src === 'yt') { playFailed(new Error(T('a.on_audio_error.2')), token); return; }
   scWidgetPlay(state.cur, token).catch((e) => playFailed(e, token));
 });
 
@@ -1353,7 +1355,7 @@ async function scWidgetPlay(t, token) {
   const w = await ensureWidget(t.url);
   if (token !== state.token) return;
   await new Promise((resolve, reject) => {
-    const to = setTimeout(() => reject(new Error('Этот трек недоступен на SoundCloud')), 15000);
+    const to = setTimeout(() => reject(new Error(T('a.scWidgetPlay.1'))), 15000);
     w.load(t.url, {
       auto_play: true, show_artwork: false, visual: false,
       callback: () => {
@@ -1452,7 +1454,7 @@ async function playTrack(t) {
       const nxt = { ...t, src: alt.src, id: alt.id, uri: alt.uri, url: alt.url, duration: alt.duration || t.duration, alts: rest };
       const qi = state.order[state.pos];
       if (state.queue[qi] === t) state.queue[qi] = nxt;
-      toast(`Играю из другого источника: ${SRC_NAMES[alt.src] || alt.src}`);
+      toast(T('a.playTrack.1', { p1: SRC_NAMES[alt.src] || alt.src }));
       return playTrack(nxt);
     }
     // трек из YouTube не заиграл: ищем тот же на SoundCloud
@@ -1463,7 +1465,7 @@ async function playTrack(t) {
         const nxt = { ...t, src: alt.src, id: alt.id, uri: undefined, url: alt.url, duration: alt.duration || t.duration, alts: [], _altTried: true };
         const qi = state.order[state.pos];
         if (state.queue[qi] === t) state.queue[qi] = nxt;
-        toast('YouTube не отдал звук, играю из SoundCloud');
+        toast(T('a.playTrack.2'));
         return playTrack(nxt);
       }
     }
@@ -1481,7 +1483,7 @@ async function findAltSource(t) {
     return (j.tracks || []).find((x) => { const [xt, xa] = dupParts(x); return title && xt === title && artistsOverlap(artist, xa) && durOk(t.duration, x.duration); }) || null;
   } catch { return null; } finally { clearTimeout(to); }
 }
-const SRC_NAMES = { sp: 'Spotify', sc: 'SoundCloud', yt: 'YouTube Music', local: 'С компа' };
+const SRC_NAMES = { sp: 'Spotify', sc: 'SoundCloud', yt: 'YouTube Music', get local() { return T('a.const.43'); } };
 function playFailed(e, token) {
   if (token !== state.token) return;
   console.warn(e);
@@ -1489,8 +1491,8 @@ function playFailed(e, token) {
   updatePlayer();
   const skip = !(e && e.fatal) && state.queue.length > 1 && state.fails < Math.min(8, state.queue.length);
   // если пропускаем, уведомление короткое: подробности в консоли и player.log
-  const name = state.cur && state.cur.title ? `«${state.cur.title.slice(0, 40)}»` : 'трек';
-  toast(skip ? `Не получилось включить ${name}, пропускаю` : e && e.message ? errText(e) : 'Не получилось включить трек', e && e.fatal ? 7000 : 3800);
+  const name = state.cur && state.cur.title ? `«${state.cur.title.slice(0, 40)}»` : T('a.playFailed.1');
+  toast(skip ? T('a.playFailed.2', { name: name }) : e && e.message ? errText(e) : T('a.playFailed.3'), e && e.fatal ? 7000 : 3800);
   if (e && e.fatal) return;
   if (++state.fails <= Math.min(8, state.queue.length) && state.queue.length > 1) setTimeout(() => { if (token === state.token) next('fail'); }, 900);
 }
@@ -1505,7 +1507,7 @@ function next(auto = false) {
     radioMore().then(() => {
       if (token !== state.token) return;   // за время подбора трек уже сменили руками
       if (state.pos + 1 < state.order.length) { state.pos++; playTrack(state.queue[state.order[state.pos]]); }
-      else if (!state.radio.more && !state.radio.loading) { engPause(); state.playing = false; updatePlayer(); toast('Радио: похожие треки закончились'); }
+      else if (!state.radio.more && !state.radio.loading) { engPause(); state.playing = false; updatePlayer(); toast(T('a.next.1')); }
     }).catch(() => {});
     return;
   }
@@ -1616,8 +1618,8 @@ function onTrackChanged() {
 }
 function updatePlayer() {
   const t = state.cur;
-  npTitle.textContent = t ? t.title : 'Ничего не играет';
-  npArtist.textContent = t ? t.artist : 'Выбери трек в списке';
+  npTitle.textContent = t ? t.title : T('a.updatePlayer.1');
+  npArtist.textContent = t ? t.artist : T('a.updatePlayer.2');
   const art = t ? t.art || t.cover : '';
   if (art) { if (npCover.getAttribute('src') !== art) npCover.src = art; } else npCover.removeAttribute('src');
   const icon = state.playing ? 'pause' : 'play';
@@ -1626,7 +1628,7 @@ function updatePlayer() {
   if (lastRepeat !== state.repeat) {
     $('b-repeat').innerHTML = state.repeat === 'one' ? ICONS.repeat1 : ICONS.repeat;
     $('b-repeat').classList.toggle('on', state.repeat !== 'off');
-    $('b-repeat').title = state.repeat === 'off' ? 'Повтор выключен' : state.repeat === 'all' ? 'Повтор списка' : 'Повтор трека';
+    $('b-repeat').title = state.repeat === 'off' ? T('a.updatePlayer.3') : state.repeat === 'all' ? T('a.updatePlayer.4') : T('a.updatePlayer.5');
     lastRepeat = state.repeat;
   }
   document.body.classList.toggle('playing', state.playing);
@@ -1731,12 +1733,12 @@ function updateProgress() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) updateProgress(); });
 
 /* ===================== Библиотека и виды ===================== */
-const VIEW_TITLES = { all: 'Вся музыка', sp: 'Spotify', sc: 'SoundCloud', yt: 'YouTube Music', local: 'С компа', recs: 'Для тебя', radio: 'Радио', stats: 'Статистика' };
+const VIEW_TITLES = { get all() { return T('a.const.44'); }, sp: 'Spotify', sc: 'SoundCloud', yt: 'YouTube Music', get local() { return T('a.const.45'); }, get recs() { return T('a.const.46'); }, get radio() { return T('a.const.47'); }, get stats() { return T('a.const.48'); } };
 const curPl = () => (state.view.startsWith('pl:') ? plGet(state.view.slice(3)) : null);
 function viewTitle() {
-  if (searchActive()) return 'Поиск';
-  if (state.view.startsWith('pl:')) { const p = curPl(); return p ? p.name : 'Плейлист'; }
-  if (state.view === 'radio' && state.radio.seed) return 'Радио: ' + state.radio.seed.title;
+  if (searchActive()) return T('a.viewTitle.1');
+  if (state.view.startsWith('pl:')) { const p = curPl(); return p ? p.name : T('a.viewTitle.2'); }
+  if (state.view === 'radio' && state.radio.seed) return T('a.viewTitle.3') + state.radio.seed.title;
   return VIEW_TITLES[state.view] || 'Sonara';
 }
 function rebuildAll() {
@@ -1787,24 +1789,24 @@ function renderHead() {
     : state.view === 'radio' ? state.radio.loading || state.radio.more
     : isPl ? false : state.loading[state.view];
   if (state.view === 'radio') {
-    sub = state.radio.loading ? 'Подбираю похожие треки…' : n ? `${n} ${plural(n, TRACKS)} · бесконечно, похожие подгружаются сами` : '';
+    sub = state.radio.loading ? T('a.renderHead.1') : n ? T('a.renderHead.2', { n: n, p2: plural(n, trackForms()) }) : '';
   } else if (state.view === 'recs') {
-    sub = state.recsLoading ? 'Подбираю треки по твоим лайкам…'
-      : n ? `${n} ${plural(n, TRACKS)} с SoundCloud · на основе ${state.recsSeeds} ${plural(state.recsSeeds, ['лайка', 'лайков', 'лайков'])}` : '';
+    sub = state.recsLoading ? T('a.renderHead.3')
+      : n ? T('a.renderHead.17', { n: n, p2: plural(n, trackForms()), recsSeeds: state.recsSeeds, p4: plural(state.recsSeeds, [T('a.renderHead.4'), T('a.renderHead.5'), T('a.renderHead.6')]) }) : '';
   } else if (searchActive()) {
     const busy = Object.values(searchSt.per).some((p) => p.st === 'loading') || (searchSt.timer && !Object.keys(searchSt.per).length);
-    sub = `«${state.query.trim()}» · ${n} ${plural(n, TRACKS)}${busy ? ' · ищу…' : ''}`;
+    sub = `«${state.query.trim()}» · ${n} ${plural(n, trackForms())}${busy ? T('a.renderHead.7') : ''}`;
   } else if (n) {
     const total = state.list.reduce((s, t) => s + (t.duration || 0), 0);
-    sub = `${n} ${plural(n, TRACKS)} · ${fmtTotal(total)}${loading ? ' · обновляю…' : ''}`;
-  } else if (loading) sub = 'Загружаю лайки…';
+    sub = `${n} ${plural(n, trackForms())} · ${fmtTotal(total)}${loading ? T('a.renderHead.8') : ''}`;
+  } else if (loading) sub = T('a.renderHead.9');
   $('view-sub').textContent = sub;
-  $('col3').textContent = state.view === 'recs' ? 'Похоже на' : 'Источник';
+  $('col3').textContent = state.view === 'recs' ? T('a.renderHead.10') : T('a.renderHead.11');
   const isStats = state.view === 'stats';
   document.querySelector('.cols').hidden = isStats;
   document.querySelector('.head-actions').hidden = isStats;
-  if (isStats) sub = 'Сколько и что ты слушаешь. Трек засчитывается после 30 секунд';
-  if (state.view === 'local' && !n && !state.query) sub = state.localFolders.length ? 'В папках не нашлось музыки' : '';
+  if (isStats) sub = T('a.renderHead.12');
+  if (state.view === 'local' && !n && !state.query) sub = state.localFolders.length ? T('a.renderHead.13') : '';
   $('view-sub').textContent = sub;
   $('act-play').disabled = !n;
   $('act-shuffle').disabled = !n || state.view === 'radio';
@@ -1813,7 +1815,7 @@ function renderHead() {
   $('act-m3u').hidden = !isPl;
   $('act-rename').hidden = !isPl;
   $('act-delete').hidden = !isPl;
-  $('act-refresh').title = state.view === 'recs' ? 'Подобрать заново' : state.view === 'radio' ? 'Подгрузить ещё' : 'Обновить лайки';
+  $('act-refresh').title = state.view === 'recs' ? T('a.renderHead.14') : state.view === 'radio' ? T('a.renderHead.15') : T('a.renderHead.16');
 }
 function emptyCard(icon, title, text, buttons = '') {
   return `<div class="empty-card"><div class="brand-icon big">${icon}</div><h2>${title}</h2><p>${text}</p><div class="btns-row">${buttons}</div></div>`;
@@ -1822,32 +1824,32 @@ function renderEmpty() {
   const el = $('empty');
   if (state.list.length) { el.hidden = true; el.innerHTML = ''; return; }
   const hasAny = state.lib.sp.length || state.lib.sc.length || state.lib.yt.length;
-  const btnSp = '<button class="pill accent" data-acc="sp">Подключить Spotify</button>';
-  const btnSc = '<button class="pill" data-acc="sc">Подключить SoundCloud</button>';
-  const btnYt = '<button class="pill" data-acc="yt">Подключить YouTube Music</button>';
+  const btnSp = T('a.renderEmpty.1');
+  const btnSc = T('a.renderEmpty.2');
+  const btnYt = T('a.renderEmpty.3');
   let html;
   if (searchActive()) {
     const pers = Object.values(searchSt.per);
     const busy = pers.some((p) => p.st === 'loading') || !pers.length;
     const failed = pers.some((p) => p.st === 'err');
-    html = busy ? '<div class="empty-card"><div class="loader"></div><p>Ищу…</p></div>'
-      : emptyCard(ICONS.search, 'Ничего не нашлось', `По запросу «${escapeHtml(state.query.trim())}» нет треков в включённых источниках.${failed ? ' Часть источников не ответила, смотри пометки над списком.' : ' Попробуй включить другие источники.'}`);
+    html = busy ? T('a.renderEmpty.4')
+      : emptyCard(ICONS.search, T('a.renderEmpty.5'), T('a.renderEmpty.31', { p1: escapeHtml(state.query.trim()), p2: failed ? T('a.renderEmpty.6') : T('a.renderEmpty.7') }));
   }
-  else if (state.view.startsWith('pl:')) html = emptyCard(ICONS.note, 'Плейлист пустой', 'Добавляй треки через ⋯ справа у трека или правой кнопкой мыши. Можно мешать Spotify и SoundCloud.');
+  else if (state.view.startsWith('pl:')) html = emptyCard(ICONS.note, T('a.renderEmpty.8'), T('a.renderEmpty.9'));
   else if (state.view === 'radio') {
-    html = state.radio.loading ? '<div class="empty-card"><div class="loader"></div><p>Настраиваю радио…</p></div>'
-      : emptyCard(ICONS.radio, 'Радио по треку', 'Нажми ⋯ у любого трека и выбери «Радио по треку»: дальше будут бесконечно играть похожие.');
+    html = state.radio.loading ? T('a.renderEmpty.10')
+      : emptyCard(ICONS.radio, T('a.renderEmpty.11'), T('a.renderEmpty.12'));
   } else if (state.view === 'recs') {
-    if (state.recsLoading) html = '<div class="empty-card"><div class="loader"></div><p>Ищу похожие треки…</p></div>';
-    else if (!hasAny) html = emptyCard(ICONS.sparkle, 'Подборка по твоим лайкам', 'Подключи Spotify или SoundCloud, и тут появятся похожие треки, которых у тебя ещё нет.', btnSp + btnSc);
-    else html = emptyCard(ICONS.sparkle, 'Подборка по твоим лайкам', escapeHtml(state.recsError) || 'Нажми, и я найду похожие треки, которых у тебя ещё нет.', '<button class="pill accent" data-act="recs">Подобрать</button>');
-  } else if (state.loading.sp || state.loading.sc || state.loading.yt) html = '<div class="empty-card"><div class="loader"></div><p>Загружаю лайки…</p></div>';
-  else if (state.view === 'sp') html = emptyCard(ICONS.note, 'Spotify', LS.get('sp_token') ? 'Лайкнутых треков пока нет.' : 'Подключи аккаунт, и тут появятся твои лайки.', LS.get('sp_token') ? '' : btnSp);
+    if (state.recsLoading) html = T('a.renderEmpty.13');
+    else if (!hasAny) html = emptyCard(ICONS.sparkle, T('a.renderEmpty.14'), T('a.renderEmpty.15'), btnSp + btnSc);
+    else html = emptyCard(ICONS.sparkle, T('a.renderEmpty.16'), escapeHtml(state.recsError) || T('a.renderEmpty.17'), T('a.renderEmpty.18'));
+  } else if (state.loading.sp || state.loading.sc || state.loading.yt) html = T('a.renderEmpty.19');
+  else if (state.view === 'sp') html = emptyCard(ICONS.note, 'Spotify', LS.get('sp_token') ? T('a.renderEmpty.20') : T('a.renderEmpty.21'), LS.get('sp_token') ? '' : btnSp);
   else if (state.view === 'stats') { el.hidden = true; el.innerHTML = ''; return; }
-  else if (state.view === 'local') html = emptyCard(ICONS.folder, 'Музыка с компа', 'Добавь папку с mp3, wav или flac, например со своими битами. Подпапки тоже читаются.', '<button class="pill accent" data-acc="local">Добавить папку</button>');
-  else if (state.view === 'yt') html = emptyCard(ICONS.note, 'YouTube Music', ytLists.length ? 'В подключённых плейлистах пусто или они недоступны.' : 'Вставь ссылку на свой плейлист, и он появится здесь. Для лайков понадобится вход через Brave.', btnYt.replace('class="pill"', 'class="pill accent"'));
-  else if (state.view === 'sc') html = emptyCard(ICONS.note, 'SoundCloud', LS.get('sc_user') ? 'Лайков не нашлось. Проверь, что они открыты в профиле.' : 'Впиши свой ник, и тут появятся твои лайки.', btnSc.replace('class="pill"', 'class="pill accent"'));
-  else html = emptyCard(ICONS.note, 'Подключи музыку', 'Твои лайки из Spotify, SoundCloud и YouTube Music соберутся в одном списке.', btnSp + btnSc + btnYt);
+  else if (state.view === 'local') html = emptyCard(ICONS.folder, T('a.renderEmpty.22'), T('a.renderEmpty.23'), T('a.renderEmpty.24'));
+  else if (state.view === 'yt') html = emptyCard(ICONS.note, 'YouTube Music', ytLists.length ? T('a.renderEmpty.25') : T('a.renderEmpty.26'), btnYt.replace('class="pill"', 'class="pill accent"'));
+  else if (state.view === 'sc') html = emptyCard(ICONS.note, 'SoundCloud', LS.get('sc_user') ? T('a.renderEmpty.27') : T('a.renderEmpty.28'), btnSc.replace('class="pill"', 'class="pill accent"'));
+  else html = emptyCard(ICONS.note, T('a.renderEmpty.29'), T('a.renderEmpty.30'), btnSp + btnSc + btnYt);
   el.innerHTML = html;
   el.hidden = false;
 }
@@ -1885,7 +1887,7 @@ function makeRow() {
   el.className = 'row';
   el.draggable = true;
   el.innerHTML = '<div class="n"><span class="num"></span><span class="eq"><i></i><i></i><i></i></span><span class="hov">' + ICONS.play +
-    '</span></div><div class="ti"><img class="cv" alt="" decoding="async"><div class="tx"><div class="tt"></div><div class="ar"></div></div></div><div class="c3"></div><div class="d"><span class="dur"></span><button class="more" title="Ещё">' + ICONS.more + '</button></div>';
+    T('a.makeRow.1') + ICONS.more + '</button></div>';
   el._num = el.querySelector('.num');
   el._img = el.querySelector('img');
   el._tt = el.querySelector('.tt');
@@ -1897,11 +1899,11 @@ function makeRow() {
 // заглушка для треков без обложки: серая нота на прозрачном фоне
 const NO_COVER = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><g transform="translate(9 9) scale(.92)" fill="none" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".7"><path d="M9 17.5V6.6l10-2.4v10.9"/><circle cx="6.6" cy="17.6" r="2.4" fill="#8e8e93"/><circle cx="16.6" cy="15.1" r="2.4" fill="#8e8e93"/></g></svg>');
 const isCur = (t) => !!state.cur && (state.cur.src === t.src && state.cur.id === t.id || (t.alts || []).some((x) => state.cur.src === x.src && state.cur.id === x.id));
-const SRC_BADGE = { sp: ['sp', 'Spotify'], sc: ['sc', 'SoundCloud'], yt: ['yt', 'YouTube'], local: ['lc', 'С компа'] };
+const SRC_BADGE = { sp: ['sp', 'Spotify'], sc: ['sc', 'SoundCloud'], yt: ['yt', 'YouTube'], local: ['lc', '@a.src.local'] };
 // у объединённого трека бейджи всех источников, недоступные для воспроизведения приглушены
 function srcBadges(t) {
   const list = t._srcs ? ['sp', 'sc', 'yt', 'local'].filter((s) => t._srcs.includes(s)) : [t.src];
-  return list.map((s) => `<span class="badge ${SRC_BADGE[s][0]}${t._dim && t._dim.includes(s) ? ' dim' : ''}">${SRC_BADGE[s][1]}</span>`).join('');
+  return list.map((s) => `<span class="badge ${SRC_BADGE[s][0]}${t._dim && t._dim.includes(s) ? ' dim' : ''}">${lbl(SRC_BADGE[s][1])}</span>`).join('');
 }
 function fillRow(el, t, i) {
   const key = t.src + ':' + t.id + ':' + i + ':' + (t._srcs ? t._srcs.join() + (t._dim || []).join() : '');
@@ -1976,14 +1978,14 @@ async function scLoadLikes(force) {
   const user = LS.get('sc_user');
   if (!user || state.loading.sc) return;
   state.loading.sc = true;
-  setAccState('sc', 'Загружаю лайки…');
+  setAccState('sc', T('a.scLoadLikes.1'));
   renderHead(); renderEmpty();
   let stale = false;
   try {
     const r = await api(`/api/sc/likes?user=${encodeURIComponent(user)}${force ? '&force=1' : ''}`);
     state.lib.sc = r.tracks || [];
     stale = !!r.cached && Date.now() - (r.at || 0) > 30 * 60 * 1000;
-    setAccState('sc', `${state.lib.sc.length} ${plural(state.lib.sc.length, TRACKS)}`, 'ok');
+    setAccState('sc', `${state.lib.sc.length} ${plural(state.lib.sc.length, trackForms())}`, 'ok');
     rebuildAll();
   } catch (e) {
     setAccState('sc', e.message, 'err');
@@ -2016,8 +2018,8 @@ function renderYtLists() {
   for (const l of ytLists) {
     const d = document.createElement('div');
     d.className = 'folder';
-    d.innerHTML = `<span></span><button title="Убрать плейлист">${ICONS.x}</button>`;
-    d.querySelector('span').textContent = `${l.id === 'LM' ? 'Понравившиеся (Brave)' : l.name || l.id}${l.n ? ' · ' + l.n : ''}`;
+    d.innerHTML = T('a.renderYtLists.1', { x: ICONS.x });
+    d.querySelector('span').textContent = `${l.id === 'LM' ? T('a.renderYtLists.2') : l.name || l.id}${l.n ? ' · ' + l.n : ''}`;
     d.querySelector('span').title = l.id;
     d.querySelector('button').addEventListener('click', () => {
       ytLists = ytLists.filter((x) => x.id !== l.id);
@@ -2028,17 +2030,17 @@ function renderYtLists() {
     box.appendChild(d);
   }
   const ib = $('yt-install');
-  if (!ib.disabled) ib.textContent = ytStatus.installed ? 'Обновить yt-dlp' : 'Скачать yt-dlp';
-  $('yt-version').textContent = !ytStatus.installed ? '' : `yt-dlp ${ytStatus.version || ''} · ${ytStatus.js ? 'JS-рантайм: ' + ytStatus.js : 'нет JS-рантайма (Node, Deno), часть роликов может не играть'}`.trim();
+  if (!ib.disabled) ib.textContent = ytStatus.installed ? T('a.renderYtLists.3') : T('a.renderYtLists.4');
+  $('yt-version').textContent = !ytStatus.installed ? '' : `yt-dlp ${ytStatus.version || ''} · ${ytStatus.js ? T('a.renderYtLists.5') + ytStatus.js : T('a.renderYtLists.6')}`.trim();
   $('yt-cookie-fb').checked = ytCookieFb();
-  $('yt-likes').title = ytStatus.brave ? 'Нужен вход в YouTube в Brave. Brave лучше закрыть' : 'Brave не найден';
+  $('yt-likes').title = ytStatus.brave ? T('a.renderYtLists.7') : T('a.renderYtLists.8');
   $('yt-likes').disabled = !ytStatus.brave;
 }
 async function ytLoadAll(force) {
   if (state.loading.yt) return;
   if (!ytLists.length) { state.lib.yt = []; setAccState('yt', ''); rebuildAll(); return; }
   state.loading.yt = true;
-  setAccState('yt', 'Загружаю плейлисты…');
+  setAccState('yt', T('a.ytLoadAll.1'));
   renderHead(); renderEmpty();
   let stale = false, errors = 0, lastError = '';
   const out = [], seen = new Set();
@@ -2058,15 +2060,15 @@ async function ytLoadAll(force) {
   LS.set('yt_lists', JSON.stringify(ytLists));
   renderYtLists();
   if (errors && !out.length) { setAccState('yt', lastError, 'err'); toast('YouTube Music: ' + lastError, 6000); }
-  else if (errors) { setAccState('yt', `${out.length} ${plural(out.length, TRACKS)}, часть плейлистов не загрузилась`, 'err'); toast('YouTube Music: ' + lastError, 6000); }
-  else setAccState('yt', `${out.length} ${plural(out.length, TRACKS)}`, 'ok');
+  else if (errors) { setAccState('yt', T('a.ytLoadAll.2', { length: out.length, p2: plural(out.length, trackForms()) }), 'err'); toast('YouTube Music: ' + lastError, 6000); }
+  else setAccState('yt', `${out.length} ${plural(out.length, trackForms())}`, 'ok');
   state.loading.yt = false;
   rebuildAll();
   if (stale && !errors) ytLoadAll(true);
 }
 async function ytAdd(id, cookies) {
-  if (ytLists.some((l) => l.id === id)) { setAccState('yt', 'Этот плейлист уже подключён', 'err'); return; }
-  if (ytLists.length >= 12) { setAccState('yt', 'Можно подключить до 12 плейлистов', 'err'); return; }
+  if (ytLists.some((l) => l.id === id)) { setAccState('yt', T('a.ytAdd.1'), 'err'); return; }
+  if (ytLists.length >= 12) { setAccState('yt', T('a.ytAdd.2'), 'err'); return; }
   ytLists.push({ id, name: '', cookies: !!cookies, n: 0 });
   saveYtLists();
   await ytLoadAll(true);
@@ -2085,13 +2087,13 @@ $('yt-link').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('yt-a
 $('yt-likes').addEventListener('click', () => ytAdd('LM', true));
 $('yt-install').addEventListener('click', async () => {
   const b = $('yt-install');
-  b.disabled = true; b.textContent = 'Скачиваю…';
+  b.disabled = true; b.textContent = T('a.on_ytinstall_click.1');
   try {
     const r = await api('/api/app/ytdlp/install', { method: 'POST', headers: { 'X-Player': '1' } });
-    toast(r.updated ? `yt-dlp обновлён до ${r.version}` : `Уже стоит последняя версия yt-dlp (${r.version})`);
+    toast(r.updated ? T('a.on_ytinstall_click.2', { version: r.version }) : T('a.on_ytinstall_click.3', { version: r.version }));
     await ytCheck();
     if (r.updated) ytLoadAll(true);
-  } catch (e) { setAccState('yt', 'Не получилось обновить yt-dlp: ' + e.message, 'err'); }
+  } catch (e) { setAccState('yt', T('a.on_ytinstall_click.4') + e.message, 'err'); }
   b.disabled = false; renderYtLists();
 });
 $('yt-cookie-fb').addEventListener('change', (e) => { LS.set('yt_cookie_fb', e.target.checked ? '1' : '0'); });
@@ -2181,8 +2183,8 @@ async function searchOne(id, q, token) {
   } catch (e) {
     if (token !== searchSt.token) return;
     searchSt.remote[id] = [];
-    searchSt.per[id] = { st: 'err', msg: ctl.signal.aborted || e.name === 'AbortError' ? `не ответил за ${Math.round(ms / 1000)} с` : e.message, ms: Date.now() - t0 };
-    console.warn('поиск', id, searchSt.per[id].msg);
+    searchSt.per[id] = { st: 'err', msg: ctl.signal.aborted || e.name === 'AbortError' ? T('a.searchOne.1', { p1: Math.round(ms / 1000) }) : e.message, ms: Date.now() - t0 };
+    console.warn(T('a.searchOne.2'), id, searchSt.per[id].msg);
   } finally { clearTimeout(timer); }
   searchRefresh();
 }
@@ -2191,7 +2193,7 @@ function searchRefresh() {
   try { searchMergeNow(); }
   catch (e) {
     // если слияние сломалось на чьих-то данных, показываем результаты как есть, без объединения дублей
-    console.error('поиск: не получилось объединить результаты', e);
+    console.error(T('a.searchRefresh.1'), e);
     searchSt.items = SEARCH_SRCS.flatMap(([id]) => (searchUsable(id) ? searchSt.remote[id] || [] : []));
   }
   if (searchActive()) render();
@@ -2206,9 +2208,9 @@ function renderSearchChips() {
       else if (per.st === 'ok') tag = `<b>${per.n}</b>`;
       else if (per.st === 'err') tag = '<b class="bad">!</b>';
     }
-    let title = !avail ? (id === 'sp' ? 'Spotify не подключён' : 'Нужен yt-dlp') : on ? 'Искать здесь: включено' : 'Искать здесь: выключено';
-    if (on && active && per.st === 'ok') title = `Найдено: ${per.n} за ${(per.ms / 1000).toFixed(1)} с`;
-    else if (on && active && per.st === 'err') title = `Ошибка: ${per.msg}`;
+    let title = !avail ? (id === 'sp' ? T('a.renderSearchChips.1') : T('a.renderSearchChips.2')) : on ? T('a.renderSearchChips.3') : T('a.renderSearchChips.4');
+    if (on && active && per.st === 'ok') title = T('a.renderSearchChips.5', { n: per.n, p2: (per.ms / 1000).toFixed(1) });
+    else if (on && active && per.st === 'err') title = T('a.renderSearchChips.6', { msg: per.msg });
     return `<button type="button" class="gs-chip ${id}${on ? ' on' : ''}${avail ? '' : ' na'}" data-src="${id}" aria-pressed="${on}" title="${title}"><span>${name}</span>${tag}</button>`;
   }).join('');
   const notes = [];
@@ -2216,7 +2218,7 @@ function renderSearchChips() {
     for (const [id, name] of SEARCH_SRCS) {
       const per = searchSt.per[id] || {};
       if (per.st === 'err') notes.push(`${name}: ${per.msg}`);
-      else if (searchOn[id] && !searchAvail(id)) notes.push(`${name}: ${id === 'sp' ? 'не подключён' : 'нужен yt-dlp'}`);
+      else if (searchOn[id] && !searchAvail(id)) notes.push(`${name}: ${id === 'sp' ? T('a.renderSearchChips.7') : T('a.renderSearchChips.8')}`);
     }
   }
   const box = $('gs-notes');
@@ -2320,10 +2322,10 @@ async function loadRecs(force) {
     state.recs = out;
     state.recsSeeds = r.seeds || seeds.length;
     state.recsAt = Date.now();
-    if (!out.length) state.recsError = 'Ничего нового не нашлось. Попробуй ещё раз, возьму другие лайки.';
+    if (!out.length) state.recsError = T('a.loadRecs.1');
     LS.set('recs', JSON.stringify({ at: state.recsAt, tracks: out, seeds: state.recsSeeds }));
   } catch (e) {
-    state.recsError = 'Не получилось подобрать: ' + e.message;
+    state.recsError = T('a.loadRecs.2') + e.message;
   } finally {
     state.recsLoading = false;
     render();
@@ -2361,8 +2363,8 @@ let playlists = LS.json('playlists', []);
 if (!Array.isArray(playlists)) playlists = [];
 // после сбоя или правки руками в плейлистах могло оказаться что угодно: оставляем только годное, чтобы список не ломал отрисовку
 playlists = playlists.filter((p) => p && typeof p === 'object' && p.id != null && Array.isArray(p.tracks)).map((p) => ({
-  ...p, id: String(p.id), name: String(p.name == null ? 'Плейлист' : p.name).slice(0, 60) || 'Плейлист',
-  tracks: p.tracks.filter((t) => t && typeof t === 'object' && ['sp', 'sc', 'yt', 'local'].includes(t.src) && t.id != null).map((t) => ({ ...t, id: String(t.id), title: String(t.title == null ? 'Без названия' : t.title) || 'Без названия', artist: String(t.artist == null ? '' : t.artist) })),
+  ...p, id: String(p.id), name: String(p.name == null ? T('a.top.1') : p.name).slice(0, 60) || T('a.top.2'),
+  tracks: p.tracks.filter((t) => t && typeof t === 'object' && ['sp', 'sc', 'yt', 'local'].includes(t.src) && t.id != null).map((t) => ({ ...t, id: String(t.id), title: String(t.title == null ? T('a.top.3') : t.title) || T('a.top.4'), artist: String(t.artist == null ? '' : t.artist) })),
 }));
 const plGet = (id) => playlists.find((p) => p.id === id) || null;
 function savePlaylists() { LS.set('playlists', JSON.stringify(playlists)); renderSidebarPlaylists(); }
@@ -2386,20 +2388,20 @@ function renderSidebarPlaylists() {
   }
 }
 async function plCreate(firstTrack) {
-  const name = await dialog({ title: 'Новый плейлист', value: '', ok: 'Создать' });
+  const name = await dialog({ title: T('a.plCreate.1'), value: '', ok: T('a.plCreate.2') });
   if (!name) return null;
   const p = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: name.slice(0, 60), tracks: [] };
   if (firstTrack) p.tracks.push(plSlim(firstTrack));
   playlists.push(p);
   savePlaylists();
-  toast(firstTrack ? `Создал «${p.name}» и добавил трек` : `Плейлист «${p.name}» создан`);
+  toast(firstTrack ? T('a.plCreate.3', { name: p.name }) : T('a.plCreate.4', { name: p.name }));
   return p;
 }
 function plAdd(p, t) {
-  if (p.tracks.some((x) => x.src === t.src && x.id === t.id)) { toast(`Уже есть в «${p.name}»`); return; }
+  if (p.tracks.some((x) => x.src === t.src && x.id === t.id)) { toast(T('a.plAdd.1', { name: p.name })); return; }
   p.tracks.push(plSlim(t));
   savePlaylists();
-  toast(`Добавлено в «${p.name}»`);
+  toast(T('a.plAdd.2', { name: p.name }));
   if (state.view === 'pl:' + p.id) render();
 }
 function plRemove(p, t) {
@@ -2410,14 +2412,14 @@ function plRemove(p, t) {
   render();
 }
 async function plRename(p) {
-  const name = await dialog({ title: 'Переименовать плейлист', value: p.name, ok: 'Сохранить' });
+  const name = await dialog({ title: T('a.plRename.1'), value: p.name, ok: T('a.plRename.2') });
   if (!name) return;
   p.name = name.slice(0, 60);
   savePlaylists();
   renderHead();
 }
 async function plDelete(p) {
-  const ok = await dialog({ title: `Удалить «${p.name}»?`, text: 'Треки останутся в библиотеке, удалится только сам плейлист.', ok: 'Удалить', danger: true });
+  const ok = await dialog({ title: T('a.plDelete.1', { name: p.name }), text: T('a.plDelete.2'), ok: T('a.plDelete.3'), danger: true });
   if (!ok) return;
   playlists = playlists.filter((x) => x !== p);
   savePlaylists();
@@ -2492,7 +2494,7 @@ async function startRadio(t) {
     if (state.radio.seed !== seed) return;
     addRadio(res, 25);
   } catch (e) {
-    if (state.radio.seed === seed) toast('Радио: ' + e.message);
+    if (state.radio.seed === seed) toast(T('a.startRadio.1') + e.message);
   }
   if (state.radio.seed !== seed) return;
   state.radio.loading = false;
@@ -2533,27 +2535,27 @@ function openTrackMenu(t, idx, x, y, alignRight) {
   if (!t) return;
   const items = [];
   const add = (label, icon, act, cls = '') => items.push({ label, icon, act, cls });
-  add('Радио по треку', ICONS.radio, () => startRadio(t));
-  if (state.cur && state.queue.length) add('Играть следующим', ICONS.queue, () => {
+  add(T('a.openTrackMenu.1'), ICONS.radio, () => startRadio(t));
+  if (state.cur && state.queue.length) add(T('a.openTrackMenu.2'), ICONS.queue, () => {
     state.queue.push(t);
     state.order.splice(state.pos + 1, 0, state.queue.length - 1);
-    toast('Будет играть следующим');
+    toast(T('a.openTrackMenu.3'));
     renderQueue();
   });
-  add('В конец очереди', ICONS.queue, () => {
+  add(T('a.openTrackMenu.4'), ICONS.queue, () => {
     if (!state.queue.length) { playFrom([t], 0); return; }
     state.queue.push(t);
     state.order.push(state.queue.length - 1);
-    toast('Добавлено в очередь');
+    toast(T('a.openTrackMenu.5'));
     renderQueue();
   });
-  items.push({ sep: true }, { head: 'Добавить в плейлист' });
+  items.push({ sep: true }, { head: T('a.openTrackMenu.6') });
   for (const p of playlists) add(p.name, ICONS.list, () => plAdd(p, t));
-  add('Новый плейлист…', ICONS.plus, () => plCreate(t));
+  add(T('a.openTrackMenu.7'), ICONS.plus, () => plCreate(t));
   const pl = curPl();
-  if (pl) { items.push({ sep: true }); add('Убрать из плейлиста', ICONS.minus, () => plRemove(pl, t), 'danger'); }
+  if (pl) { items.push({ sep: true }); add(T('a.openTrackMenu.8'), ICONS.minus, () => plRemove(pl, t), 'danger'); }
   const ext = t.src === 'sp' ? `https://open.spotify.com/track/${t.id}` : t.url;
-  if (ext && /^https?:/.test(ext)) { items.push({ sep: true }); add(t.src === 'sp' ? 'Открыть в Spotify' : t.src === 'yt' ? 'Открыть в YouTube Music' : 'Открыть на SoundCloud', ICONS.link, () => window.open(ext, '_blank')); }
+  if (ext && /^https?:/.test(ext)) { items.push({ sep: true }); add(t.src === 'sp' ? T('a.openTrackMenu.9') : t.src === 'yt' ? T('a.openTrackMenu.10') : T('a.openTrackMenu.11'), ICONS.link, () => window.open(ext, '_blank')); }
 
   ctxEl.innerHTML = '';
   const head = document.createElement('div');
@@ -2609,7 +2611,7 @@ async function localPlay(t, token) {
   catch (e) {
     if (e.name === 'NotAllowedError') { state.playing = false; updatePlayer(); return; }
     if (e.name === 'AbortError' || token !== state.token) return;
-    throw new Error('Не получилось открыть файл: формат не поддерживается или файл перемещён');
+    throw new Error(T('a.localPlay.1'));
   }
 }
 let localLoading = false;
@@ -2636,24 +2638,24 @@ function renderFolders() {
   for (const f of state.localFolders) {
     const d = document.createElement('div');
     d.className = 'folder';
-    d.innerHTML = `<span></span><button title="Убрать папку">${ICONS.x}</button>`;
+    d.innerHTML = T('a.renderFolders.1', { x: ICONS.x });
     d.querySelector('span').textContent = f;
     d.querySelector('span').title = f;
     d.querySelector('button').addEventListener('click', () => localCmd('remove', { path: f }));
     box.appendChild(d);
   }
   const n = state.lib.local.length;
-  $('lc-state').textContent = state.localFolders.length ? `${n} ${plural(n, TRACKS)}` : 'Не добавлено';
+  $('lc-state').textContent = state.localFolders.length ? `${n} ${plural(n, trackForms())}` : T('a.renderFolders.2');
   $('lc-state').className = 'state' + (n ? ' ok' : '');
 }
 async function localCmd(name, body) {
-  $('lc-state').textContent = 'Читаю папки…';
+  $('lc-state').textContent = T('a.localCmd.1');
   try {
     const r = await fetch('/api/app/local/' + name, { method: 'POST', headers: { 'X-Player': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
     const j = await r.json();
-    if (!r.ok) throw new Error(j.error || 'ошибка');
+    if (!r.ok) throw new Error(j.error || T('a.localCmd.2'));
     applyLocal(j);
-    if (name !== 'remove' && j.tracks) toast(`С компа: ${j.tracks.length} ${plural(j.tracks.length, TRACKS)}`);
+    if (name !== 'remove' && j.tracks) toast(T('a.localCmd.3', { length: j.tracks.length, p2: plural(j.tracks.length, trackForms()) }));
   } catch (e) { toast(e.message); renderFolders(); }
 }
 $('lc-add').addEventListener('click', () => { const v = $('lc-path').value.trim(); if (v) { localCmd('add', { path: v }); $('lc-path').value = ''; } });
@@ -2687,12 +2689,12 @@ async function renderStats() {
   const range = state.statsRange;
   let st;
   try { st = await fetch('/api/app/stats?range=' + range, { headers: { 'X-Player': '1' } }).then((r) => r.json()); }
-  catch { box.innerHTML = '<p class="hint">Не получилось загрузить статистику.</p>'; return; }
+  catch { box.innerHTML = T('a.renderStats.1'); return; }
   if (state.view !== 'stats') return;
   const min = Math.round(st.totalMs / 60000);
-  const seg = `<div class="seg" id="st-range">${[['week', 'Неделя'], ['month', 'Месяц'], ['all', 'Всё время']].map(([k, l]) => `<button data-r="${k}" class="${k === range ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  const seg = `<div class="seg" id="st-range">${[['week', T('a.renderStats.2')], ['month', T('a.renderStats.3')], ['all', T('a.renderStats.4')]].map(([k, l]) => `<button data-r="${k}" class="${k === range ? 'on' : ''}">${l}</button>`).join('')}</div>`;
   if (!st.plays) {
-    box.innerHTML = seg + emptyCard(ICONS.chart, 'Пока пусто', 'Слушай музыку, и тут начнёт копиться: сколько минут, любимые треки и артисты. Трек засчитывается после 30 секунд.');
+    box.innerHTML = seg + emptyCard(ICONS.chart, T('a.renderStats.5'), T('a.renderStats.6'));
     bindStats();
     return;
   }
@@ -2702,25 +2704,12 @@ async function renderStats() {
     const [, mm, dd] = d.day.split('-');
     const h = Math.round((d.ms / maxDay) * 100);
     const label = i % step === 0 || i === st.chart.length - 1 ? `<small>${dd}.${mm}</small>` : '';
-    return `<div class="st-bar${d.ms ? '' : ' zero'}" title="${dd}.${mm}: ${Math.round(d.ms / 60000)} мин"><i style="height:${Math.max(h, 2)}%"></i>${label}</div>`;
+    return T('a.renderStats.7', { p1: d.ms ? '' : ' zero', dd: dd, mm: mm, p4: Math.round(d.ms / 60000), p5: Math.max(h, 2), label: label });
   }).join('');
   const srcTotal = Math.max(1, st.sources.sp + st.sources.sc + st.sources.local + (st.sources.yt || 0));
-  const srcs = [['sp', 'Spotify', '#1ed760'], ['sc', 'SoundCloud', '#ff7700'], ['yt', 'YouTube Music', '#ff2d2d'], ['local', 'С компа', '#8e8e93']].filter(([k]) => st.sources[k] > 0);
+  const srcs = [['sp', 'Spotify', '#1ed760'], ['sc', 'SoundCloud', '#ff7700'], ['yt', 'YouTube Music', '#ff2d2d'], ['local', T('a.renderStats.8'), '#8e8e93']].filter(([k]) => st.sources[k] > 0);
   const maxArt = Math.max(1, ...st.topArtists.map((a) => a.count));
-  box.innerHTML = seg + `
-    <div class="st-cards">
-      <div class="st-card"><b>${min >= 600 ? Math.round(min / 60) + ' ч' : min + ' мин'}</b><span>прослушано</span></div>
-      <div class="st-card"><b>${st.plays}</b><span>${plural(st.plays, ['прослушивание', 'прослушивания', 'прослушиваний'])}</span></div>
-      <div class="st-card"><b>${st.uniqueTracks}</b><span>${plural(st.uniqueTracks, ['разный трек', 'разных трека', 'разных треков'])}</span></div>
-      <div class="st-card"><b>${st.uniqueArtists}</b><span>${plural(st.uniqueArtists, ['артист', 'артиста', 'артистов'])}</span></div>
-    </div>
-    <div class="st-chart">${bars}</div>
-    <div class="st-src">${srcs.map(([k, , c]) => `<i style="width:${(st.sources[k] / srcTotal) * 100}%;background:${c}"></i>`).join('')}</div>
-    <div class="st-legend">${srcs.map(([k, l, c]) => `<span style="--c:${c}">${l} · ${Math.round((st.sources[k] / srcTotal) * 100)}%</span>`).join('')}</div>
-    <div class="st-cols">
-      <div><h3>Любимые треки</h3><div id="st-tracks"></div></div>
-      <div><h3>Любимые артисты</h3><div id="st-artists"></div></div>
-    </div>`;
+  box.innerHTML = seg + T('a.renderStats.22', { p1: min >= 600 ? Math.round(min / 60) + T('a.renderStats.9') : min + T('a.renderStats.10'), plays: st.plays, p3: plural(st.plays, [T('a.renderStats.11'), T('a.renderStats.12'), T('a.renderStats.13')]), uniqueTracks: st.uniqueTracks, p5: plural(st.uniqueTracks, [T('a.renderStats.14'), T('a.renderStats.15'), T('a.renderStats.16')]), uniqueArtists: st.uniqueArtists, p7: plural(st.uniqueArtists, [T('a.renderStats.17'), T('a.renderStats.18'), T('a.renderStats.19')]), bars: bars, p9: srcs.map(([k, , c]) => `<i style="width:${(st.sources[k] / srcTotal) * 100}%;background:${c}"></i>`).join(''), p10: srcs.map(([k, l, c]) => `<span style="--c:${c}">${l} · ${Math.round((st.sources[k] / srcTotal) * 100)}%</span>`).join('') });
   const tl = $('st-tracks');
   st.topTracks.forEach((x, i) => {
     const t = hydrateLocal({ ...x.t });
@@ -2730,7 +2719,7 @@ async function renderStats() {
     d.querySelector('img').src = t.cover || NO_COVER;
     d.querySelector('b').textContent = t.title;
     d.querySelector('small').textContent = t.artist;
-    d.title = 'Включить';
+    d.title = T('a.renderStats.20');
     d.addEventListener('click', () => playFrom(st.topTracks.map((y) => hydrateLocal({ ...y.t })), i, 'list'));
     d.addEventListener('contextmenu', (e) => { e.preventDefault(); openTrackMenu(t, -1, e.clientX, e.clientY); });
     tl.appendChild(d);
@@ -2739,7 +2728,7 @@ async function renderStats() {
   st.topArtists.forEach((a, i) => {
     const d = document.createElement('div');
     d.className = 'st-item art';
-    d.innerHTML = `<span class="r">${i + 1}</span><div><b></b><div class="meter" style="width:${(a.count / maxArt) * 100}%"></div></div><span class="c">${a.count} × · ${Math.round(a.ms / 60000)} мин</span>`;
+    d.innerHTML = T('a.renderStats.21', { p1: i + 1, p2: (a.count / maxArt) * 100, count: a.count, p4: Math.round(a.ms / 60000) });
     d.querySelector('b').textContent = a.name;
     al.appendChild(d);
   });
@@ -2760,20 +2749,20 @@ async function loadDiscord() {
 function showDiscord(r) {
   $('dc-on').checked = !!r.on;
   if (document.activeElement !== $('dc-id')) $('dc-id').value = r.id || '';
-  $('dc-state').textContent = r.on ? r.status : 'Выключено';
+  $('dc-state').textContent = r.on ? r.status : T('a.showDiscord.1');
   $('dc-state').className = 'state' + (r.on && /подключено/.test(r.status) ? ' ok' : r.on && /отказал|нужен|не запущен/.test(r.status) ? ' err' : '');
 }
 async function saveDiscord() {
   const id = $('dc-id').value.trim();
   const on = $('dc-on').checked;
-  if (on && !/^\d{15,25}$/.test(id)) { $('dc-state').textContent = 'Вставь Application ID (длинное число)'; $('dc-state').className = 'state err'; return; }
-  $('dc-state').textContent = 'Подключаюсь…';
+  if (on && !/^\d{15,25}$/.test(id)) { $('dc-state').textContent = T('a.saveDiscord.1'); $('dc-state').className = 'state err'; return; }
+  $('dc-state').textContent = T('a.saveDiscord.2');
   try {
     const r = await fetch('/api/app/discord', { method: 'POST', headers: { 'X-Player': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ on, id }) }).then((x) => x.json());
     showDiscord(r);
     setTimeout(loadDiscord, 2500);
     publishState(true);
-  } catch { $('dc-state').textContent = 'Ошибка'; }
+  } catch { $('dc-state').textContent = T('a.saveDiscord.3'); }
 }
 $('dc-save').addEventListener('click', saveDiscord);
 $('dc-on').addEventListener('change', saveDiscord);
@@ -2815,7 +2804,7 @@ function buildSettings() {
   for (const [name, c] of ACCENTS) {
     const b = document.createElement('button');
     b.className = 'sw';
-    b.title = name;
+    b.title = lbl(name);
     b.dataset.c = c;
     b.style.setProperty('--c', c);
     b.addEventListener('click', () => { ui.accent = c; ui.preset = null; saveUI(); applyUI(); });
@@ -2823,7 +2812,7 @@ function buildSettings() {
   }
   const custom = document.createElement('label');
   custom.className = 'sw sw-custom';
-  custom.title = 'Свой цвет';
+  custom.title = T('a.buildSettings.1');
   custom.innerHTML = '<input type="color" id="accent-custom">';
   aBox.appendChild(custom);
   $('accent-custom').addEventListener('input', (e) => { ui.accent = e.target.value.toUpperCase(); ui.preset = null; liveChange(); });
@@ -2895,11 +2884,11 @@ async function onWallFile(file) {
     c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
     if (bmp.close) bmp.close();
     const url = c.toDataURL('image/jpeg', 0.82);
-    if (!LS.set('wallImg', url)) { toast('Картинка слишком большая, выбери поменьше'); return; }
+    if (!LS.set('wallImg', url)) { toast(T('a.onWallFile.1')); return; }
     setWall('custom'); ui.preset = null; saveUI();
     lastWallBg = null;
     buildWalls(); applyUI();
-  } catch { toast('Не получилось открыть картинку'); }
+  } catch { toast(T('a.onWallFile.2')); }
 }
 function syncSettingsUI() {
   if ($('settings').hidden) return;
@@ -2926,7 +2915,7 @@ function buildLook() {
   const sel = $('lk-font');
   for (const [v, name] of FONTS) {
     const o = document.createElement('option');
-    o.value = v; o.textContent = name;
+    o.value = v; o.textContent = lbl(name);
     if (v) o.style.fontFamily = fontStack(v);
     sel.appendChild(o);
   }
@@ -3019,7 +3008,7 @@ function gradBarRefresh() {
   const info = $('gr-info');
   if (gradActive()) {
     const a = gradAnalyze(effGradTarget(), userOpVal(), palettePanel());
-    info.textContent = `Тема подобрана по яркости градиента: ${a.mode === 'dark' ? 'тёмная' : 'светлая'} · контраст текста ${a.contrast.toFixed(1)}:1${a.raised ? ' · панели плотнее для читаемости' : ''}`;
+    info.textContent = T('a.gradBarRefresh.4', { p1: a.mode === 'dark' ? T('a.gradBarRefresh.1') : T('a.gradBarRefresh.2'), p2: a.contrast.toFixed(1), p3: a.raised ? T('a.gradBarRefresh.3') : '' });
   } else info.textContent = '';
   info.hidden = !info.textContent;
   if (gradSel) {
@@ -3038,13 +3027,13 @@ function gradRender() {
     h.type = 'button';
     h.className = 'gr-h';
     h._stop = s;
-    h.title = 'Потяни, чтобы сдвинуть. Двойной клик удаляет';
+    h.title = T('a.gradRender.1');
     bar.appendChild(h);
   }
   document.querySelectorAll('#gr-type button').forEach((b) => b.classList.toggle('on', b.dataset.t === g.type));
   $('gr-angle-row').hidden = g.type === 'radial';
   $('gr-angle').value = g.angle; setFill($('gr-angle'));
-  $('gr-angle-v').textContent = g.type === 'conic' ? `Начало: ${g.angle}°` : `${g.angle}°`;
+  $('gr-angle-v').textContent = g.type === 'conic' ? T('a.gradRender.2', { angle: g.angle }) : `${g.angle}°`;
   $('gr-add').disabled = g.stops.length >= GRAD_MAX_STOPS;
   $('gr-del').disabled = g.stops.length <= GRAD_MIN_STOPS;
   gradBarRefresh();
@@ -3067,7 +3056,7 @@ function gradLive() {
 }
 function gradAddAt(p) {
   const g = ui.grad;
-  if (g.stops.length >= GRAD_MAX_STOPS) { toast('Максимум 5 точек'); return null; }
+  if (g.stops.length >= GRAD_MAX_STOPS) { toast(T('a.gradAddAt.1')); return null; }
   const s = { c: gradColorAt(p), p: Math.round(p) };
   g.stops.push(s);
   gradSort();
@@ -3120,7 +3109,7 @@ function buildGradEditor() {
     lastWallBg = null;
     saveUI(); autoCover(); applyUI();
   });
-  $('gr-angle').addEventListener('input', (e) => { ui.grad.angle = Number(e.target.value); setFill(e.target); $('gr-angle-v').textContent = ui.grad.type === 'conic' ? `Начало: ${ui.grad.angle}°` : `${ui.grad.angle}°`; gradLive(); });
+  $('gr-angle').addEventListener('input', (e) => { ui.grad.angle = Number(e.target.value); setFill(e.target); $('gr-angle-v').textContent = ui.grad.type === 'conic' ? T('a.on_grangle_input.1', { angle: ui.grad.angle }) : `${ui.grad.angle}°`; gradLive(); });
   $('gr-angle').addEventListener('change', liveEnd);
   $('gr-color').addEventListener('input', (e) => { if (gradSel) { gradSel.c = e.target.value.toLowerCase(); gradLive(); } });
   $('gr-color').addEventListener('change', liveEnd);
@@ -3170,7 +3159,7 @@ function buildGradEditor() {
 }
 function gradDelete(stop) {
   const g = ui.grad;
-  if (!stop || g.stops.length <= GRAD_MIN_STOPS) { toast('Нужно хотя бы две точки'); return; }
+  if (!stop || g.stops.length <= GRAD_MIN_STOPS) { toast(T('a.gradDelete.1')); return; }
   g.stops = g.stops.filter((s) => s !== stop);
   gradSel = null;
   gradRender(); gradCommit();
@@ -3195,40 +3184,40 @@ const isNum = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >=
 const hexOrNull = (v) => v === null || (typeof v === 'string' && HEX_RE.test(v));
 // проверка настроек темы: только известные поля с допустимыми значениями; возвращает { theme } или { error }
 function validateTheme(o) {
-  if (!o || typeof o !== 'object' || Array.isArray(o)) return { error: 'Тема должна быть объектом' };
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return { error: T('a.validateTheme.1') };
   const out = {};
   const only = (obj, keys, where) => {
-    for (const k of Object.keys(obj)) if (!keys.includes(k)) return `Неизвестное поле «${where}${k}»`;
+    for (const k of Object.keys(obj)) if (!keys.includes(k)) return T('a.only.1', { where: where, k: k });
     return '';
   };
   let e = only(o, ['mode', 'accent', 'wall', 'alpha', 'blur', 'grad', 'gradCover', 'look', 'layout', 'blocks'], '');
   if (e) return { error: e };
-  if ('mode' in o) { if (!['light', 'dark', 'auto'].includes(o.mode)) return { error: 'mode: ожидается light, dark или auto' }; out.mode = o.mode; }
-  if ('accent' in o) { if (typeof o.accent !== 'string' || !HEX_RE.test(o.accent)) return { error: 'accent: ожидается цвет #rrggbb' }; out.accent = o.accent.toUpperCase(); }
-  if ('wall' in o) { if (typeof o.wall !== 'string' || o.wall === 'custom' || !Object.prototype.hasOwnProperty.call(WALLS, o.wall)) return { error: 'wall: неизвестный фон' }; out.wall = o.wall; }
-  if ('alpha' in o) { if (!isNum(o.alpha, 0, 100)) return { error: 'alpha: число от 0 до 100' }; out.alpha = Math.round(o.alpha); }
-  if ('blur' in o) { if (!isNum(o.blur, 0, 80)) return { error: 'blur: число от 0 до 80' }; out.blur = Math.round(o.blur); }
+  if ('mode' in o) { if (!['light', 'dark', 'auto'].includes(o.mode)) return { error: T('a.validateTheme.2') }; out.mode = o.mode; }
+  if ('accent' in o) { if (typeof o.accent !== 'string' || !HEX_RE.test(o.accent)) return { error: T('a.validateTheme.3') }; out.accent = o.accent.toUpperCase(); }
+  if ('wall' in o) { if (typeof o.wall !== 'string' || o.wall === 'custom' || !Object.prototype.hasOwnProperty.call(WALLS, o.wall)) return { error: T('a.validateTheme.4') }; out.wall = o.wall; }
+  if ('alpha' in o) { if (!isNum(o.alpha, 0, 100)) return { error: T('a.validateTheme.5') }; out.alpha = Math.round(o.alpha); }
+  if ('blur' in o) { if (!isNum(o.blur, 0, 80)) return { error: T('a.validateTheme.6') }; out.blur = Math.round(o.blur); }
   if ('grad' in o) {
     const v = validateGrad(o.grad);
     if (v.error) return { error: 'grad: ' + v.error };
     out.grad = v.grad;
   } else if (out.wall === 'gradient') out.grad = normalizeGrad(null);   // старая тема с градиентом без самих точек: берём градиент по умолчанию
   // в тему входит только переключатель, сами цвета берутся у играющего трека
-  if ('gradCover' in o) { if (typeof o.gradCover !== 'boolean') return { error: 'gradCover: ожидается true или false' }; out.gradCover = o.gradCover; }
+  if ('gradCover' in o) { if (typeof o.gradCover !== 'boolean') return { error: T('a.validateTheme.7') }; out.gradCover = o.gradCover; }
   if ('look' in o) {
     const L = o.look;
-    if (!L || typeof L !== 'object' || Array.isArray(L)) return { error: 'look: ожидается объект' };
+    if (!L || typeof L !== 'object' || Array.isArray(L)) return { error: T('a.validateTheme.8') };
     e = only(L, ['bg', 'text', 'font', 'rs', 'cover', 'auto', 'css', 'cssOn'], 'look.');
     if (e) return { error: e };
     const l = {};
-    for (const k of ['bg', 'text']) if (k in L) { if (!hexOrNull(L[k])) return { error: `look.${k}: ожидается цвет #rrggbb или null` }; l[k] = L[k] && L[k].toLowerCase(); }
-    if ('font' in L) { if (typeof L.font !== 'string' || !FONTS.some(([v]) => v === L.font)) return { error: 'look.font: неизвестный шрифт' }; l.font = L.font; }
-    if ('rs' in L) { if (!isNum(L.rs, 0, 200)) return { error: 'look.rs: число от 0 до 200' }; l.rs = Math.round(L.rs); }
-    if ('cover' in L) { if (!isNum(L.cover, 70, 160)) return { error: 'look.cover: число от 70 до 160' }; l.cover = Math.round(L.cover); }
-    for (const k of ['auto', 'cssOn']) if (k in L) { if (typeof L[k] !== 'boolean') return { error: `look.${k}: ожидается true или false` }; l[k] = L[k]; }
+    for (const k of ['bg', 'text']) if (k in L) { if (!hexOrNull(L[k])) return { error: T('a.validateTheme.9', { k: k }) }; l[k] = L[k] && L[k].toLowerCase(); }
+    if ('font' in L) { if (typeof L.font !== 'string' || !FONTS.some(([v]) => v === L.font)) return { error: T('a.validateTheme.10') }; l.font = L.font; }
+    if ('rs' in L) { if (!isNum(L.rs, 0, 200)) return { error: T('a.validateTheme.11') }; l.rs = Math.round(L.rs); }
+    if ('cover' in L) { if (!isNum(L.cover, 70, 160)) return { error: T('a.validateTheme.12') }; l.cover = Math.round(L.cover); }
+    for (const k of ['auto', 'cssOn']) if (k in L) { if (typeof L[k] !== 'boolean') return { error: T('a.validateTheme.13', { k: k }) }; l[k] = L[k]; }
     if ('css' in L) {
-      if (typeof L.css !== 'string') return { error: 'look.css: ожидается строка' };
-      const p = cssProblem(L.css) || (cssBalanced(L.css) ? '' : 'в CSS не закрыта или лишняя скобка { }');
+      if (typeof L.css !== 'string') return { error: T('a.validateTheme.14') };
+      const p = cssProblem(L.css) || (cssBalanced(L.css) ? '' : T('a.validateTheme.15'));
       if (p) return { error: 'look.css: ' + p };
       l.css = L.css;
     }
@@ -3236,17 +3225,17 @@ function validateTheme(o) {
   }
   if ('layout' in o) {
     const Y = o.layout;
-    if (!Y || typeof Y !== 'object' || Array.isArray(Y)) return { error: 'layout: ожидается объект' };
+    if (!Y || typeof Y !== 'object' || Array.isArray(Y)) return { error: T('a.validateTheme.16') };
     e = only(Y, ['mode', 'side'], 'layout.');
     if (e) return { error: e };
     const y = {};
-    if ('mode' in Y) { if (!['normal', 'compact'].includes(Y.mode)) return { error: 'layout.mode: normal или compact' }; y.mode = Y.mode; }
-    if ('side' in Y) { if (!['left', 'right'].includes(Y.side)) return { error: 'layout.side: left или right' }; y.side = Y.side; }
+    if ('mode' in Y) { if (!['normal', 'compact'].includes(Y.mode)) return { error: T('a.validateTheme.17') }; y.mode = Y.mode; }
+    if ('side' in Y) { if (!['left', 'right'].includes(Y.side)) return { error: T('a.validateTheme.18') }; y.side = Y.side; }
     out.layout = y;
   }
   if ('blocks' in o) {
     const B = o.blocks;
-    if (!B || typeof B !== 'object' || Array.isArray(B)) return { error: 'blocks: ожидается объект' };
+    if (!B || typeof B !== 'object' || Array.isArray(B)) return { error: T('a.validateTheme.19') };
     e = only(B, ['order', 'off'], 'blocks.');
     if (e) return { error: e };
     const sideIds = Object.keys(BLOCKS).filter((id) => BLOCKS[id].side);
@@ -3256,25 +3245,25 @@ function validateTheme(o) {
     };
     const order = 'order' in B ? ids(B.order, sideIds, 'order') : [];
     const off = 'off' in B ? ids(B.off, Object.keys(BLOCKS), 'off') : [];
-    if (!order || !off) return { error: 'blocks: неизвестный блок в списке' };
+    if (!order || !off) return { error: T('a.validateTheme.20') };
     out.blocks = { order, off };
   }
-  if (!Object.keys(out).length) return { error: 'В теме нет ни одной настройки оформления' };
+  if (!Object.keys(out).length) return { error: T('a.validateTheme.21') };
   return { theme: out };
 }
 // градиент из файла: тип, угол 0..360, от 2 до 5 точек с hex-цветом и позицией 0..100, ничего другого
 function validateGrad(g) {
-  if (!g || typeof g !== 'object' || Array.isArray(g)) return { error: 'ожидается объект' };
-  for (const k of Object.keys(g)) if (!['type', 'angle', 'stops'].includes(k)) return { error: `неизвестное поле «${k}»` };
-  if (!GRAD_TYPES.includes(g.type)) return { error: 'type: linear, radial или conic' };
-  if (!isNum(g.angle, 0, 360)) return { error: 'angle: число от 0 до 360' };
-  if (!Array.isArray(g.stops) || g.stops.length < GRAD_MIN_STOPS || g.stops.length > GRAD_MAX_STOPS) return { error: `stops: от ${GRAD_MIN_STOPS} до ${GRAD_MAX_STOPS} точек` };
+  if (!g || typeof g !== 'object' || Array.isArray(g)) return { error: T('a.validateGrad.1') };
+  for (const k of Object.keys(g)) if (!['type', 'angle', 'stops'].includes(k)) return { error: T('a.validateGrad.2', { k: k }) };
+  if (!GRAD_TYPES.includes(g.type)) return { error: T('a.validateGrad.3') };
+  if (!isNum(g.angle, 0, 360)) return { error: T('a.validateGrad.4') };
+  if (!Array.isArray(g.stops) || g.stops.length < GRAD_MIN_STOPS || g.stops.length > GRAD_MAX_STOPS) return { error: T('a.validateGrad.5', { GRAD_MIN_STOPS: GRAD_MIN_STOPS, GRAD_MAX_STOPS: GRAD_MAX_STOPS }) };
   const stops = [];
   for (const s of g.stops) {
-    if (!s || typeof s !== 'object' || Array.isArray(s)) return { error: 'stops: точка должна быть объектом' };
-    for (const k of Object.keys(s)) if (k !== 'c' && k !== 'p') return { error: `stops: неизвестное поле «${k}»` };
-    if (typeof s.c !== 'string' || !HEX_RE.test(s.c)) return { error: 'stops: цвет должен быть вида #rrggbb' };
-    if (!isNum(s.p, 0, 100)) return { error: 'stops: позиция от 0 до 100' };
+    if (!s || typeof s !== 'object' || Array.isArray(s)) return { error: T('a.validateGrad.6') };
+    for (const k of Object.keys(s)) if (k !== 'c' && k !== 'p') return { error: T('a.validateGrad.7', { k: k }) };
+    if (typeof s.c !== 'string' || !HEX_RE.test(s.c)) return { error: T('a.validateGrad.8') };
+    if (!isNum(s.p, 0, 100)) return { error: T('a.validateGrad.9') };
     stops.push({ c: s.c.toLowerCase(), p: Math.round(s.p) });
   }
   stops.sort((a, b) => a.p - b.p);
@@ -3323,7 +3312,7 @@ function loadThemes() {
 }
 const saveThemes = () => { LS.set('themes', JSON.stringify(themes)); renderThemes(); };
 function uniqueThemeName(name) {
-  const base = String(name || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 40) || 'Моя тема';
+  const base = String(name || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 40) || T('a.uniqueThemeName.1');
   let n = base, i = 2;
   while (themes.some((t) => t.name.toLowerCase() === n.toLowerCase())) n = `${base} (${i++})`;
   return n;
@@ -3354,7 +3343,7 @@ function renderThemes() {
     const d = document.createElement('div');
     d.className = 'lk-th' + (JSON.stringify(t.theme) === cur ? ' on' : '');
     d.dataset.id = t.id;
-    d.innerHTML = '<span class="lk-th-dot"></span><button class="lk-th-name" title="Применить"></button><button class="x lk-th-b" data-act="rename" title="Переименовать"></button><button class="x lk-th-b" data-act="export" title="Экспортировать в файл"></button><button class="x lk-th-b" data-act="delete" title="Удалить"></button>';
+    d.innerHTML = T('a.renderThemes.1');
     d.querySelector('.lk-th-dot').style.background = t.theme.wall === 'gradient' && t.theme.grad ? gradCss(t.theme.grad) : t.theme.accent || 'var(--accent)';
     d.querySelector('.lk-th-name').textContent = t.name;
     d.querySelector('[data-act="rename"]').innerHTML = TH_ICONS.edit;
@@ -3368,20 +3357,20 @@ async function exportTheme(name, theme) {
   const json = JSON.stringify({ format: THEME_FORMAT, version: 1, name, theme }, null, 2);
   try {
     const r = await api('/api/app/theme/export', { method: 'POST', headers: { 'X-Player': '1', 'Content-Type': 'application/json' }, body: JSON.stringify({ name, json }) });
-    themeMsg('Файл темы сохранён: ' + r.path, false);
-    toast('Тема сохранена в файл', 5000);
-  } catch (e) { themeMsg('Не получилось сохранить файл: ' + e.message, true); }
+    themeMsg(T('a.exportTheme.1') + r.path, false);
+    toast(T('a.exportTheme.2'), 5000);
+  } catch (e) { themeMsg(T('a.exportTheme.3') + e.message, true); }
 }
 // файл темы: { format, version, name, theme }, ничего лишнего
 function parseThemeFile(text) {
-  if (text.length > THEME_FILE_MAX) return { error: 'Файл слишком большой для темы' };
+  if (text.length > THEME_FILE_MAX) return { error: T('a.parseThemeFile.1') };
   let doc;
-  try { doc = JSON.parse(text.replace(/^﻿/, '')); } catch { return { error: 'Файл повреждён: это не JSON' }; }
-  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { error: 'Это не файл темы Sonara' };
-  if (doc.format !== THEME_FORMAT) return { error: 'Это не файл темы Sonara' };
-  if (doc.version !== 1) return { error: 'Версия темы не поддерживается' };
-  for (const k of Object.keys(doc)) if (!['format', 'version', 'name', 'theme'].includes(k)) return { error: `В файле есть лишнее поле «${k}»: в теме могут быть только настройки оформления` };
-  if (typeof doc.name !== 'string' || !doc.name.trim() || doc.name.length > 80) return { error: 'У темы нет имени' };
+  try { doc = JSON.parse(text.replace(/^﻿/, '')); } catch { return { error: T('a.parseThemeFile.2') }; }
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { error: T('a.parseThemeFile.3') };
+  if (doc.format !== THEME_FORMAT) return { error: T('a.parseThemeFile.4') };
+  if (doc.version !== 1) return { error: T('a.parseThemeFile.5') };
+  for (const k of Object.keys(doc)) if (!['format', 'version', 'name', 'theme'].includes(k)) return { error: T('a.parseThemeFile.6', { k: k }) };
+  if (typeof doc.name !== 'string' || !doc.name.trim() || doc.name.length > 80) return { error: T('a.parseThemeFile.7') };
   const v = validateTheme(doc.theme);
   if (v.error) return { error: v.error };
   return { name: doc.name, theme: v.theme };
@@ -3389,37 +3378,38 @@ function parseThemeFile(text) {
 async function importThemeFile(file) {
   themeMsg('');
   const res = parseThemeFile(await file.text());
-  if (res.error) { themeMsg('Тема не импортирована: ' + res.error, true); toast('Файл темы не подошёл'); return; }
+  if (res.error) { themeMsg(T('a.importThemeFile.1') + res.error, true); toast(T('a.importThemeFile.2')); return; }
   // перед чужой темой сохраняем текущее оформление, чтобы можно было вернуться
-  themes = themes.filter((t) => t.name !== 'Перед импортом');
-  addTheme('Перед импортом', currentTheme());
+  const prevNames = [T('a.importThemeFile.3', null, 'ru'), T('a.importThemeFile.3', null, 'en')];
+  themes = themes.filter((t) => !prevNames.includes(t.name));
+  addTheme(T('a.importThemeFile.3'), currentTheme());
   const t = addTheme(res.name, res.theme);
   applyTheme(t.theme);
-  themeMsg(`Тема «${t.name}» импортирована и применена. Прежнее оформление лежит в теме «Перед импортом».`, false);
+  themeMsg(T('a.importThemeFile.4', { name: t.name }), false);
 }
 function buildThemes() {
   loadThemes();
   renderThemes();
   $('lk-th-save').addEventListener('click', () => {
     const input = $('lk-th-name');
-    const t = addTheme(input.value || `Тема ${themes.length + 1}`, currentTheme());
+    const t = addTheme(input.value || T('a.on_lkthsave_click.1', { p1: themes.length + 1 }), currentTheme());
     input.value = '';
-    themeMsg(`Тема «${t.name}» сохранена`, false);
+    themeMsg(T('a.on_lkthsave_click.2', { name: t.name }), false);
   });
   $('lk-th-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('lk-th-save').click(); });
   $('lk-th-import').addEventListener('click', () => $('lk-th-file').click());
   $('lk-th-file').addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) importThemeFile(f); });
-  $('lk-th-current').addEventListener('click', () => exportTheme('Моя тема', currentTheme()));
+  $('lk-th-current').addEventListener('click', () => exportTheme(T('a.on_lkthcurrent_click.1'), currentTheme()));
   $('lk-themes').addEventListener('click', async (e) => {
     const row = e.target.closest('.lk-th');
     if (!row) return;
     const t = themes.find((x) => x.id === row.dataset.id);
     if (!t) return;
     const act = e.target.closest('[data-act]');
-    if (!act) { if (e.target.closest('.lk-th-name') || e.target.closest('.lk-th-dot')) { applyTheme(t.theme); themeMsg(`Применена тема «${t.name}»`, false); } return; }
+    if (!act) { if (e.target.closest('.lk-th-name') || e.target.closest('.lk-th-dot')) { applyTheme(t.theme); themeMsg(T('a.on_lkthemes_click.1', { name: t.name }), false); } return; }
     if (act.dataset.act === 'export') exportTheme(t.name, t.theme);
     else if (act.dataset.act === 'rename') {
-      const name = await dialog({ title: 'Переименовать тему', value: t.name, ok: 'Сохранить' });
+      const name = await dialog({ title: T('a.on_lkthemes_click.2'), value: t.name, ok: T('a.on_lkthemes_click.3') });
       if (name) {
         const others = themes.filter((x) => x !== t);
         const all = themes;
@@ -3429,7 +3419,7 @@ function buildThemes() {
         saveThemes();
       }
     } else if (act.dataset.act === 'delete') {
-      if (await dialog({ title: `Удалить тему «${t.name}»?`, text: 'Текущее оформление не изменится.', ok: 'Удалить', danger: true })) { themes = themes.filter((x) => x.id !== t.id); saveThemes(); }
+      if (await dialog({ title: T('a.on_lkthemes_click.4', { name: t.name }), text: T('a.on_lkthemes_click.5'), ok: T('a.on_lkthemes_click.6'), danger: true })) { themes = themes.filter((x) => x.id !== t.id); saveThemes(); }
     }
   });
 
@@ -3441,16 +3431,16 @@ function buildThemes() {
     cssTimer = setTimeout(() => {
       const css = area.value;
       const bad = cssProblem(css);
-      if (bad) { cssMsg(bad + '. CSS не применён.', true); return; }
+      if (bad) { cssMsg(bad + T('a.on_area_input.1'), true); return; }
       ui.look.css = css;
       if (css && ui.look.cssOn === false) ui.look.cssOn = true;
       saveUI(); applyUI();
-      cssMsg(css ? (cssBalanced(css) ? 'Применено' : 'Применено, но скобки { } не сходятся: проверь CSS') : '', false);
+      cssMsg(css ? (cssBalanced(css) ? T('a.on_area_input.2') : T('a.on_area_input.3')) : '', false);
       showCssRescue();
     }, 150);
   });
   $('lk-css-on').addEventListener('change', (e) => { ui.look.cssOn = e.target.checked; saveUI(); applyUI(); showCssRescue(); });
-  $('lk-css-reset').addEventListener('click', () => { ui.look.css = ''; ui.look.cssOn = true; area.value = ''; saveUI(); applyUI(); cssMsg('CSS сброшен', false); showCssRescue(); });
+  $('lk-css-reset').addEventListener('click', () => { ui.look.css = ''; ui.look.cssOn = true; area.value = ''; saveUI(); applyUI(); cssMsg(T('a.on_lkcssreset_click.1'), false); showCssRescue(); });
 }
 function cssMsg(text, bad) {
   const el = $('lk-css-msg');
@@ -3505,7 +3495,7 @@ function renderQueue() {
   box.innerHTML = items.length ? items.map(([i, t]) => {
     const art = t.art || t.cover || '';
     return `<button class="q-row" data-i="${i}" title="${escapeHtml(t.title)}">${art ? `<img class="q-cv" alt="" loading="lazy" src="${escapeHtml(art)}">` : '<span class="q-cv"></span>'}<span class="q-tx"><b>${escapeHtml(t.title)}</b><small>${escapeHtml(t.artist || '')}</small></span></button>`;
-  }).join('') : `<div class="q-empty">${state.cur ? 'Дальше ничего нет' : 'Очередь пуста'}</div>`;
+  }).join('') : `<div class="q-empty">${state.cur ? T('a.renderQueue.1') : T('a.renderQueue.2')}</div>`;
 }
 $('queue-list').addEventListener('click', (e) => {
   const b = e.target.closest('.q-row');
@@ -3517,8 +3507,8 @@ $('queue-list').addEventListener('click', (e) => {
 function lycRender() {
   const t = state.cur;
   let p = '', c = '', n = '';
-  if (!t) c = 'Включи трек, и здесь появится текст';
-  else if (lyr.key !== lyKeyOf(t) || lyr.status === 'loading' || lyr.status === 'idle') c = 'Ищу текст…';
+  if (!t) c = T('a.lycRender.1');
+  else if (lyr.key !== lyKeyOf(t) || lyr.status === 'loading' || lyr.status === 'idle') c = T('a.lycRender.2');
   else if (lyr.status === 'synced') {
     const L = lyr.lines, now = lyNow() + 200;
     let lo = 0, hi = L.length - 1, idx = -1;
@@ -3529,7 +3519,7 @@ function lycRender() {
   } else if (lyr.status === 'plain') {
     const lines = lyr.plain.split(/\r?\n/).filter((s) => s.trim() && !/^\s*\[.+\]\s*$/.test(s));
     c = lines[0] || ''; n = lines[1] || '';
-  } else c = lyr.status === 'instrumental' ? 'Инструментал' : 'Текста не нашлось';
+  } else c = lyr.status === 'instrumental' ? T('a.lycRender.3') : T('a.lycRender.4');
   const sig = p + '\n' + c + '\n' + n;
   if (sig === lycSig) return;
   lycSig = sig;
@@ -3558,7 +3548,7 @@ function blockRow(id) {
   const d = document.createElement('div');
   d.className = 'lk-blk';
   d.dataset.id = id;
-  d.innerHTML = `<span class="lk-grip" title="${def.side ? 'Перетащить' : ''}">${def.side ? '⋮⋮' : ''}</span><span class="lk-bn">${def.name}<small>${def.desc}</small></span><label class="switch"><input type="checkbox" aria-label="${def.name}"><span></span></label>`;
+  d.innerHTML = `<span class="lk-grip" title="${def.side ? T('a.blockRow.1') : ''}">${def.side ? '⋮⋮' : ''}</span><span class="lk-bn">${def.name}<small>${def.desc}</small></span><label class="switch"><input type="checkbox" aria-label="${def.name}"><span></span></label>`;
   const cb = d.querySelector('input');
   cb.checked = blockOn(id);
   cb.disabled = !!def.locked;
@@ -3689,8 +3679,8 @@ function syncLookUI() {
   if (L.auto) {
     const A = autoNow;
     info.textContent = A
-      ? `Контраст: текст ${A.ratios.text.toFixed(1)}:1, подписи ${A.ratios.muted.toFixed(1)}:1, кнопки ${A.ratios.button.toFixed(1)}:1`
-      : state.cur ? 'У трека нет обложки, остаются цвета темы' : 'Включи трек: цвета подберутся по его обложке';
+      ? T('a.syncLookUI.1', { p1: A.ratios.text.toFixed(1), p2: A.ratios.muted.toFixed(1), p3: A.ratios.button.toFixed(1) })
+      : state.cur ? T('a.syncLookUI.2') : T('a.syncLookUI.3');
   }
   document.querySelectorAll('#lk-side button').forEach((b) => b.classList.toggle('on', b.dataset.side === ui.layout.side));
   document.querySelectorAll('#lk-mode button').forEach((b) => b.classList.toggle('on', b.dataset.mode === ui.layout.mode));
@@ -3717,15 +3707,15 @@ function syncAccounts() {
   const spEl = $('sp-state');
   const name = spEl.dataset.name;
   const s = accState.sp;
-  spEl.textContent = s.cls === 'err' || !connected ? (s.text || 'Не подключён') : `${name ? name + ' · ' : ''}${s.text || 'Подключён'}`;
+  spEl.textContent = s.cls === 'err' || !connected ? (s.text || T('a.syncAccounts.1')) : `${name ? name + ' · ' : ''}${s.text || T('a.syncAccounts.2')}`;
   spEl.className = 'state ' + (connected && s.cls !== 'err' ? 'ok' : s.cls);
-  $('sp-connect').textContent = connected ? 'Переподключить' : 'Подключить';
+  $('sp-connect').textContent = connected ? T('a.syncAccounts.3') : T('a.syncAccounts.4');
   $('sp-logout').hidden = !connected;
   const c = accState.sc;
-  $('sc-state').textContent = c.text || (LS.get('sc_user') ? '' : 'Не подключён');
+  $('sc-state').textContent = c.text || (LS.get('sc_user') ? '' : T('a.syncAccounts.5'));
   $('sc-state').className = 'state ' + c.cls;
   const y = accState.yt;
-  $('yt-state').textContent = y.text || (ytLists.length ? '' : 'Не подключён');
+  $('yt-state').textContent = y.text || (ytLists.length ? '' : T('a.syncAccounts.6'));
   $('yt-state').className = 'state ' + y.cls;
   renderSearchChips();
 }
@@ -3733,7 +3723,7 @@ $('sp-connect').addEventListener('click', spLogin);
 $('sp-logout').addEventListener('click', spLogout);
 $('sc-load').addEventListener('click', () => {
   const user = parseScUser($('sc-user').value);
-  if (!/^[\w\-.]{1,100}$/.test(user)) { setAccState('sc', 'Впиши ник из ссылки на профиль', 'err'); return; }
+  if (!/^[\w\-.]{1,100}$/.test(user)) { setAccState('sc', T('a.on_scload_click.1'), 'err'); return; }
   $('sc-user').value = user;
   LS.set('sc_user', user);
   scLoadLikes(true);
@@ -3759,7 +3749,7 @@ $('gs-chips').addEventListener('click', (e) => {
   const b = e.target.closest('.gs-chip');
   if (!b) return;
   const id = b.dataset.src;
-  if (!searchAvail(id)) { toast(id === 'sp' ? 'Spotify не подключён: войди в настройках' : 'Для YouTube Music нужен yt-dlp: скачай его в настройках'); return; }
+  if (!searchAvail(id)) { toast(id === 'sp' ? T('a.on_gschips_click.1') : T('a.on_gschips_click.2')); return; }
   searchOn[id] = !searchOn[id];
   LS.set('search_src', JSON.stringify(searchOn));
   if (searchOn[id] && searchActive()) { searchSt.per[id] = { st: 'loading' }; searchOne(id, state.query.trim(), searchSt.token); }
@@ -3823,7 +3813,7 @@ function updShow(s) {
   const tag = s && s.latest && s.latest.tag;
   const seen = LS.get('upd_seen');
   $('upd-bar').hidden = !tag || seen === tag;
-  if (tag) $('upd-text').textContent = `Вышла новая версия ${tag} (у вас ${s.current})`;
+  if (tag) $('upd-text').textContent = T('a.updShow.1', { tag: tag, current: s.current });
 }
 async function updPoll() {
   try { updShow(await api('/api/app/update/status', { headers: { 'X-Player': '1' } })); } catch {}
@@ -3837,14 +3827,14 @@ $('upd-x').addEventListener('click', () => {
 $('upd-on').addEventListener('change', (e) => appCmd('settings', { updateCheck: e.target.checked }));
 $('upd-check').addEventListener('click', async () => {
   const msg = $('upd-msg');
-  msg.textContent = 'Проверяю…';
+  msg.textContent = T('a.on_updcheck_click.1');
   try {
     const s = await (await fetch('/api/app/update/check', { method: 'POST', headers: { 'X-Player': '1' } })).json();
-    if (!s.repoSet) msg.textContent = 'Репозиторий релизов пока не задан';
-    else if (s.error) msg.textContent = 'Не получилось проверить: ' + s.error;
-    else if (s.latest) { msg.textContent = `Есть новая версия ${s.latest.tag}`; LS.set('upd_seen', ''); updShow(s); }
-    else msg.textContent = `У вас последняя версия (${s.current})`;
-  } catch (e) { msg.textContent = 'Не получилось проверить: ' + e.message; }
+    if (!s.repoSet) msg.textContent = T('a.on_updcheck_click.2');
+    else if (s.error) msg.textContent = T('a.on_updcheck_click.3') + s.error;
+    else if (s.latest) { msg.textContent = T('a.on_updcheck_click.4', { tag: s.latest.tag }); LS.set('upd_seen', ''); updShow(s); }
+    else msg.textContent = T('a.on_updcheck_click.5', { current: s.current });
+  } catch (e) { msg.textContent = T('a.on_updcheck_click.6') + e.message; }
 });
 api('/api/app/update/status', { headers: { 'X-Player': '1' } }).then((s) => { $('upd-on').checked = !!s.enabled; }).catch(() => {});
 setTimeout(updPoll, 14000);
@@ -3856,7 +3846,7 @@ const BK_MAX_BYTES = 40e6;
 const BK_ID_RE = { sp: /^[A-Za-z0-9]{10,30}$/, sc: /^\d{1,20}$/, yt: /^[\w-]{11}$/, local: /^[\w-]{1,80}$/ };
 const BK_URL_HOSTS = new Set(['open.spotify.com', 'music.youtube.com', 'www.youtube.com', 'youtube.com', 'soundcloud.com', 'www.soundcloud.com']);
 const BK_COVER_RE = /^https:\/\/([\w-]+\.)*(scdn\.co|spotifycdn\.com|sndcdn\.com|ytimg\.com|ggpht\.com|googleusercontent\.com)\/[^\s"'<>]{1,380}$/i;
-const BK_LIKE_NAMES = { sp: 'Лайки Spotify (копия)', sc: 'Лайки SoundCloud (копия)', yt: 'Лайки YouTube Music (копия)' };
+const BK_LIKE_NAMES = { get sp() { return T('a.const.49'); }, get sc() { return T('a.const.50'); }, get yt() { return T('a.const.51'); } };
 const bkClean = (s, max) => String(s).replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, max);
 const hdr = { 'X-Player': '1' };
 function bkIso(at) { return at > 0 ? new Date(at).toISOString() : undefined; }
@@ -3891,53 +3881,53 @@ function buildBackup() {
 }
 function bkValidateTrack(t, where, only) {
   const bad = (m) => ({ error: `${where}: ${m}` });
-  if (!t || typeof t !== 'object' || Array.isArray(t)) return bad('ожидается объект');
-  for (const k of Object.keys(t)) if (!['src', 'id', 'title', 'artist', 'album', 'url', 'uri', 'duration', 'added', 'cover'].includes(k)) return bad(`неизвестное поле «${k}»`);
-  if (typeof t.src !== 'string' || !BK_ID_RE[t.src] || (only && t.src !== only)) return bad('источник должен быть sp, sc, yt' + (only ? '' : ' или local') + (only ? ` (здесь ${only})` : ''));
-  if (typeof t.id !== 'string' || !BK_ID_RE[t.src].test(t.id)) return bad('id трека не подходит к источнику');
-  if (typeof t.title !== 'string' || !t.title.trim() || t.title.length > 300) return bad('название от 1 до 300 символов');
-  if (typeof t.artist !== 'string' || t.artist.length > 300) return bad('артист до 300 символов');
+  if (!t || typeof t !== 'object' || Array.isArray(t)) return bad(T('a.bkValidateTrack.1'));
+  for (const k of Object.keys(t)) if (!['src', 'id', 'title', 'artist', 'album', 'url', 'uri', 'duration', 'added', 'cover'].includes(k)) return bad(T('a.bkValidateTrack.2', { k: k }));
+  if (typeof t.src !== 'string' || !BK_ID_RE[t.src] || (only && t.src !== only)) return bad(T('a.bkValidateTrack.3') + (only ? '' : T('a.bkValidateTrack.4')) + (only ? T('a.bkValidateTrack.5', { only: only }) : ''));
+  if (typeof t.id !== 'string' || !BK_ID_RE[t.src].test(t.id)) return bad(T('a.bkValidateTrack.6'));
+  if (typeof t.title !== 'string' || !t.title.trim() || t.title.length > 300) return bad(T('a.bkValidateTrack.7'));
+  if (typeof t.artist !== 'string' || t.artist.length > 300) return bad(T('a.bkValidateTrack.8'));
   const o = { src: t.src, id: t.id, title: bkClean(t.title, 300), artist: bkClean(t.artist, 300) };
-  if ('album' in t) { if (typeof t.album !== 'string' || t.album.length > 300) return bad('альбом до 300 символов'); if (t.album) o.album = bkClean(t.album, 300); }
+  if ('album' in t) { if (typeof t.album !== 'string' || t.album.length > 300) return bad(T('a.bkValidateTrack.9')); if (t.album) o.album = bkClean(t.album, 300); }
   if ('url' in t) {
     let u = null;
     try { u = typeof t.url === 'string' && t.url.length <= 600 ? new URL(t.url) : null; } catch {}
-    if (!u || u.protocol !== 'https:' || !BK_URL_HOSTS.has(u.hostname) || u.username || u.password) return bad('ссылка должна быть https на Spotify, SoundCloud или YouTube');
+    if (!u || u.protocol !== 'https:' || !BK_URL_HOSTS.has(u.hostname) || u.username || u.password) return bad(T('a.bkValidateTrack.10'));
     o.url = u.href;
   }
-  if ('uri' in t) { if (t.src !== 'sp' || typeof t.uri !== 'string' || t.uri !== `spotify:track:${t.id}`) return bad('uri подходит только Spotify и должен совпадать с id'); o.uri = t.uri; }
-  if ('duration' in t) { if (!isNum(t.duration, 0, 36e6)) return bad('длительность: число миллисекунд'); o.duration = Math.round(t.duration); }
-  if ('added' in t) { if (typeof t.added !== 'string' || !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(t.added) || !Number.isFinite(Date.parse(t.added))) return bad('дата в формате ISO'); o.added = t.added; }
-  if ('cover' in t) { if (typeof t.cover !== 'string' || !BK_COVER_RE.test(t.cover)) return bad('обложка: https-ссылка на CDN Spotify, SoundCloud или YouTube'); o.cover = t.cover; }
+  if ('uri' in t) { if (t.src !== 'sp' || typeof t.uri !== 'string' || t.uri !== `spotify:track:${t.id}`) return bad(T('a.bkValidateTrack.11')); o.uri = t.uri; }
+  if ('duration' in t) { if (!isNum(t.duration, 0, 36e6)) return bad(T('a.bkValidateTrack.12')); o.duration = Math.round(t.duration); }
+  if ('added' in t) { if (typeof t.added !== 'string' || !/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/.test(t.added) || !Number.isFinite(Date.parse(t.added))) return bad(T('a.bkValidateTrack.13')); o.added = t.added; }
+  if ('cover' in t) { if (typeof t.cover !== 'string' || !BK_COVER_RE.test(t.cover)) return bad(T('a.bkValidateTrack.14')); o.cover = t.cover; }
   return { track: o };
 }
 // файл копии: только известные поля и допустимые значения, иначе отказ с понятной причиной (как у импорта тем)
 function validateBackup(text) {
-  if (text.length > BK_MAX_BYTES) return { error: 'Файл слишком большой для копии библиотеки' };
+  if (text.length > BK_MAX_BYTES) return { error: T('a.validateBackup.1') };
   let d;
-  try { d = JSON.parse(text.replace(/^﻿/, '')); } catch { return { error: 'Файл повреждён: это не JSON' }; }
-  if (!d || typeof d !== 'object' || Array.isArray(d) || d.format !== BK_FORMAT) return { error: 'Это не копия библиотеки Sonara' };
-  if (d.version !== 1) return { error: 'Версия копии не поддерживается' };
-  for (const k of Object.keys(d)) if (!['format', 'version', 'createdAt', 'app', 'likes', 'playlists', 'connections'].includes(k)) return { error: `В файле есть лишнее поле «${k}»` };
-  if (typeof d.createdAt !== 'string' || !Number.isFinite(Date.parse(d.createdAt))) return { error: 'У копии нет корректной даты создания' };
-  if ('app' in d && (typeof d.app !== 'string' || d.app.length > 40)) return { error: 'Поле app: строка до 40 символов' };
+  try { d = JSON.parse(text.replace(/^﻿/, '')); } catch { return { error: T('a.validateBackup.2') }; }
+  if (!d || typeof d !== 'object' || Array.isArray(d) || d.format !== BK_FORMAT) return { error: T('a.validateBackup.3') };
+  if (d.version !== 1) return { error: T('a.validateBackup.4') };
+  for (const k of Object.keys(d)) if (!['format', 'version', 'createdAt', 'app', 'likes', 'playlists', 'connections'].includes(k)) return { error: T('a.validateBackup.5', { k: k }) };
+  if (typeof d.createdAt !== 'string' || !Number.isFinite(Date.parse(d.createdAt))) return { error: T('a.validateBackup.6') };
+  if ('app' in d && (typeof d.app !== 'string' || d.app.length > 40)) return { error: T('a.validateBackup.7') };
   const out = { createdAt: d.createdAt, likes: { sp: [], sc: [], yt: [] }, playlists: [], connections: {} };
   if ('likes' in d) {
-    if (!d.likes || typeof d.likes !== 'object' || Array.isArray(d.likes)) return { error: 'likes: ожидается объект' };
+    if (!d.likes || typeof d.likes !== 'object' || Array.isArray(d.likes)) return { error: T('a.validateBackup.8') };
     for (const [k, list] of Object.entries(d.likes)) {
-      if (!['sp', 'sc', 'yt'].includes(k)) return { error: `likes: неизвестный источник «${k}»` };
-      if (!Array.isArray(list) || list.length > 60000) return { error: `likes.${k}: ожидается список до 60000 треков` };
+      if (!['sp', 'sc', 'yt'].includes(k)) return { error: T('a.validateBackup.9', { k: k }) };
+      if (!Array.isArray(list) || list.length > 60000) return { error: T('a.validateBackup.10', { k: k }) };
       for (let i = 0; i < list.length; i++) { const r = bkValidateTrack(list[i], `likes.${k}[${i}]`, k); if (r.error) return r; out.likes[k].push(r.track); }
     }
   }
   if ('playlists' in d) {
-    if (!Array.isArray(d.playlists) || d.playlists.length > 300) return { error: 'playlists: ожидается список до 300 плейлистов' };
+    if (!Array.isArray(d.playlists) || d.playlists.length > 300) return { error: T('a.validateBackup.11') };
     for (let i = 0; i < d.playlists.length; i++) {
       const p = d.playlists[i];
-      if (!p || typeof p !== 'object' || Array.isArray(p)) return { error: `playlists[${i}]: ожидается объект` };
-      for (const k of Object.keys(p)) if (k !== 'name' && k !== 'tracks') return { error: `playlists[${i}]: неизвестное поле «${k}»` };
-      if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > 60) return { error: `playlists[${i}]: название от 1 до 60 символов` };
-      if (!Array.isArray(p.tracks) || p.tracks.length > 30000) return { error: `playlists[${i}]: треков не больше 30000` };
+      if (!p || typeof p !== 'object' || Array.isArray(p)) return { error: T('a.validateBackup.12', { i: i }) };
+      for (const k of Object.keys(p)) if (k !== 'name' && k !== 'tracks') return { error: T('a.validateBackup.13', { i: i, k: k }) };
+      if (typeof p.name !== 'string' || !p.name.trim() || p.name.length > 60) return { error: T('a.validateBackup.14', { i: i }) };
+      if (!Array.isArray(p.tracks) || p.tracks.length > 30000) return { error: T('a.validateBackup.15', { i: i }) };
       const tracks = [];
       for (let j = 0; j < p.tracks.length; j++) { const r = bkValidateTrack(p.tracks[j], `playlists[${i}].tracks[${j}]`); if (r.error) return r; tracks.push(r.track); }
       out.playlists.push({ name: bkClean(p.name, 60), tracks });
@@ -3945,24 +3935,24 @@ function validateBackup(text) {
   }
   if ('connections' in d) {
     const c = d.connections;
-    if (!c || typeof c !== 'object' || Array.isArray(c)) return { error: 'connections: ожидается объект' };
-    for (const k of Object.keys(c)) if (k !== 'sc_user' && k !== 'yt_lists') return { error: `connections: неизвестное поле «${k}»` };
-    if ('sc_user' in c) { if (typeof c.sc_user !== 'string' || !/^[\w\-.]{1,100}$/.test(c.sc_user)) return { error: 'connections.sc_user: ник SoundCloud' }; out.connections.sc_user = c.sc_user; }
+    if (!c || typeof c !== 'object' || Array.isArray(c)) return { error: T('a.validateBackup.16') };
+    for (const k of Object.keys(c)) if (k !== 'sc_user' && k !== 'yt_lists') return { error: T('a.validateBackup.17', { k: k }) };
+    if ('sc_user' in c) { if (typeof c.sc_user !== 'string' || !/^[\w\-.]{1,100}$/.test(c.sc_user)) return { error: T('a.validateBackup.18') }; out.connections.sc_user = c.sc_user; }
     if ('yt_lists' in c) {
-      if (!Array.isArray(c.yt_lists) || c.yt_lists.length > 12) return { error: 'connections.yt_lists: не больше 12 плейлистов' };
+      if (!Array.isArray(c.yt_lists) || c.yt_lists.length > 12) return { error: T('a.validateBackup.19') };
       out.connections.yt_lists = [];
       for (const l of c.yt_lists) {
-        if (!l || typeof l !== 'object' || Array.isArray(l)) return { error: 'connections.yt_lists: ожидается объект' };
-        for (const k of Object.keys(l)) if (!['id', 'name', 'cookies'].includes(k)) return { error: `connections.yt_lists: неизвестное поле «${k}»` };
-        if (typeof l.id !== 'string' || !/^[\w-]{2,60}$/.test(l.id)) return { error: 'connections.yt_lists: id плейлиста' };
-        if ('name' in l && (typeof l.name !== 'string' || l.name.length > 80)) return { error: 'connections.yt_lists: название до 80 символов' };
-        if ('cookies' in l && typeof l.cookies !== 'boolean') return { error: 'connections.yt_lists: cookies true или false' };
+        if (!l || typeof l !== 'object' || Array.isArray(l)) return { error: T('a.validateBackup.20') };
+        for (const k of Object.keys(l)) if (!['id', 'name', 'cookies'].includes(k)) return { error: T('a.validateBackup.21', { k: k }) };
+        if (typeof l.id !== 'string' || !/^[\w-]{2,60}$/.test(l.id)) return { error: T('a.validateBackup.22') };
+        if ('name' in l && (typeof l.name !== 'string' || l.name.length > 80)) return { error: T('a.validateBackup.23') };
+        if ('cookies' in l && typeof l.cookies !== 'boolean') return { error: T('a.validateBackup.24') };
         out.connections.yt_lists.push({ id: l.id, name: bkClean(l.name || '', 80), cookies: !!l.cookies });
       }
     }
   }
   const n = out.likes.sp.length + out.likes.sc.length + out.likes.yt.length + out.playlists.length;
-  if (!n) return { error: 'В копии нет ни лайков, ни плейлистов' };
+  if (!n) return { error: T('a.validateBackup.25') };
   return { data: out };
 }
 // трек из копии -> запись плейлиста: обложки у YouTube восстанавливаем по id
@@ -3977,36 +3967,36 @@ function bkToSlim(t) {
   return o;
 }
 function bkMsg(text, bad) { const el = $('bk-msg'); el.textContent = text || ''; el.hidden = !text; el.classList.toggle('bad', !!bad); }
-const bkFmtDate = (ms) => new Date(ms).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-const bkFmtSize = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + ' МБ' : Math.max(1, Math.round(b / 1024)) + ' КБ');
+const bkFmtDate = (ms) => I18N.dateTime(ms);
+const bkFmtSize = (b) => (b >= 1048576 ? (b / 1048576).toFixed(1) + T('a.bkFmtSize.1') : Math.max(1, Math.round(b / 1024)) + T('a.bkFmtSize.2'));
 async function backupRefresh() {
   try {
     const s = await api('/api/app/backup/status', { headers: hdr });
     $('bk-auto').checked = !!s.auto;
-    $('bk-state').textContent = s.lastAt ? 'Последняя: ' + bkFmtDate(s.lastAt) : 'Копий ещё нет';
+    $('bk-state').textContent = s.lastAt ? T('a.backupRefresh.1') + bkFmtDate(s.lastAt) : T('a.backupRefresh.2');
     $('bk-state').className = 'state' + (s.lastAt ? ' ok' : '');
     const box = $('bk-files');
     box.replaceChildren(...s.files.map((f) => {
       const d = document.createElement('div');
       d.className = 'folder';
-      d.innerHTML = '<span></span><button class="bk-restore-one" type="button">Восстановить</button>';
-      d.querySelector('span').textContent = `${bkFmtDate(f.at)} · ${f.auto ? 'авто' : 'вручную'} · ${bkFmtSize(f.size)}`;
+      d.innerHTML = T('a.backupRefresh.3');
+      d.querySelector('span').textContent = `${bkFmtDate(f.at)} · ${f.auto ? T('a.backupRefresh.4') : T('a.backupRefresh.5')} · ${bkFmtSize(f.size)}`;
       d.querySelector('span').title = f.name;
       d.querySelector('button').addEventListener('click', async () => {
-        try { restoreFlow(await (await fetch('/api/app/backup/file?name=' + encodeURIComponent(f.name), { headers: hdr })).text()); } catch (e) { bkMsg('Не получилось прочитать файл: ' + e.message, true); }
+        try { restoreFlow(await (await fetch('/api/app/backup/file?name=' + encodeURIComponent(f.name), { headers: hdr })).text()); } catch (e) { bkMsg(T('a.on_button_click.1') + e.message, true); }
       });
       return d;
     }));
-    if (!s.files.length) box.innerHTML = '<div class="hint">Пока пусто</div>';
-  } catch (e) { $('bk-state').textContent = 'Недоступно'; }
+    if (!s.files.length) box.innerHTML = T('a.backupRefresh.6');
+  } catch (e) { $('bk-state').textContent = T('a.backupRefresh.7'); }
 }
 async function backupSave(auto) {
   const b = buildBackup();
-  if (!b.counts.total) { if (!auto) bkMsg('Пока нечего сохранять: нет ни лайков, ни плейлистов', true); return null; }
+  if (!b.counts.total) { if (!auto) bkMsg(T('a.backupSave.1'), true); return null; }
   const r = await api('/api/app/backup/save', { method: 'POST', headers: { ...hdr, 'Content-Type': 'application/json' }, body: JSON.stringify({ json: b.json, auto }) });
-  const what = `Spotify ${b.counts.sp}, SoundCloud ${b.counts.sc}, YouTube Music ${b.counts.yt}, плейлистов ${b.counts.playlists}`;
-  if (auto) toast('Автокопия библиотеки сохранена');
-  else bkMsg(`Копия сохранена: ${r.dir}\\${r.name}. В ней ${what}.`, false);
+  const what = T('a.backupSave.2', { sp: b.counts.sp, sc: b.counts.sc, yt: b.counts.yt, playlists: b.counts.playlists });
+  if (auto) toast(T('a.backupSave.3'));
+  else bkMsg(T('a.backupSave.4', { dir: r.dir, name: r.name, what: what }), false);
   backupRefresh();
   return r;
 }
@@ -4016,16 +4006,16 @@ async function backupAutoCheck() {
     const s = await api('/api/app/backup/status', { headers: hdr });
     if (!s.auto || Date.now() - (s.lastAt || 0) < 7 * 86400e3) return;
     await backupSave(true);
-  } catch (e) { console.warn('автокопия', e); }
+  } catch (e) { console.warn(T('a.backupAutoCheck.1'), e); }
 }
 async function restoreFlow(text) {
   const v = validateBackup(text);
-  if (v.error) { bkMsg('Копия не принята: ' + v.error, true); toast('Файл копии не подошёл'); return; }
+  if (v.error) { bkMsg(T('a.restoreFlow.1') + v.error, true); toast(T('a.restoreFlow.2')); return; }
   const d = v.data;
   const plTracks = d.playlists.reduce((a, p) => a + p.tracks.length, 0);
-  const lines = [`Копия от ${bkFmtDate(Date.parse(d.createdAt))}.`, `Лайки: Spotify ${d.likes.sp.length}, SoundCloud ${d.likes.sc.length}, YouTube Music ${d.likes.yt.length}.`, `Плейлистов: ${d.playlists.length} (треков ${plTracks}).`,
-    'Ничего не удалится: плейлисты с тем же названием дополнятся, остальные появятся новыми, лайки станут плейлистами «Лайки … (копия)».'];
-  const ok = await dialog({ title: 'Восстановить из копии?', text: lines.join('\n'), ok: 'Восстановить' });
+  const lines = [T('a.restoreFlow.3', { p1: bkFmtDate(Date.parse(d.createdAt)) }), T('a.restoreFlow.4', { length: d.likes.sp.length, p2: d.likes.sc.length, p3: d.likes.yt.length }), T('a.restoreFlow.5', { length: d.playlists.length, plTracks: plTracks }),
+    T('a.restoreFlow.6')];
+  const ok = await dialog({ title: T('a.restoreFlow.7'), text: lines.join('\n'), ok: T('a.restoreFlow.8') });
   if (!ok) return;
   const st = { created: 0, merged: 0, added: 0 };
   const fill = (name, list) => {
@@ -4046,19 +4036,19 @@ async function restoreFlow(text) {
     if (added) { saveYtLists(); ytLoadAll(false); }
   }
   if (state.view.startsWith('pl:')) render();
-  bkMsg(`Восстановлено: новых плейлистов ${st.created}, дополнено ${st.merged}, добавлено треков ${st.added}.`, false);
-  toast('Копия восстановлена');
+  bkMsg(T('a.restoreFlow.9', { created: st.created, merged: st.merged, added: st.added }), false);
+  toast(T('a.restoreFlow.10'));
 }
 async function exportM3u(list) {
   const pls = list.filter((p) => p.tracks.length).map((p) => ({ name: p.name, tracks: p.tracks.map((t) => ({ src: t.src, id: t.id, title: t.title, artist: t.artist, duration: t.duration, url: t.url })) }));
-  if (!pls.length) { toast('В плейлисте нет треков'); bkMsg('Нет плейлистов с треками для экспорта', true); return; }
+  if (!pls.length) { toast(T('a.exportM3u.1')); bkMsg(T('a.exportM3u.2'), true); return; }
   try {
     const r = await api('/api/app/backup/m3u', { method: 'POST', headers: { ...hdr, 'Content-Type': 'application/json' }, body: JSON.stringify({ playlists: pls }) });
-    bkMsg(`M3U сохранено: файлов ${r.files}, треков ${r.tracks}. Папка: ${r.dir}`, false);
-    toast(`M3U: файлов ${r.files}, треков ${r.tracks}`, 5000);
-  } catch (e) { bkMsg('Не получилось выгрузить M3U: ' + e.message, true); toast('M3U: ' + e.message); }
+    bkMsg(T('a.exportM3u.3', { files: r.files, tracks: r.tracks, dir: r.dir }), false);
+    toast(T('a.exportM3u.4', { files: r.files, tracks: r.tracks }), 5000);
+  } catch (e) { bkMsg(T('a.exportM3u.5') + e.message, true); toast('M3U: ' + e.message); }
 }
-$('bk-save').addEventListener('click', async () => { try { await backupSave(false); } catch (e) { bkMsg('Не получилось сохранить: ' + e.message, true); } });
+$('bk-save').addEventListener('click', async () => { try { await backupSave(false); } catch (e) { bkMsg(T('a.on_bksave_click.1') + e.message, true); } });
 $('bk-restore').addEventListener('click', () => $('bk-file').click());
 $('bk-file').addEventListener('change', async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) restoreFlow(await f.text()); });
 $('bk-auto').addEventListener('change', (e) => appCmd('settings', { autoBackup: e.target.checked }));
@@ -4106,14 +4096,14 @@ function sleepRestoreVolume() {
 function sleepUi() {
   const on = !!sleepT.mode;
   const left = on ? sleepLeft() : 0;
-  const txt = !on ? '' : left === Infinity ? 'до конца' : sleepFmt(left);
+  const txt = !on ? '' : left === Infinity ? T('a.sleepUi.1') : sleepFmt(left);
   $('b-sleep').classList.toggle('on', on);
   $('sleep-lbl').textContent = txt;
   $('sleep-lbl').hidden = !on;
-  $('b-sleep').title = on ? `Таймер сна: ${sleepT.label}, осталось ${txt}` : 'Таймер сна';
+  $('b-sleep').title = on ? T('a.sleepUi.2', { label: sleepT.label, txt: txt }) : T('a.sleepUi.3');
   $('sp-status').hidden = !on;
-  $('sp-left').textContent = on ? (sleepT.mode === 'track' ? (left === Infinity ? 'до конца трека' : `${txt} до конца трека`) : txt) : '';
-  document.querySelectorAll('#sleep-pop [data-min]').forEach((b) => b.classList.toggle('on', on && sleepT.mode === 'time' && sleepT.label === `${b.dataset.min} мин`));
+  $('sp-left').textContent = on ? (sleepT.mode === 'track' ? (left === Infinity ? T('a.sleepUi.4') : T('a.sleepUi.5', { txt: txt })) : txt) : '';
+  document.querySelectorAll('#sleep-pop [data-min]').forEach((b) => b.classList.toggle('on', on && sleepT.mode === 'time' && sleepT.min === Number(b.dataset.min)));
   $('sp-track').classList.toggle('on', on && sleepT.mode === 'track');
 }
 function sleepSchedule() {
@@ -4142,22 +4132,23 @@ function sleepStop() {
 function sleepFire() {
   sleepStop();
   if (state.playing) engPause();   // для Spotify в приложении это пауза через API
-  toast('Таймер сна: поставил на паузу');
+  toast(T('a.sleepFire.1'));
   setTimeout(sleepRestoreVolume, 700);   // громкость возвращаем уже на паузе, чтобы следующий запуск не был тихим
 }
 function sleepCancel(silent) {
   if (!sleepT.mode) return;
   sleepStop();
   sleepRestoreVolume();
-  if (!silent) toast('Таймер сна отменён');
+  if (!silent) toast(T('a.sleepCancel.1'));
 }
 function sleepStart(mode, ms, label) {
   if (sleepT.mode) { sleepStop(); sleepRestoreVolume(); }
-  if (mode === 'track' && !state.cur) { toast('Включи трек: таймер сработает в его конце'); return; }
+  if (mode === 'track' && !state.cur) { toast(T('a.sleepStart.1')); return; }
   sleepT.mode = mode;
   sleepT.label = label;
+  sleepT.min = mode === 'time' ? Math.round(ms / 60000) : 0;
   sleepT.end = mode === 'time' ? Date.now() + ms : 0;
-  toast(`Таймер сна: ${label}`);
+  toast(T('a.sleepStart.2', { label: label }));
   sleepUi();
   sleepSchedule();
   publishState(true);
@@ -4168,13 +4159,13 @@ $('b-sleep').addEventListener('click', () => { if ($('sleep-pop').hidden) openSl
 $('sleep-pop').addEventListener('click', (e) => {
   const b = e.target.closest('button');
   if (!b) return;
-  if (b.dataset.min) { sleepStart('time', Number(b.dataset.min) * 60000, `${b.dataset.min} мин`); closeSleepPop(); }
-  else if (b.id === 'sp-track') { sleepStart('track', 0, 'до конца трека'); closeSleepPop(); }
+  if (b.dataset.min) { sleepStart('time', Number(b.dataset.min) * 60000, T('a.on_sleeppop_click.1', { min: b.dataset.min })); closeSleepPop(); }
+  else if (b.id === 'sp-track') { sleepStart('track', 0, T('a.on_sleeppop_click.2')); closeSleepPop(); }
   else if (b.id === 'sp-cancel') { sleepCancel(); closeSleepPop(); }
   else if (b.id === 'sp-custom-go') {
     const v = Math.round(Number($('sp-custom').value));
-    if (!(v >= 1 && v <= 720)) { $('sp-custom').focus(); toast('Свой таймер: от 1 до 720 минут'); return; }
-    sleepStart('time', v * 60000, `${v} мин`);
+    if (!(v >= 1 && v <= 720)) { $('sp-custom').focus(); toast(T('a.on_sleeppop_click.3')); return; }
+    sleepStart('time', v * 60000, T('a.on_sleeppop_click.4', { v: v }));
     $('sp-custom').value = '';
     closeSleepPop();
   }
@@ -4193,7 +4184,7 @@ function comboOf(e) {
   return [...m, e.code].join('+');
 }
 const isModifierCode = (c) => /^(Control|Shift|Alt|Meta|OS)(Left|Right)?$/.test(c);
-const KEY_NAMES = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Space: 'Пробел', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backslash: '\\', PageUp: 'PgUp', PageDown: 'PgDn' };
+const KEY_NAMES = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', get Space() { return T('a.const.52'); }, Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backslash: '\\', PageUp: 'PgUp', PageDown: 'PgDn' };
 function comboLabel(c) {
   if (!c) return '—';
   return c.split('+').map((p) => KEY_NAMES[p] || p.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Num ')).join(' + ');
@@ -4201,30 +4192,30 @@ function comboLabel(c) {
 // действия: def это сочетание по умолчанию; inInput: работает даже в поле ввода; repeat: можно держать нажатой
 const focusSearch = () => { setLyrics(false); const gs = $('gs-input'); if (gs.offsetParent) { gs.focus(); gs.select(); return; } peekSide(true); $('search').focus(); $('search').select(); };
 const KEY_ACTIONS = [
-  { id: 'toggle', name: 'Пауза / играть', def: 'Space', run: () => togglePlay() },
-  { id: 'seekBack', name: 'Назад на 5 секунд', def: 'ArrowLeft', repeat: true, run: () => seek(lyNow() - 5000) },
-  { id: 'seekFwd', name: 'Вперёд на 5 секунд', def: 'ArrowRight', repeat: true, run: () => seek(lyNow() + 5000) },
-  { id: 'prev', name: 'Предыдущий трек', def: 'Ctrl+ArrowLeft', run: () => prev() },
-  { id: 'next', name: 'Следующий трек', def: 'Ctrl+ArrowRight', run: () => next(false) },
-  { id: 'volUp', name: 'Громче', def: 'ArrowUp', repeat: true, run: () => setVolume(state.volume + 5) },
-  { id: 'volDown', name: 'Тише', def: 'ArrowDown', repeat: true, run: () => setVolume(state.volume - 5) },
-  { id: 'mute', name: 'Выключить звук', def: 'KeyM', run: () => setVolume(state.volume > 0 ? 0 : state.lastVolume || 70) },
-  { id: 'lyrics', name: 'Текст песни', def: 'KeyL', run: () => toggleLyrics() },
-  { id: 'fullscreen', name: 'Полный экран', def: 'F11', inInput: true, run: () => toggleFull() },
-  { id: 'search', name: 'Поиск', def: 'Ctrl+KeyF', inInput: true, run: focusSearch },
+  { id: 'toggle', get name() { return T('a.const.53'); }, def: 'Space', run: () => togglePlay() },
+  { id: 'seekBack', get name() { return T('a.const.54'); }, def: 'ArrowLeft', repeat: true, run: () => seek(lyNow() - 5000) },
+  { id: 'seekFwd', get name() { return T('a.const.55'); }, def: 'ArrowRight', repeat: true, run: () => seek(lyNow() + 5000) },
+  { id: 'prev', get name() { return T('a.const.56'); }, def: 'Ctrl+ArrowLeft', run: () => prev() },
+  { id: 'next', get name() { return T('a.const.57'); }, def: 'Ctrl+ArrowRight', run: () => next(false) },
+  { id: 'volUp', get name() { return T('a.const.58'); }, def: 'ArrowUp', repeat: true, run: () => setVolume(state.volume + 5) },
+  { id: 'volDown', get name() { return T('a.const.59'); }, def: 'ArrowDown', repeat: true, run: () => setVolume(state.volume - 5) },
+  { id: 'mute', get name() { return T('a.const.60'); }, def: 'KeyM', run: () => setVolume(state.volume > 0 ? 0 : state.lastVolume || 70) },
+  { id: 'lyrics', get name() { return T('a.const.61'); }, def: 'KeyL', run: () => toggleLyrics() },
+  { id: 'fullscreen', get name() { return T('a.const.62'); }, def: 'F11', inInput: true, run: () => toggleFull() },
+  { id: 'search', get name() { return T('a.const.63'); }, def: 'Ctrl+KeyF', inInput: true, run: focusSearch },
 ];
 // эти сочетания занять нельзя: на них держится сам плеер или система
 const KEY_RESERVED = {
-  Escape: 'Esc закрывает окна и выходит из полного экрана',
-  Tab: 'Tab переключает фокус по интерфейсу',
-  'Shift+Tab': 'Shift+Tab переключает фокус по интерфейсу',
-  Enter: 'Enter нажимает кнопки',
-  'Ctrl+Shift+KeyK': 'Ctrl+Shift+K отключает свой CSS, если он сломал интерфейс',
-  'Alt+F4': 'Alt+F4 закрывает окно Windows',
-  F5: 'F5 перезагружает страницу',
-  'Ctrl+KeyR': 'Ctrl+R перезагружает страницу',
+  get Escape() { return T('a.const.64'); },
+  get Tab() { return T('a.const.65'); },
+  'Shift+Tab': '@a.key.shifttab',
+  get Enter() { return T('a.const.66'); },
+  'Ctrl+Shift+KeyK': '@a.key.ctrlshiftk',
+  'Alt+F4': '@a.key.altf4',
+  get F5() { return T('a.const.67'); },
+  'Ctrl+KeyR': '@a.key.ctrlr',
 };
-const KEY_SYSTEM_WARN = { 'Ctrl+KeyC': 'копирование', 'Ctrl+KeyV': 'вставка', 'Ctrl+KeyX': 'вырезание', 'Ctrl+KeyA': 'выделить всё', 'Ctrl+KeyZ': 'отмена', 'Ctrl+KeyW': 'закрытие вкладки' };
+const KEY_SYSTEM_WARN = { 'Ctrl+KeyC': '@a.sys.copy', 'Ctrl+KeyV': '@a.sys.paste', 'Ctrl+KeyX': '@a.sys.cut', 'Ctrl+KeyA': '@a.sys.selectall', 'Ctrl+KeyZ': '@a.sys.undo', 'Ctrl+KeyW': '@a.sys.closetab' };
 const KEY_COMBO_RE = /^((Ctrl|Alt|Shift|Meta)\+)*[A-Za-z0-9]+$/;
 let keymap = {};
 let keyCapture = null;
@@ -4251,17 +4242,17 @@ function keyMsg(html, bad) {
 }
 function keyAssign(id, combo) {
   const act = KEY_ACTIONS.find((a) => a.id === id);
-  if (KEY_RESERVED[combo]) { keyMsg(`Это сочетание занять нельзя: ${KEY_RESERVED[combo]}.`, true); return; }
+  if (KEY_RESERVED[combo]) { keyMsg(T('a.keyAssign.1', { p1: lbl(KEY_RESERVED[combo]) }), true); return; }
   const other = KEY_ACTIONS.find((a) => a.id !== id && keymap[a.id] === combo);
   if (other) {
     keyPending = { id, combo, other: other.id };
-    keyMsg(`Сочетание «${escapeHtml(comboLabel(combo))}» уже назначено на «${escapeHtml(other.name)}». <button class="pill" id="kb-steal" type="button">Забрать себе</button> <button class="pill" id="kb-cancel" type="button">Отмена</button>`, true);
+    keyMsg(T('a.keyAssign.2', { p1: escapeHtml(comboLabel(combo)), p2: escapeHtml(other.name) }), true);
     return;
   }
   keymap[id] = combo;
   saveKeymap();
-  const sys = KEY_SYSTEM_WARN[combo];
-  keyMsg(sys ? `Сохранено. Внимание: в полях ввода ${escapeHtml(comboLabel(combo))} это ещё и ${sys}, поэтому там плеер его не трогает.` : `«${escapeHtml(act.name)}»: ${escapeHtml(comboLabel(combo))}`, false);
+  const sys = lbl(KEY_SYSTEM_WARN[combo] || '');
+  keyMsg(sys ? T('a.keyAssign.3', { p1: escapeHtml(comboLabel(combo)), sys: sys }) : `«${escapeHtml(act.name)}»: ${escapeHtml(comboLabel(combo))}`, false);
   renderKeys();
 }
 function keyCancelCapture() { keyCapture = null; renderKeys(); }
@@ -4272,7 +4263,7 @@ window.addEventListener('keydown', (e) => {
   e.stopPropagation();
   if (isModifierCode(e.code)) return;
   const id = keyCapture.id;
-  if (e.code === 'Escape') { keyCancelCapture(); keyMsg('Отменено'); return; }
+  if (e.code === 'Escape') { keyCancelCapture(); keyMsg(T('a.on_window_keydown.1')); return; }
   keyCapture = null;
   keyPending = null;
   keyAssign(id, comboOf(e));
@@ -4284,12 +4275,12 @@ function renderKeys() {
   box.replaceChildren(...KEY_ACTIONS.map((a) => {
     const d = document.createElement('div');
     d.className = 'kb-row';
-    d.innerHTML = '<span class="kb-name"></span><button class="kb-key" type="button"></button><button class="x kb-btn" data-act="reset" type="button" title="По умолчанию">&#8634;</button><button class="x kb-btn" data-act="clear" type="button" title="Убрать сочетание">&times;</button>';
+    d.innerHTML = T('a.renderKeys.1');
     d.dataset.id = a.id;
     d.querySelector('.kb-name').textContent = a.name;
     const k = d.querySelector('.kb-key');
     const rec = keyCapture && keyCapture.id === a.id;
-    k.textContent = rec ? 'Нажми сочетание…' : comboLabel(keymap[a.id]);
+    k.textContent = rec ? T('a.renderKeys.2') : comboLabel(keymap[a.id]);
     k.classList.toggle('rec', !!rec);
     k.classList.toggle('empty', !keymap[a.id]);
     d.querySelector('[data-act="reset"]').hidden = keymap[a.id] === a.def;
@@ -4302,14 +4293,14 @@ async function renderMediaKeysStatus() {
   try {
     const s = await api('/api/app/mediakeys', { headers: { 'X-Player': '1' } });
     $('kb-global').checked = !!s.enabled;
-    const names = { play: 'Play/Pause', next: 'Следующий', prev: 'Предыдущий', stop: 'Стоп' };
+    const names = { play: 'Play/Pause', next: T('a.renderMediaKeysStatus.1'), prev: T('a.renderMediaKeysStatus.2'), stop: T('a.renderMediaKeysStatus.3') };
     const bad = Object.entries(s.keys || {}).filter(([, ok]) => !ok).map(([k]) => names[k]);
-    el.textContent = !s.enabled ? 'Выключены'
-      : !s.running ? 'Помощник запускается…'
-      : bad.length ? `Заняты другой программой: ${bad.join(', ')}. Остальное работает`
-      : s.active ? 'Работают: Play/Pause, Следующий, Предыдущий, Стоп' : 'Включены, заработают, когда заиграет трек';
+    el.textContent = !s.enabled ? T('a.renderMediaKeysStatus.4')
+      : !s.running ? T('a.renderMediaKeysStatus.5')
+      : bad.length ? T('a.renderMediaKeysStatus.6', { p1: bad.join(', ') })
+      : s.active ? T('a.renderMediaKeysStatus.7') : T('a.renderMediaKeysStatus.8');
     el.classList.toggle('bad', !!bad.length);
-  } catch { el.textContent = 'Недоступно в этом режиме'; }
+  } catch { el.textContent = T('a.renderMediaKeysStatus.9'); }
 }
 function buildKeys() {
   $('kb-list').addEventListener('click', (e) => {
@@ -4328,11 +4319,11 @@ function buildKeys() {
       keymap[id] = combo;
       keyPending = null;
       saveKeymap();
-      keyMsg('Сочетание перенесено', false);
+      keyMsg(T('a.on_kbmsg_click.1'), false);
       renderKeys();
     } else if (e.target.id === 'kb-cancel') { keyPending = null; keyMsg(''); renderKeys(); }
   });
-  $('kb-reset').addEventListener('click', () => { keymap = Object.fromEntries(KEY_ACTIONS.map((a) => [a.id, a.def])); keyPending = null; saveKeymap(); keyMsg('Все сочетания возвращены', false); renderKeys(); });
+  $('kb-reset').addEventListener('click', () => { keymap = Object.fromEntries(KEY_ACTIONS.map((a) => [a.id, a.def])); keyPending = null; saveKeymap(); keyMsg(T('a.on_kbreset_click.1'), false); renderKeys(); });
   $('kb-global').addEventListener('change', (e) => { appCmd('settings', { mediaKeys: e.target.checked }); setTimeout(renderMediaKeysStatus, 1500); });
   // пока окно клавиш закрыто, запись отменяем, чтобы не перехватывать нажатия зря
   $('settings').addEventListener('mousedown', (e) => { if (keyCapture && !e.target.closest('.kb-key')) keyCancelCapture(); });
@@ -4419,10 +4410,10 @@ function lyState(title, text, extra = '') {
 function lyRender() {
   lyLinesEl.className = 'ly-lines';
   lyr.idx = -1;
-  if (!state.cur) { lyLinesEl.innerHTML = lyState('Тут будет текст', 'Включи любой трек, и слова пойдут строчка за строчкой под голос.'); return; }
+  if (!state.cur) { lyLinesEl.innerHTML = lyState(T('a.lyRender.1'), T('a.lyRender.2')); return; }
   switch (lyr.status) {
     case 'loading':
-      lyLinesEl.innerHTML = lyState('Ищу текст…', '', '<div class="loader"></div>');
+      lyLinesEl.innerHTML = lyState(T('a.lyRender.3'), '', '<div class="loader"></div>');
       break;
     case 'synced': {
       const frag = document.createDocumentFragment();
@@ -4443,8 +4434,8 @@ function lyRender() {
       lyLinesEl.className = 'ly-lines plain';
       const note = document.createElement('div');
       note.className = 'ly-note';
-      const srcName = { genius: 'Genius', lrclib: 'LRCLIB', lyricsovh: 'lyrics.ovh', custom: 'твой текст' }[lyr.source];
-      note.textContent = (srcName ? `Текст: ${srcName} · ` : '') + 'без синхронизации, прокручивается по ходу трека';
+      const srcName = { genius: 'Genius', lrclib: 'LRCLIB', lyricsovh: 'lyrics.ovh', custom: T('a.lyRender.4') }[lyr.source];
+      note.textContent = (srcName ? T('a.lyRender.5', { srcName: srcName }) : '') + T('a.lyRender.6');
       const frag = document.createDocumentFragment();
       frag.appendChild(note);
       for (const line of lyr.plain.split(/\r?\n/)) {
@@ -4462,15 +4453,15 @@ function lyRender() {
       break;
     }
     case 'instrumental':
-      lyLinesEl.innerHTML = lyState('Инструментал', 'В этом треке нет слов, просто кайфуй.');
+      lyLinesEl.innerHTML = lyState(T('a.lyRender.7'), T('a.lyRender.8'));
       break;
     case 'error':
-      lyLinesEl.innerHTML = lyState('Не загрузилось', 'Не получилось достать текст. Проверь интернет.', '') ;
-      lyLinesEl.querySelector('.ly-state').insertAdjacentHTML('beforeend', '<button class="pill accent" id="ly-retry">Ещё раз</button>');
+      lyLinesEl.innerHTML = lyState(T('a.lyRender.9'), T('a.lyRender.10'), '') ;
+      lyLinesEl.querySelector('.ly-state').insertAdjacentHTML('beforeend', T('a.lyRender.11'));
       break;
     default:
-      lyLinesEl.innerHTML = lyState('Текста не нашлось', 'Искал на LRCLIB, NetEase, Genius и lyrics.ovh. У совсем свежих и редких треков текста часто ещё нет.');
-      lyLinesEl.querySelector('.ly-state').insertAdjacentHTML('beforeend', '<button class="pill accent" id="ly-refresh">Искать заново</button><button class="pill" id="ly-custom-open">Добавить свой текст</button>');
+      lyLinesEl.innerHTML = lyState(T('a.lyRender.12'), T('a.lyRender.13'));
+      lyLinesEl.querySelector('.ly-state').insertAdjacentHTML('beforeend', T('a.lyRender.14'));
   }
 }
 lyLinesEl.addEventListener('click', (e) => {
@@ -4598,7 +4589,7 @@ function lyTrack() {
   if (big) { if (img.getAttribute('src') !== big) img.src = big; } else img.removeAttribute('src');
   $('ly-title').textContent = t ? t.title : '';
   $('ly-artist').textContent = t ? t.artist : '';
-  $('ly-src').innerHTML = t ? (t.src === 'sp' ? '<span class="badge sp">Spotify</span>' : t.src === 'yt' ? '<span class="badge yt">YouTube</span>' : t.src === 'local' ? '<span class="badge lc">С компа</span>' : '<span class="badge sc">SoundCloud</span>') : '';
+  $('ly-src').innerHTML = t ? (t.src === 'sp' ? '<span class="badge sp">Spotify</span>' : t.src === 'yt' ? '<span class="badge yt">YouTube</span>' : t.src === 'local' ? T('a.lyTrack.1') : '<span class="badge sc">SoundCloud</span>') : '';
   if (t) lyLoad(t); else { lyr.key = null; lyRender(); }
 }
 function setLyrics(open) {
@@ -4623,6 +4614,37 @@ const ping = () => fetch('/api/ping', { cache: 'no-store' }).catch(() => {});
 setInterval(ping, 20000);
 window.addEventListener('pagehide', () => { listenTick(); listenFlush(true); if (!leavingForAuth) { try { navigator.sendBeacon('/api/bye'); } catch {} } });
 
+/* ===================== Смена языка без перезапуска ===================== */
+// Разметку с data-i18n уже перевёл I18N.apply(). Здесь обновляем то, что собирается из JS: подписи в списках, меню, настройках, плеере.
+function relocalize() {
+  const names = (sel, list, pick) => document.querySelectorAll(sel).forEach((b, i) => { const v = pick(list, b, i); if (v != null) { const s = b.querySelector('span'); if (s) s.textContent = v; } });
+  names('#presets .preset', PRESETS, (L, b) => (L.find((p) => p.id === b.dataset.id) || {}).name);
+  names('#walls .wl', WALLS, (L, b) => (L[b.dataset.id] || {}).name);
+  names('#gr-presets .gr-preset', GRAD_PRESETS, (L, b, i) => (L[i] || {}).name);
+  document.querySelectorAll('#gr-presets .gr-preset').forEach((b, i) => { if (GRAD_PRESETS[i]) b.title = GRAD_PRESETS[i].name; });
+  document.querySelectorAll('#accents .sw[data-c]').forEach((b, i) => { if (ACCENTS[i]) b.title = lbl(ACCENTS[i][0]); });
+  const custom = document.querySelector('.sw-custom');
+  if (custom) custom.title = T('a.buildSettings.1');
+  [...$('lk-font').options].forEach((o, i) => { if (FONTS[i]) o.textContent = lbl(FONTS[i][1]); });
+  $('lk-blocks').dataset.sig = ''; syncBlocksUI();
+  if (appInfo.native) $('hint-sp-play').innerHTML = T('a.top.5');
+  for (const src of ['sp', 'sc', 'yt']) {
+    const n = state.lib[src].length;
+    if (accState[src].cls === 'ok' && n) accState[src] = { text: `${n} ${plural(n, trackForms())}`, cls: 'ok' };
+  }
+  syncAccounts();
+  renderYtLists(); renderFolders(); renderSearchChips();
+  renderSidebarPlaylists();
+  render();
+  renderQueue(); lycRender(); lyRender();
+  updatePlayer(); sleepUi();
+  renderThemes(); renderKeys(); renderMediaKeysStatus(); syncLookUI();
+  if (state.view === 'stats') renderStats();
+  if (!$('settings').hidden) backupRefresh();
+  appCmd('settings', { lang: I18N.lang });
+}
+document.addEventListener('langchange', () => { try { relocalize(); } catch (e) { console.warn('language switch', e); } });
+
 /* ===================== Старт ===================== */
 (async function init() {
   $('redirect-uri').textContent = REDIRECT_URI;
@@ -4640,13 +4662,14 @@ window.addEventListener('pagehide', () => { listenTick(); listenFlush(true); if 
     $('ver').textContent = 'v' + i.version;
     $('log-path').textContent = i.logFile;
     connectEvents();
+    appCmd('settings', { lang: I18N.lang });   // трей, заголовки окон и ошибки сервера говорят на языке интерфейса
     if (i.native) {
       $('b-mini').hidden = false;
       $('row-tray').hidden = false;
       appCmd('settings', { closeToTray: ui.tray !== false });
       syncFullscreen();   // сохранённый полноэкранный режим включаем сразу при старте
       publishState(true);
-      $('hint-sp-play').innerHTML = 'Треки Spotify звучат через <b>приложение Spotify</b> на компе: если оно закрыто, плеер запустит его сам. Войди в нём в тот же аккаунт.';
+      $('hint-sp-play').innerHTML = T('a.top.5');
       pushTheme();
     }
   }).catch(() => {});
@@ -4656,7 +4679,7 @@ window.addEventListener('pagehide', () => { listenTick(); listenFlush(true); if 
   renderSidebarPlaylists();
   rebuildAll();
   if (LS.get('sp_token')) {
-    setAccState('sp', state.lib.sp.length ? `${state.lib.sp.length} ${plural(state.lib.sp.length, TRACKS)}` : '', 'ok');
+    setAccState('sp', state.lib.sp.length ? `${state.lib.sp.length} ${plural(state.lib.sp.length, trackForms())}` : '', 'ok');
     spLoadLikes();
     spMe().then(syncAccounts);
   }

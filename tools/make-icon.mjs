@@ -33,5 +33,5 @@ export async function makeIcons() {
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  console.log('иконка:', await makeIcons());
+  console.log('icon:', await makeIcons());
 }

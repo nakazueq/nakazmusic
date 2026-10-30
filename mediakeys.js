@@ -39,7 +39,7 @@ class MediaKeys {
       c = useExe
         ? spawn(this.helperExe, [], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] })
         : spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', Buffer.from(psScript(), 'utf16le').toString('base64')], { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
-    } catch (e) { this.log('медиаклавиши не запустились', e.message); if (useExe) { this.child = null; this.start(); } return; }
+    } catch (e) { this.log('media keys helper did not start', e.message); if (useExe) { this.child = null; this.start(); } return; }
     this.mode = useExe ? 'exe' : 'powershell';
     this.child = c;
     process.once('exit', () => { try { c.kill(); } catch {} });   // при выходе помощник не должен остаться висеть
@@ -50,25 +50,25 @@ class MediaKeys {
       let i;
       while ((i = buf.indexOf('\n')) >= 0) { const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1); if (line) this._line(line); }
     });
-    c.stderr.on('data', (d) => { const s = String(d).trim(); if (s && !/^#< CLIXML|^<Objs/.test(s)) this.log('медиаклавиши:', s.slice(0, 200)); });
+    c.stderr.on('data', (d) => { const s = String(d).trim(); if (s && !/^#< CLIXML|^<Objs/.test(s)) this.log('media keys helper:', s.slice(0, 200)); });
     c.stdin.on('error', () => {});
-    c.on('error', (e) => this.log('медиаклавиши', e.message));
+    c.on('error', (e) => this.log('media keys helper', e.message));
     c.on('exit', () => {
       if (this.child !== c) return;
       const neverReady = !this.ready;
       this.child = null; this.ready = false; this.sent = null; this.reg = {};
       // exe не заработал (антивирус, повреждён): переходим на запасной PowerShell
-      if (useExe && neverReady) { this.log('mkhelper.exe не стартовал, запускаю через PowerShell'); this.starts = 2; this.start(); }
+      if (useExe && neverReady) { this.log('mkhelper.exe did not start, falling back to PowerShell'); this.starts = 2; this.start(); }
     });
   }
   _line(line) {
     if (line === 'READY') { this.ready = true; this._push(); return; }
     const m = line.match(/^(OK|FAIL|OFF|KEY) (\w+)$/);
     if (!m) return;
-    if (m[1] === 'KEY') { try { this.onKey(m[2]); } catch (e) { this.log('медиаклавиша', e.message); } return; }
+    if (m[1] === 'KEY') { try { this.onKey(m[2]); } catch (e) { this.log('media key handler', e.message); } return; }
     if (m[1] === 'OFF') { delete this.reg[m[2]]; return; }
     this.reg[m[2]] = m[1] === 'OK';
-    if (m[1] === 'FAIL') this.log(`медиаклавиша ${m[2]} занята другой программой`);
+    if (m[1] === 'FAIL') this.log(`media key ${m[2]} is taken by another program`);
   }
   _push() {
     if (!this.ready || !this.child || this.sent === this.want) return;

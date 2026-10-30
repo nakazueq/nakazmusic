@@ -119,7 +119,7 @@ function render() {
   }
   $('play').innerHTML = st.playing ? PAUSE : PLAY;
   document.body.classList.toggle('paused', !st.playing);
-  document.title = st.hasTrack ? `${st.title} · ${st.artist}` : 'Sonara — мини';
+  document.title = st.hasTrack ? `${st.title} · ${st.artist}` : T('m.root.1');
   progress();
 }
 function now() { return st.playing ? st.time + (Date.now() - st.at) : st.time; }

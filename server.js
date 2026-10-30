@@ -1,4 +1,6 @@
 'use strict';
+// тот же exe в роли сторожа окна: сервер и интерфейс не поднимаем (см. watchdog.js)
+if (process.env.SONARA_WATCH_PID) { require('./watchdog.js'); return; }
 // Локальный сервер плеера «Sonara».
 // Работает как обычный node-скрипт (node server.js) и как собранный Sonara.exe.
 const http = require('http');
@@ -25,7 +27,7 @@ if (IS_EXE) {
   for (const name of ['stdout', 'stderr']) {
     try { Object.defineProperty(process, name, { value: new Writable({ write(c, e, cb) { cb(); } }), configurable: true, writable: true }); } catch {}
   }
-  process.emitWarning = (w) => { try { log('предупреждение:', String((w && w.message) || w)); } catch {} };
+  process.emitWarning = (w) => { try { log(LT('l.emitWarning.1'), String((w && w.message) || w)); } catch {} };
 }
 const PUB = path.join(__dirname, 'public');
 const BASE_DIR = IS_EXE ? path.dirname(process.execPath) : __dirname;
@@ -58,7 +60,7 @@ function redact(s) {
 let logWrites = 0;
 function log(...parts) {
   let text;
-  try { text = parts.map((p) => (p instanceof Error ? p.stack || p.message : typeof p === 'string' ? p : JSON.stringify(p))).join(' '); } catch { text = '(не удалось записать сообщение)'; }
+  try { text = parts.map((p) => (p instanceof Error ? p.stack || p.message : typeof p === 'string' ? p : JSON.stringify(p))).join(' '); } catch { text = '(could not format the message)'; }
   const line = `[${new Date().toISOString()}] ${redact(text).slice(0, 4000)}\n`;
   try {
     // ротация и во время работы, не только при старте: один файл не больше 512 КБ, плюс один старый
@@ -75,7 +77,7 @@ function readJson(file, def) { try { return JSON.parse(fs.readFileSync(file, 'ut
 function writeJson(file, data) {
   const tmp = file + '.tmp';
   try { fs.writeFileSync(tmp, JSON.stringify(data)); fs.renameSync(tmp, file); }
-  catch (e) { log('не смог записать', file, e); try { fs.unlinkSync(tmp); } catch {} }
+  catch (e) { log(LT('l.writeJson.1'), file, e); try { fs.unlinkSync(tmp); } catch {} }
 }
 // дочерние процессы (yt-dlp): при выходе не оставляем их висеть
 const liveKids = new Set();
@@ -94,21 +96,27 @@ function readStore() {
     const v = JSON.parse(raw.replace(/^﻿/, ''));
     if (v && typeof v === 'object' && !Array.isArray(v)) return v;
   } catch {}
-  try { fs.renameSync(STORE_FILE, STORE_FILE + '.broken-' + Date.now()); log('store.json повреждён, отложен в сторону'); } catch {}
+  try { fs.renameSync(STORE_FILE, STORE_FILE + '.broken-' + Date.now()); log(LT('l.readStore.1')); } catch {}
   return {};
 }
 const readCfg = () => { const v = readJson(CONFIG_FILE, {}); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; };
 const config = readCfg();
-const discord = new DiscordPresence(log);
+// язык сервера: выбранный в интерфейсе (страница присылает его при запуске и при смене), пока нет, то язык системы
+const i18nCore = require('./public/locales/core.js');
+const I18 = i18nCore.create({ ru: require('./public/locales/ru.js'), en: require('./public/locales/en.js') },
+  config.lang || i18nCore.detect([process.env.LC_ALL, process.env.LANG, (() => { try { return Intl.DateTimeFormat().resolvedOptions().locale; } catch { return ''; } })()]));
+const T = (key, params) => I18.t(key, params);
+const LT = (key, params) => I18.t(key, params, 'en');   // для лога: всегда английский, чтобы его можно было читать и присылать
+const discord = new DiscordPresence(log, T);
 discord.configure(config.discordOn, config.discordId);
 const localLib = new Library(path.join(DATA_DIR, 'local-cache.json'));
 const localFolders = () => (Array.isArray(config.localFolders) ? config.localFolders : []);
-function localScan() { const t = localLib.scan(localFolders()); log(`папки с компа: ${t.length} файлов`); return t; }
+function localScan() { const t = localLib.scan(localFolders()); log(LT('l.localScan.1', { length: t.length })); return t; }
 // файлы и обложки с компа отдаём только своей странице (чужие сайты браузер помечает cross-site)
 const sameOrigin = (req) => !['cross-site', 'same-site'].includes(String(req.headers['sec-fetch-site'] || ''));
 function serveFile(req, res, file, mime) {
   let size;
-  try { size = fs.statSync(file).size; } catch { return send(res, 404, { error: 'нет файла' }); }
+  try { size = fs.statSync(file).size; } catch { return send(res, 404, { error: T('s.serveFile.1') }); }
   const m = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '');
   if (m && (m[1] || m[2])) {
     let start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
@@ -215,16 +223,16 @@ async function pickBrowser() {
   return null;
 }
 async function openWindow() {
-  if (!IS_WIN) { log('Открой в браузере:', URL_APP); return; }
+  if (!IS_WIN) { log(LT('l.openWindow.1'), URL_APP); return; }
   try {
     const browser = await pickBrowser();
-    log('браузер:', browser || 'по умолчанию');
+    log(LT('l.openWindow.2'), browser || LT('l.openWindow.3'));
     const child = browser
       ? spawn(browser, [`--app=${URL_APP}`, '--window-size=1220,800'], { detached: true, stdio: 'ignore' })
       : spawn('explorer.exe', [URL_APP], { detached: true, stdio: 'ignore' });
-    child.on('error', (e) => log('окно не открылось', e));
+    child.on('error', (e) => log(LT('l.openWindow.4'), e));
     child.unref();
-  } catch (e) { log('окно не открылось', e); }
+  } catch (e) { log(LT('l.openWindow.5'), e); }
 }
 
 // ---------- одна копия программы ----------
@@ -250,7 +258,7 @@ let shuttingDown = false;
 async function shutdown(reason) {
   if (shuttingDown) return;
   shuttingDown = true;
-  log('выход:', reason);
+  log(LT('l.shutdown.1'), reason);
   try { saveBounds(); saveMiniPos(); } catch {}
   try { mediaKeys.stop(); } catch {}
   await pauseSpotifyOnExit();
@@ -261,8 +269,8 @@ function startWatchdog() {
   if (watchdog) return;
   watchdog = setInterval(() => {
     const now = Date.now();
-    if (!lastSeen && now - startedAt > 120000) shutdown('окно так и не открылось');
-    if (lastSeen && now - lastSeen > 300000) shutdown('окно не отвечает');
+    if (!lastSeen && now - startedAt > 120000) shutdown(T('s.startWatchdog.1'));
+    if (lastSeen && now - lastSeen > 300000) shutdown(T('s.startWatchdog.2'));
   }, 10000);
 }
 
@@ -275,15 +283,15 @@ async function pauseSpotifyOnExit() {
     await fetch('https://api.spotify.com/v1/me/player/pause' + q, {
       method: 'PUT', headers: { Authorization: 'Bearer ' + spSession.token }, signal: AbortSignal.timeout(2000),
     });
-  } catch (e) { log('пауза Spotify при выходе не удалась:', e.message); }
+  } catch (e) { log(LT('l.pauseSpotifyOnExit.1'), e.message); }
 }
 function openExternal(url) {
   if (!/^https?:\/\//i.test(url)) return;
-  try { spawn('explorer.exe', [url], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('ссылка не открылась', e); }
+  try { spawn('explorer.exe', [url], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log(LT('l.openExternal.1'), e); }
 }
 function launchSpotifyApp() {
   if (!IS_WIN) return;
-  try { spawn('explorer.exe', ['spotify:'], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('Spotify не запустился', e); }
+  try { spawn('explorer.exe', ['spotify:'], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log(LT('l.launchSpotifyApp.1'), e); }
   // Spotify при запуске выскакивает поверх: возвращаем наше окно
   if (native) { setTimeout(focusApp, 3500); setTimeout(focusApp, 7000); }
 }
@@ -294,11 +302,11 @@ function startNative() {
   if ((!IS_WIN && !process.env.PLAYER_NATIVE_TEST) || process.env.PLAYER_BROWSER === '1' || config.browserMode) return false;
   let wv;
   try { wv = require('@webviewjs/webview'); }
-  catch (e) { log('родное окно: модуль не загрузился', e); return false; }
+  catch (e) { log(LT('l.startNative.1'), e); return false; }
   try {
     let ver = '';
-    try { ver = wv.getWebviewVersion(); } catch (e) { log('WebView2 не найден:', e.message); return false; }
-    if (!ver) { log('WebView2 не найден'); return false; }
+    try { ver = wv.getWebviewVersion(); } catch (e) { log(LT('l.startNative.2'), e.message); return false; }
+    if (!ver) { log(LT('l.startNative.3')); return false; }
     log('WebView2', ver);
     const app = new wv.Application();
     const b = config.winBounds;
@@ -329,13 +337,13 @@ function startNative() {
       if (tray && config.closeToTray !== false) { e.preventDefault(); hideMain(); }
       else saveBounds();
     });
-    app.on('application-close-requested', () => shutdown('окно закрыто'));
+    app.on('application-close-requested', () => shutdown(T('s.startNative.1')));
     app.on('custom-menu-click', (e) => { const id = e && e.customMenuEvent && e.customMenuEvent.id; if (id) onTrayMenu(id); });
     app.run({ interval: 16 });
     setupTray();
     return true;
   } catch (e) {
-    log('родное окно не создалось', e);
+    log(LT('l.startNative.4'), e);
     return false;
   }
 }
@@ -344,7 +352,7 @@ function setIcons(win) {
     const icon = fs.readFileSync(path.join(__dirname, 'assets', 'icon-256.rgba'));
     win.setWindowIcon(icon, 256, 256);
     win.setTaskbarIcon(icon, 256, 256);
-  } catch (e) { log('иконка окна:', e.message); }
+  } catch (e) { log(LT('l.setIcons.1'), e.message); }
 }
 function saveBounds() {
   if (!native) return;
@@ -360,17 +368,17 @@ function saveBounds() {
       config.winBounds = { x: Math.round(p.x), y: Math.round(p.y), w: Math.round(s.width), h: Math.round(s.height), max: false };
     }
     writeJson(CONFIG_FILE, config);
-  } catch (e) { log('размер окна не сохранился', e.message); }
+  } catch (e) { log(LT('l.saveBounds.1'), e.message); }
 }
 function hideMain() {
   if (!native) return;
   saveBounds();
-  try { native.win.setVisible(false); } catch (e) { log('скрыть окно', e.message); }
+  try { native.win.setVisible(false); } catch (e) { log(LT('l.hideMain.1'), e.message); }
   updateTray();
 }
 function focusApp() {
   if (native) {
-    try { native.win.setVisible(true); native.win.setMinimized(false); native.win.focus(); } catch (e) { log('фокус окна', e.message); }
+    try { native.win.setVisible(true); native.win.setMinimized(false); native.win.focus(); } catch (e) { log(LT('l.focusApp.1'), e.message); }
     updateTray();
   } else openWindow();
 }
@@ -388,15 +396,15 @@ function trayMenu() {
   const playing = !!(nowState && nowState.playing);
   return {
     items: [
-      { id: 'toggle', label: playing ? 'Пауза' : 'Играть' },
-      { id: 'next', label: 'Следующий трек' },
-      { id: 'prev', label: 'Предыдущий трек' },
-      ...(nowState && nowState.sleep ? [{ id: 'sleepcancel', label: 'Отменить таймер сна' }] : []),
+      { id: 'toggle', label: playing ? T('s.trayMenu.1') : T('s.trayMenu.2') },
+      { id: 'next', label: T('s.trayMenu.3') },
+      { id: 'prev', label: T('s.trayMenu.4') },
+      ...(nowState && nowState.sleep ? [{ id: 'sleepcancel', label: T('s.trayMenu.5') }] : []),
       { role: 'separator' },
-      { id: 'mini', label: mini ? 'Закрыть мини-плеер' : 'Мини-плеер' },
-      { id: 'show', label: 'Открыть плеер' },
+      { id: 'mini', label: mini ? T('s.trayMenu.6') : T('s.trayMenu.7') },
+      { id: 'show', label: T('s.trayMenu.8') },
       { role: 'separator' },
-      { id: 'quit', label: 'Выйти' },
+      { id: 'quit', label: T('s.trayMenu.9') },
     ],
   };
 }
@@ -408,8 +416,8 @@ function setupTray() {
     tray = native.app.createTrayIcon({ id: 'main', icon: { data, width: 32, height: 32 }, tooltip: 'Sonara', menu: trayMenu(), menuOnLeftClick: false, menuOnRightClick: true });
     tray.on('click', () => focusApp());
     tray.on('double-click', () => focusApp());
-    log('трей: ок');
-  } catch (e) { tray = null; log('трей не создался', e.message || e); }
+    log(LT('l.setupTray.1'));
+  } catch (e) { tray = null; log(LT('l.setupTray.2'), e.message || e); }
 }
 let trayKey = '';
 function updateTray() {
@@ -419,11 +427,11 @@ function updateTray() {
   const key = [tip, !!s.playing, !!mini, !!s.sleep].join('|');
   if (key === trayKey) return;
   trayKey = key;
-  try { tray.setTooltip(tip); tray.setMenu(trayMenu()); } catch (e) { log('трей', e.message); }
+  try { tray.setTooltip(tip); tray.setMenu(trayMenu()); } catch (e) { log(LT('l.updateTray.1'), e.message); }
 }
 function onTrayMenu(id) {
   if (id === 'show') return focusApp();
-  if (id === 'quit') return shutdown('выход из трея');
+  if (id === 'quit') return shutdown(T('s.onTrayMenu.1'));
   if (id === 'mini') return mini ? closeMini() : openMini();
   if (['toggle', 'next', 'prev', 'sleepcancel'].includes(id)) sseSend('main', 'cmd', { cmd: id });
 }
@@ -444,7 +452,7 @@ function openMini() {
       }
     }
     const win = native.app.createBrowserWindow({
-      title: 'Sonara — мини', logical: true, width: W, height: H,
+      title: T('s.openMini.1'), logical: true, width: W, height: H,
       ...(pos ? { x: pos.x, y: pos.y } : {}),
       alwaysOnTop: true, decorations: false, resizable: false, maximizable: false,
       windowsUndecoratedShadow: true, focused: true,
@@ -455,7 +463,7 @@ function openMini() {
     win.on('close', () => { saveMiniPos(); mini = null; updateTray(); });
     mini = { win, view };
     hideMain();
-  } catch (e) { mini = null; log('мини-плеер не открылся', e); }
+  } catch (e) { mini = null; log(LT('l.openMini.1'), e); }
   updateTray();
 }
 function saveMiniPos() {
@@ -463,7 +471,7 @@ function saveMiniPos() {
   try { const p = mini.win.getPosition(true); config.miniPos = { x: Math.round(p.x), y: Math.round(p.y) }; writeJson(CONFIG_FILE, config); } catch {}
 }
 function closeMini(showMain = false) {
-  if (mini) { saveMiniPos(); const w = mini.win; mini = null; try { w.close(); } catch (e) { log('закрыть мини', e.message); } }
+  if (mini) { saveMiniPos(); const w = mini.win; mini = null; try { w.close(); } catch (e) { log(LT('l.closeMini.1'), e.message); } }
   if (showMain) focusApp();
   updateTray();
 }
@@ -492,7 +500,7 @@ function mediaHelperPath() {
     try { same = fs.readFileSync(dest).equals(buf); } catch {}
     if (!same) { fs.writeFileSync(dest + '.part', buf); fs.renameSync(dest + '.part', dest); }
     return dest;
-  } catch (e) { log('mkhelper.exe не подготовлен:', e.message); return ''; }
+  } catch (e) { log(LT('l.mediaHelperPath.1'), e.message); return ''; }
 }
 const mediaKeys = new MediaKeys((name) => {
   const cmd = MEDIA_CMD[name];
@@ -532,7 +540,7 @@ async function getClientId(force = false) {
         if (m) { scClient = { id: m[1], at: Date.now() }; writeJson(SC_ID_FILE, scClient); return m[1]; }
       } catch {}
     }
-    throw new Error('Не получилось подключиться к SoundCloud');
+    throw new Error(T('s.getClientId.1'));
   })();
   try { return await scClientPromise; } finally { scClientPromise = null; }
 }
@@ -543,8 +551,8 @@ async function scGet(p, params = {}, retry = true) {
   u.searchParams.set('client_id', id);
   const r = await fetch(u, { headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(20000) });
   if ((r.status === 401 || r.status === 403) && retry) { await getClientId(true); return scGet(p, params, false); }
-  if (r.status === 404) { const e = new Error('Не найдено на SoundCloud'); e.status = 404; throw e; }
-  if (!r.ok) throw new Error(`SoundCloud ответил ${r.status}`);
+  if (r.status === 404) { const e = new Error(T('s.scGet.1')); e.status = 404; throw e; }
+  if (!r.ok) throw new Error(T('s.scGet.2', { status: r.status }));
   return r.json();
 }
 function scArt(url, size) { return url ? url.replace('-large.', `-${size}.`) : ''; }
@@ -553,7 +561,7 @@ function scMap(t, likedAt) {
   return {
     src: 'sc',
     id: String(t.id),
-    title: t.title || 'Без названия',
+    title: t.title || T('s.scMap.1'),
     artist: (t.publisher_metadata && t.publisher_metadata.artist) || (t.user && t.user.username) || '',
     url: t.permalink_url,
     duration: t.full_duration || t.duration || 0,
@@ -565,7 +573,7 @@ function scMap(t, likedAt) {
 
 async function scLikesDirect(user) {
   const u = await scGet('/resolve', { url: `https://soundcloud.com/${user}` });
-  if (!u || u.kind !== 'user') throw new Error('Такой ник на SoundCloud не найден');
+  if (!u || u.kind !== 'user') throw new Error(T('s.scLikesDirect.1'));
   const out = [];
   let next = `/users/${u.id}/likes`;
   let params = { limit: 200, linked_partitioning: 1 };
@@ -579,7 +587,7 @@ async function scLikesDirect(user) {
 }
 function scLikesYtdlp(user) {
   const exe = ytdlpExe();
-  if (!exe) return Promise.reject(new Error('yt-dlp не найден'));
+  if (!exe) return Promise.reject(new Error(T('s.scLikesYtdlp.1')));
   return new Promise((resolve, reject) => {
     trackKid(execFile(exe, ['--flat-playlist', '-J', '--no-warnings', `https://soundcloud.com/${user}/likes`],
       { maxBuffer: 256 * 1024 * 1024, timeout: 5 * 60 * 1000, windowsHide: true },
@@ -588,11 +596,11 @@ function scLikesYtdlp(user) {
         try {
           const data = JSON.parse(stdout);
           resolve((data.entries || []).filter((e) => e && e.id).map((e) => ({
-            src: 'sc', id: String(e.id), title: e.title || 'Без названия', artist: e.uploader || '',
+            src: 'sc', id: String(e.id), title: e.title || T('s.scLikesYtdlp.2'), artist: e.uploader || '',
             url: e.webpage_url || e.url, duration: e.duration ? Math.round(e.duration * 1000) : 0,
             cover: '', art: '', at: 0,
           })));
-        } catch { reject(new Error('yt-dlp вернул что-то непонятное')); }
+        } catch { reject(new Error(T('s.scLikesYtdlp.3'))); }
       }));
   });
 }
@@ -603,8 +611,8 @@ async function scLikes(user, force) {
   let tracks;
   try { tracks = await scLikesDirect(user); }
   catch (e) {
-    log('лайки SoundCloud напрямую не загрузились:', e.message);
-    try { tracks = await scLikesYtdlp(user); } catch (e2) { log('yt-dlp тоже не помог:', e2.message); throw e; }
+    log(LT('l.scLikes.1'), e.message);
+    try { tracks = await scLikesYtdlp(user); } catch (e2) { log(LT('l.scLikes.2'), e2.message); throw e; }
   }
   const res = { at: Date.now(), tracks };
   writeJson(file, res);
@@ -620,9 +628,9 @@ async function scStream(id) {
     (x.format.protocol === 'progressive' ? 0 : 10) +
     (/mpeg/.test(x.format.mime_type || '') ? 0 : 1);
   const pick = list.filter(okProto).sort((a, b) => rank(a) - rank(b))[0];
-  if (!pick) { const e = new Error('Этот трек нельзя проиграть вне SoundCloud'); e.status = 403; throw e; }
+  if (!pick) { const e = new Error(T('s.scStream.1')); e.status = 403; throw e; }
   const s = await scGet(pick.url, { track_authorization: t.track_authorization });
-  if (!s || !s.url) throw new Error('SoundCloud не отдал ссылку на поток');
+  if (!s || !s.url) throw new Error(T('s.scStream.2'));
   return { url: s.url, protocol: pick.format.protocol, mime: pick.format.mime_type, snipped: !!pick.snipped || t.policy === 'SNIP' };
 }
 
@@ -638,7 +646,7 @@ async function mapLimit(items, limit, fn) {
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (i < items.length) {
       const k = i++;
-      try { out[k] = await fn(items[k]); } catch (e) { log('подбор:', e.message); out[k] = null; }
+      try { out[k] = await fn(items[k]); } catch (e) { log(LT('l.mapLimit.1'), e.message); out[k] = null; }
     }
   });
   await Promise.all(workers);
@@ -662,7 +670,7 @@ async function recommend(seeds) {
     });
     return found ? { id: String(found.id), title: s.title, artist: s.artist } : null;
   })).filter(Boolean);
-  if (!resolved.length) throw new Error('Не нашёл на SoundCloud треков, похожих на твои лайки');
+  if (!resolved.length) throw new Error(T('s.recommend.1'));
 
   const seedIds = new Set(resolved.map((s) => s.id));
   const scores = new Map();
@@ -695,13 +703,13 @@ async function lrclib(p, params) {
   for (const [k, v] of Object.entries(params)) if (v != null && v !== '') u.searchParams.set(k, v);
   const r = await fetch(u, { headers: { 'User-Agent': `Sonara/${VERSION} (personal music player)` }, signal: AbortSignal.timeout(12000) });
   if (r.status === 404) return null;
-  if (!r.ok) throw new Error(`Сервис текстов ответил ${r.status}`);
+  if (!r.ok) throw new Error(T('s.lrclib.1', { status: r.status }));
   return r.json();
 }
 // чистим мусор из названий: feat., Remastered, Official Video, скобки, лишние пробелы
-const JUNK_WORDS = 'feat|ft|featuring|prod|official|video|audio|lyrics?|visuali[sz]er|remaster(?:ed)?|clip|hd|hq|4k|explicit|премьера|клип|текст|слова';
+const JUNK_WORDS = 'feat|ft|featuring|prod|official|video|audio|lyrics?|visuali[sz]er|remaster(?:ed)?|clip|hd|hq|4k|explicit|премьера|клип|текст|слова'; // i18n-ignore: русские слова-мусор для очистки названий
 const JUNK_RE = new RegExp(`(?<![\\p{L}\\p{N}])(?:${JUNK_WORDS})(?![\\p{L}\\p{N}])`, 'iu');
-const JUNK_TAIL_RE = new RegExp(`\\s+[-–—]\\s+[^-–—]*(?<![\\p{L}\\p{N}])(?:remaster(?:ed)?|official|video|audio|lyrics?|visuali[sz]er|version|mono|stereo|clip|клип)(?![\\p{L}\\p{N}]).*$`, 'iu');
+const JUNK_TAIL_RE = new RegExp(`\\s+[-–—]\\s+[^-–—]*(?<![\\p{L}\\p{N}])(?:remaster(?:ed)?|official|video|audio|lyrics?|visuali[sz]er|version|mono|stereo|clip|клип)(?![\\p{L}\\p{N}]).*$`, 'iu'); // i18n-ignore: русские слова-мусор для очистки названий
 function cleanTitle(s) {
   return String(s || '')
     .replace(/[_ ​]+/g, ' ')
@@ -832,7 +840,7 @@ async function geniusLyrics(q) {
     const r = await fetch('https://genius.com/api/search/multi?per_page=5&q=' + encodeURIComponent(query), {
       headers: { 'User-Agent': UA, Accept: 'application/json' }, signal: AbortSignal.timeout(12000),
     });
-    if (!r.ok) throw new Error(`Genius ответил ${r.status}`);
+    if (!r.ok) throw new Error(T('s.geniusLyrics.1', { status: r.status }));
     const j = await r.json();
     const hits = [];
     for (const sec of (j.response && j.response.sections) || []) {
@@ -850,7 +858,7 @@ async function geniusLyrics(q) {
     if (!song) continue;
     if (song.instrumental) return { instrumental: true, url: song.url, match: song.full_title || song.title };
     const page = await fetch(song.url, { headers: { 'User-Agent': UA, Accept: 'text/html' }, signal: AbortSignal.timeout(15000) });
-    if (!page.ok) throw new Error(`Genius ответил ${page.status}`);
+    if (!page.ok) throw new Error(T('s.geniusLyrics.2', { status: page.status }));
     const text = geniusExtract(await page.text());
     if (text) return { text, url: song.url, match: song.full_title || `${song.artist_names} — ${song.title}` };
   }
@@ -865,7 +873,7 @@ async function neteaseLyrics(q) {
   for (const v of lyricVariants(q).slice(0, 3)) {
     if (!v.title) continue;
     const r = await fetch('https://music.163.com/api/search/get?type=1&limit=8&s=' + encodeURIComponent(`${v.artist} ${v.title}`.trim()), { headers, signal: AbortSignal.timeout(10000) });
-    if (!r.ok) throw new Error(`NetEase ответил ${r.status}`);
+    if (!r.ok) throw new Error(T('s.neteaseLyrics.1', { status: r.status }));
     const songs = ((await r.json()).result || {}).songs || [];
     const want = norm(v.title), who = norm(v.artist);
     const cand = songs
@@ -896,7 +904,7 @@ async function ovhLyrics(q) {
   for (const v of lyricVariants(q).filter((x) => x.artist && x.title).slice(0, 2)) {
     const r = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(v.artist)}/${encodeURIComponent(v.title)}`, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(8000) });
     if (r.status === 404) continue;
-    if (!r.ok) throw new Error(`lyrics.ovh ответил ${r.status}`);
+    if (!r.ok) throw new Error(T('s.ovhLyrics.1', { status: r.status }));
     const text = String((await r.json()).lyrics || '').replace(/\r\n?/g, '\n').replace(/^Paroles de la chanson[^\n]*\n+/i, '').replace(/\n{3,}/g, '\n\n').trim();
     if (text.length > 40) return { plain: text, match: `${v.artist} — ${v.title}` };
   }
@@ -952,7 +960,7 @@ async function lyrics(q, refresh) {
   }
   let res = synced || plain || instr;
   if (!res) {
-    if (coreErrors >= coreTotal) throw new Error('Сервисы текстов недоступны');
+    if (coreErrors >= coreTotal) throw new Error(T('s.lyrics.1'));
     // если один из основных сервисов не ответил, «не найдено» не запоминаем
     if (coreErrors) return { found: false, at: Date.now() };
     res = { found: false };
@@ -964,14 +972,14 @@ async function lyrics(q, refresh) {
 function saveCustomLyrics(q, text) {
   const isLrc = (text.match(new RegExp(LRC_STAMP_RE, 'g')) || []).length >= 2;
   const plain = (isLrc ? text.replace(/\[[^\]]*\]/g, '').replace(/<\d{1,3}:\d{1,2}(?:\.\d{1,3})?>/g, '') : text).replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-  const res = { found: true, custom: true, source: 'custom', synced: isLrc ? text : '', plain, match: 'Свой текст', at: Date.now() };
+  const res = { found: true, custom: true, source: 'custom', synced: isLrc ? text : '', plain, match: T('s.saveCustomLyrics.1'), at: Date.now() };
   writeJson(path.join(LYR_DIR, lyrKey(q) + '.json'), res);
   return res;
 }
 function resetCustomLyrics(q) {
   const file = path.join(LYR_DIR, lyrKey(q) + '.json');
   const cur = readJson(file, null);
-  if (cur && cur.custom) { try { fs.unlinkSync(file); } catch (e) { log('не смог удалить', file, e); } }
+  if (cur && cur.custom) { try { fs.unlinkSync(file); } catch (e) { log(LT('l.resetCustomLyrics.1'), file, e); } }
 }
 
 // ---------- YouTube Music (через yt-dlp) ----------
@@ -990,18 +998,18 @@ function ytFail(msg, status) { const e = new Error(msg); if (status) e.status = 
 // переводим ответы yt-dlp на человеческий язык
 function ytError(raw) {
   const text = String(raw || '');
-  const line = (text.split(/\r?\n/).reverse().find((l) => /ERROR/i.test(l)) || text.trim().split(/\r?\n/).pop() || 'yt-dlp завершился с ошибкой').replace(/^.*?ERROR:\s*(\[[^\]]*\]\s*)?/i, '');
-  if (/could not copy|database is locked|cookie/i.test(text)) return ytFail('Не получилось прочитать cookies Brave. Закрой Brave целиком и попробуй ещё раз (или добавь публичный плейлист по ссылке)', 502);
-  if (/sign in|log in|login|private|members-only|confirm you.re not a bot/i.test(text)) return ytFail('Плейлист приватный или нужен вход: для лайков включи cookies Brave, для своего плейлиста сделай его доступным по ссылке', 403);
-  if (/does not exist|not found|unavailable|404|HTTP Error 400|Bad Request/i.test(text)) return ytFail('Плейлист не найден: проверь ссылку', 404);
+  const line = (text.split(/\r?\n/).reverse().find((l) => /ERROR/i.test(l)) || text.trim().split(/\r?\n/).pop() || T('s.ytError.1')).replace(/^.*?ERROR:\s*(\[[^\]]*\]\s*)?/i, '');
+  if (/could not copy|database is locked|cookie/i.test(text)) return ytFail(T('s.ytError.2'), 502);
+  if (/sign in|log in|login|private|members-only|confirm you.re not a bot/i.test(text)) return ytFail(T('s.ytError.3'), 403);
+  if (/does not exist|not found|unavailable|404|HTTP Error 400|Bad Request/i.test(text)) return ytFail(T('s.ytError.4'), 404);
   return ytFail('YouTube: ' + line.slice(0, 220), 502);
 }
 function ytdlp(args, timeout = 120000) {
   const exe = ytdlpExe();
-  if (!exe) return Promise.reject(ytFail('Нужен yt-dlp: нажми «Скачать yt-dlp» в настройках, в карточке YouTube Music', 424));
+  if (!exe) return Promise.reject(ytFail(T('s.ytdlp.1'), 424));
   return new Promise((resolve, reject) => {
     trackKid(execFile(exe, args, { maxBuffer: 128 * 1024 * 1024, timeout, windowsHide: true }, (err, stdout, stderr) => {
-      if (err) return reject(err.killed ? ytFail('YouTube отвечает слишком долго', 504) : ytError(stderr || err.message));
+      if (err) return reject(err.killed ? ytFail(T('s.ytdlp.2'), 504) : ytError(stderr || err.message));
       resolve(stdout);
     }));
   });
@@ -1026,7 +1034,7 @@ function ytMap(e, i, at) {
     else if (norm(m[2]).includes(a)) title = m[1];
   }
   return {
-    src: 'yt', id: e.id, title: title || 'Без названия', artist,
+    src: 'yt', id: e.id, title: title || T('s.ytMap.1'), artist,
     url: `https://music.youtube.com/watch?v=${e.id}`,
     duration: e.duration ? Math.round(e.duration * 1000) : 0,
     ...ytThumbs(e.id),
@@ -1045,7 +1053,7 @@ async function ytPlaylist(id, force, cookies) {
   if (!force && cached) return { ...cached, tracks: (cached.tracks || []).map((t) => ({ ...t, ...ytThumbs(t.id) })), cached: true };   // в старом кэше обложки были другими
   const out = await ytdlp(['--flat-playlist', '-J', '--no-warnings', '--ignore-errors', ...ytCookieArgs(cookies), `https://www.youtube.com/playlist?list=${id}`], 5 * 60 * 1000);
   let data;
-  try { data = JSON.parse(out); } catch { throw ytFail('yt-dlp вернул что-то непонятное', 502); }
+  try { data = JSON.parse(out); } catch { throw ytFail(T('s.ytPlaylist.1'), 502); }
   const at = Date.now();
   const tracks = (data.entries || [])
     .filter((e) => e && /^[\w-]{11}$/.test(e.id || '') && e.title && !/^\[(private|deleted) video\]$/i.test(e.title))
@@ -1102,8 +1110,8 @@ function ytStreamUrl(id, fresh, useCookies) {
       try {
         const out = await ytdlp([...step.args, '-f', 'bestaudio[ext=m4a]/bestaudio/best', '-g', '--no-playlist', '--no-warnings', `https://www.youtube.com/watch?v=${id}`], 45000);
         const url = out.trim().split(/\r?\n/)[0];
-        if (!/^https:\/\/[^/]+\.googlevideo\.com\//i.test(url)) throw new Error('нет ссылки на звук');
-        if (ytLastGood !== step.name) log(`YouTube ${id}: сработал способ «${step.name}»`);
+        if (!/^https:\/\/[^/]+\.googlevideo\.com\//i.test(url)) throw new Error(T('s.ytStreamUrl.1'));
+        if (ytLastGood !== step.name) log(LT('l.ytStreamUrl.1', { id: id, name: step.name }));
         ytLastGood = step.name;
         ytUrls.set(id, { url, at: Date.now() });
         if (ytUrls.size > 60) ytUrls.delete(ytUrls.keys().next().value);
@@ -1111,10 +1119,10 @@ function ytStreamUrl(id, fresh, useCookies) {
       } catch (e) {
         if (e.status === 424) throw e;   // нет yt-dlp: перебирать нечего
         failed.push(step.name);
-        log(`YouTube ${id}: способ «${step.name}» не вышел: ${e.message}`);
+        log(LT('l.ytStreamUrl.2', { id: id, name: step.name, message: e.message }));
       }
     }
-    throw ytFail(`YouTube не отдал звук ни одним способом (${failed.join(', ')})`, 502);
+    throw ytFail(T('s.ytStreamUrl.2', { p1: failed.join(', ') }), 502);
   })();
   ytInflight.set(key, job);
   job.then(() => ytInflight.delete(key), () => ytInflight.delete(key));
@@ -1130,7 +1138,7 @@ async function ytAudio(req, res, id, useCookies) {
   };
   let r = await go(false);
   if (r.status === 403 || r.status === 410 || r.status === 404) r = await go(true);   // ссылка протухла
-  if (!r.ok && r.status !== 206) throw ytFail(`YouTube не отдал звук (${r.status})`, 502);
+  if (!r.ok && r.status !== 206) throw ytFail(T('s.ytAudio.1', { status: r.status }), 502);
   const h = { 'Content-Type': r.headers.get('content-type') || 'audio/mp4', 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-store' };
   for (const k of ['content-length', 'content-range']) if (r.headers.get(k)) h[k] = r.headers.get(k);
   res.writeHead(r.status, h);
@@ -1143,23 +1151,23 @@ async function ytdlpInstall() {
   const assets = Array.isArray(rel.assets) ? rel.assets : [];
   const exeAsset = assets.find((a) => a.name === 'yt-dlp.exe'), sumAsset = assets.find((a) => a.name === 'SHA2-256SUMS');
   const okUrl = (a) => a && /^https:\/\/github\.com\/yt-dlp\/yt-dlp\/releases\/download\//.test(a.browser_download_url || '');
-  if (!okUrl(exeAsset) || !okUrl(sumAsset)) throw ytFail('В релизе yt-dlp нет нужных файлов', 502);
+  if (!okUrl(exeAsset) || !okUrl(sumAsset)) throw ytFail(T('s.ytdlpInstall.1'), 502);
   // уже стоит последняя версия: ничего не качаем
   if (ytdlpExe()) { let cur = ''; try { cur = (await ytdlp(['--version'], 15000)).trim(); } catch {} if (cur && cur === String(rel.tag_name || '')) return { version: cur, path: ytdlpExe(), updated: false }; }
   const sums = await (await fetch(sumAsset.browser_download_url, gh)).text();
   let want = '';
   for (const l of sums.split(/\r?\n/)) { const m = l.trim().match(/^([0-9a-f]{64})\s+\*?(\S+)$/i); if (m && m[2] === 'yt-dlp.exe') want = m[1].toLowerCase(); }
-  if (!want) throw ytFail('Не нашёл контрольную сумму yt-dlp.exe', 502);
+  if (!want) throw ytFail(T('s.ytdlpInstall.2'), 502);
   const r = await fetch(exeAsset.browser_download_url, { headers: { 'User-Agent': 'Sonara' }, signal: AbortSignal.timeout(5 * 60 * 1000) });
-  if (!r.ok) throw ytFail(`GitHub ответил ${r.status}`, 502);
+  if (!r.ok) throw ytFail(T('s.ytdlpInstall.3', { status: r.status }), 502);
   const buf = Buffer.from(await r.arrayBuffer());
-  if (buf.length < 1e6 || buf.length > 90e6) throw ytFail('Скачанный файл выглядит неправильно', 502);
-  if (crypto.createHash('sha256').update(buf).digest('hex') !== want) throw ytFail('Контрольная сумма не совпала, файл не сохранён', 502);
+  if (buf.length < 1e6 || buf.length > 90e6) throw ytFail(T('s.ytdlpInstall.4'), 502);
+  if (crypto.createHash('sha256').update(buf).digest('hex') !== want) throw ytFail(T('s.ytdlpInstall.5'), 502);
   const dest = path.join(YT_DIR, 'yt-dlp.exe'), tmp = dest + '.part';
   fs.writeFileSync(tmp, buf);
   fs.renameSync(tmp, dest);
   ytUrls.clear();
-  log('yt-dlp установлен', rel.tag_name);
+  log(LT('l.ytdlpInstall.1'), rel.tag_name);
   return { version: String(rel.tag_name || ''), path: dest, updated: true };
 }
 
@@ -1177,7 +1185,7 @@ async function searchTracks(src, q) {
     // ytsearch20: yt-dlp ищет по YouTube; длинные миксы и подкасты (дольше 20 минут) отбрасываем
     const out = await ytdlp(['--flat-playlist', '-J', '--no-warnings', `ytsearch20:${q}`], 25000);
     let data;
-    try { data = JSON.parse(out); } catch { throw ytFail('yt-dlp вернул что-то непонятное', 502); }
+    try { data = JSON.parse(out); } catch { throw ytFail(T('s.searchTracks.1'), 502); }
     tracks = (data.entries || [])
       .filter((e) => e && /^[\w-]{11}$/.test(e.id || '') && e.title && (!e.duration || e.duration <= 1200))
       .map((e, i) => ({ ...ytMap(e, i, 0), at: 0 }));
@@ -1213,18 +1221,18 @@ async function updateCheck(force) {
   updateBusy = true;
   try {
     const r = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`, { headers: { 'User-Agent': `Sonara/${VERSION}`, Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10000) });
-    if (!r.ok) throw new Error('GitHub ответил ' + r.status);
+    if (!r.ok) throw new Error(T('s.updateCheck.1') + r.status);
     const j = await r.json();
     const tag = String(j.tag_name || '');
     const url = String(j.html_url || '');
-    if (!verParts(tag) || !url.startsWith(`https://github.com/${UPDATE_REPO}/`)) throw new Error('непонятный ответ GitHub');
+    if (!verParts(tag) || !url.startsWith(`https://github.com/${UPDATE_REPO}/`)) throw new Error(T('s.updateCheck.2'));
     config.updateCheckAt = Date.now();
     config.updateLatest = { tag: tag.slice(0, 40), url };
     delete config.updateError;
   } catch (e) {
     config.updateError = String(e.message || e).slice(0, 120);
     config.updateCheckAt = Date.now() - UPDATE_EVERY + 3600e3;   // при сбое повторим через час
-    log('проверка обновлений:', config.updateError);
+    log(LT('l.updateCheck.1'), config.updateError);
   } finally { updateBusy = false; writeJson(CONFIG_FILE, config); }
 }
 function updateStatus() {
@@ -1248,10 +1256,10 @@ function backupList() {
   }).sort((a, b) => b.at - a.at);
 }
 function backupSave(json, auto) {
-  if (typeof json !== 'string' || json.length > 40e6) throw ytFail('Копия слишком большая', 413);
+  if (typeof json !== 'string' || json.length > 40e6) throw ytFail(T('s.backupSave.1'), 413);
   let doc = null;
   try { doc = JSON.parse(json); } catch {}
-  if (!doc || doc.format !== 'sonara-backup') throw ytFail('Это не копия библиотеки Sonara', 400);
+  if (!doc || doc.format !== 'sonara-backup') throw ytFail(T('s.backupSave.2'), 400);
   const d = new Date(), p2 = (n) => String(n).padStart(2, '0');
   const stamp = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}`;
   const dir = backupDir();
@@ -1259,7 +1267,7 @@ function backupSave(json, auto) {
   fs.writeFileSync(path.join(dir, name), json);
   config.backupAt = Date.now();
   writeJson(CONFIG_FILE, config);
-  if (auto) for (const f of backupList().filter((x) => x.auto).slice(BACKUP_KEEP)) { try { fs.unlinkSync(path.join(dir, f.name)); } catch (e) { log('старую копию не удалил', f.name, e.message); } }
+  if (auto) for (const f of backupList().filter((x) => x.auto).slice(BACKUP_KEEP)) { try { fs.unlinkSync(path.join(dir, f.name)); } catch (e) { log(LT('l.backupSave.1'), f.name, e.message); } }
   return { name, dir };
 }
 const m3uSafe = (s) => String(s || '').replace(/[\r\n]+/g, ' ').trim();
@@ -1301,7 +1309,7 @@ async function fetchArt(raw) {
   const hit = artCache.get(u.href);
   if (hit) return hit;
   const r = await fetch(u, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(10000), redirect: 'error' });
-  if (!r.ok) { const e = new Error(`обложка: ${r.status}`); e.status = 502; throw e; }
+  if (!r.ok) { const e = new Error(T('s.fetchArt.1', { status: r.status })); e.status = 502; throw e; }
   const type = String(r.headers.get('content-type') || '');
   if (!/^image\//i.test(type)) { const e = new Error('not an image'); e.status = 415; throw e; }
   const buf = Buffer.from(await r.arrayBuffer());
@@ -1325,7 +1333,7 @@ function send(res, code, body, type = 'application/json; charset=utf-8') {
 function readBody(req, limit = 1e6) {
   return new Promise((resolve, reject) => {
     let size = 0; const chunks = [];
-    req.on('data', (c) => { size += c.length; if (size > limit) { reject(new Error('слишком большой запрос')); req.destroy(); } else chunks.push(c); });
+    req.on('data', (c) => { size += c.length; if (size > limit) { reject(new Error(T('s.readBody.1'))); req.destroy(); } else chunks.push(c); });
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
     req.on('error', reject);
   });
@@ -1343,9 +1351,9 @@ const server = http.createServer(async (req, res) => {
   if (!(p === '/api/ping' && u.searchParams.get('probe'))) touch();
 
   try {
-    if (p === '/api/ping') return send(res, 200, { app: APP_ID, version: VERSION });
+    if (p === '/api/ping') return send(res, 200, { app: APP_ID, version: VERSION, seen: lastSeen > 0 });
     if (p === '/api/bye') {
-      if (IS_EXE && !native) { if (byeTimer) clearTimeout(byeTimer); byeTimer = setTimeout(() => shutdown('окно закрыто'), 12000); }
+      if (IS_EXE && !native) { if (byeTimer) clearTimeout(byeTimer); byeTimer = setTimeout(() => shutdown(T('s.top.1')), 12000); }
       return send(res, 200, { ok: true });
     }
     if (p === '/api/info') return send(res, 200, { version: VERSION, logFile: LOG_FILE, dataDir: DATA_DIR, native: !!native, hostname: require('os').hostname() });
@@ -1355,10 +1363,10 @@ const server = http.createServer(async (req, res) => {
       const id = u.searchParams.get('id') || '';
       if (!localLib.file(id) && localFolders().length) localScan();
       const file = localLib.file(id);
-      if (!file) return send(res, 404, { error: 'Файл не найден. Может, его переместили?' });
+      if (!file) return send(res, 404, { error: T('s.top.2') });
       if (p === '/api/local/file') return serveFile(req, res, file, AUDIO_MIME[path.extname(file).toLowerCase()] || 'application/octet-stream');
       const pic = localCover(id);
-      if (!pic) return send(res, 404, { error: 'нет обложки' });
+      if (!pic) return send(res, 404, { error: T('s.top.3') });
       res.writeHead(200, { 'Content-Type': pic.mime, 'Cache-Control': 'max-age=86400' });
       return res.end(pic.data);
     }
@@ -1386,7 +1394,7 @@ const server = http.createServer(async (req, res) => {
         const dir = String(b.path || '').trim().replace(/^"|"$/g, '');
         let ok = false;
         try { ok = !!dir && fs.statSync(dir).isDirectory(); } catch {}
-        if (!ok) return send(res, 400, { error: 'Такой папки нет' });
+        if (!ok) return send(res, 400, { error: T('s.top.4') });
         const list = localFolders();
         if (!list.some((x) => x.toLowerCase() === path.resolve(dir).toLowerCase())) { list.push(path.resolve(dir)); config.localFolders = list; writeJson(CONFIG_FILE, config); }
         localScan();
@@ -1400,11 +1408,11 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { folders: localFolders(), tracks: localLib.tracks });
       }
       if (p === '/api/app/local/pick' && req.method === 'POST') {
-        if (!native) return send(res, 400, { error: 'Выбор через окно есть только в программе. Вставь путь к папке вручную.' });
+        if (!native) return send(res, 400, { error: T('s.top.5') });
         let files = [];
         try {
-          files = native.win.openFileDialog({ multiple: true, title: 'Выбери любые треки в папке — добавлю всю папку', filters: [{ name: 'Музыка', extensions: ['mp3', 'wav', 'flac', 'm4a', 'ogg', 'opus', 'aac'] }] }) || [];
-        } catch (e) { log('окно выбора файлов', e); return send(res, 500, { error: 'Не открылось окно выбора' }); }
+          files = native.win.openFileDialog({ multiple: true, title: T('s.top.6'), filters: [{ name: T('s.top.7'), extensions: ['mp3', 'wav', 'flac', 'm4a', 'ogg', 'opus', 'aac'] }] }) || [];
+        } catch (e) { log(LT('l.top.1'), e); return send(res, 500, { error: T('s.top.8') }); }
         const list = localFolders();
         for (const f of files) {
           const dir = path.dirname(f);
@@ -1418,7 +1426,7 @@ const server = http.createServer(async (req, res) => {
         const b = JSON.parse((await readBody(req)) || '{}');
         if (b && b.t && b.t.id) {
           const t = {}; for (const k of ['src', 'id', 'uri', 'url', 'title', 'artist', 'album', 'cover', 'art', 'big', 'duration', 'hasPicture']) if (b.t[k] != null) t[k] = b.t[k];
-          try { fs.appendFileSync(PLAYS_FILE, JSON.stringify({ at: Number(b.at) || Date.now(), ms: Math.round(Number(b.ms) || 0), t }) + '\n'); } catch (e) { log('статистика не записалась', e.message); }
+          try { fs.appendFileSync(PLAYS_FILE, JSON.stringify({ at: Number(b.at) || Date.now(), ms: Math.round(Number(b.ms) || 0), t }) + '\n'); } catch (e) { log(LT('l.top.2'), e.message); }
         }
         return send(res, 200, { ok: true });
       }
@@ -1456,21 +1464,21 @@ const server = http.createServer(async (req, res) => {
         const json = String(b.json || '');
         let doc = null;
         try { doc = JSON.parse(json); } catch {}
-        if (!doc || doc.format !== 'sonara-theme' || json.length > 300000) return send(res, 400, { error: 'Это не файл темы' });
+        if (!doc || doc.format !== 'sonara-theme' || json.length > 300000) return send(res, 400, { error: T('s.top.9') });
         const base = String(b.name || '').replace(/[^\p{L}\p{N} _.-]+/gu, '').trim().slice(0, 50) || 'theme';
         let dir = path.join(require('os').homedir(), 'Documents', 'Sonara', 'themes');
         try { fs.mkdirSync(dir, { recursive: true }); } catch { dir = path.join(DATA_DIR, 'themes'); fs.mkdirSync(dir, { recursive: true }); }
         let file = path.join(dir, base + '.sonara-theme.json');
         for (let i = 2; fs.existsSync(file) && i < 100; i++) file = path.join(dir, `${base} (${i}).sonara-theme.json`);
         fs.writeFileSync(file, json);
-        if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', ['/select,' + file], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('проводник', e.message); } }
+        if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', ['/select,' + file], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log(LT('l.top.3'), e.message); } }
         return send(res, 200, { ok: true, path: file });
       }
       if (p === '/api/app/update/status') return send(res, 200, updateStatus());
       if (p === '/api/app/update/check' && req.method === 'POST') { await updateCheck(true); return send(res, 200, updateStatus()); }
       if (p === '/api/app/update/open' && req.method === 'POST') {
         const l = updateStatus().latest;
-        if (!l) return send(res, 404, { error: 'Нет новой версии' });
+        if (!l) return send(res, 404, { error: T('s.top.10') });
         if (process.env.SONARA_NO_REVEAL !== '1') openExternal(l.url);
         return send(res, 200, { ok: true, url: l.url });
       }
@@ -1483,19 +1491,19 @@ const server = http.createServer(async (req, res) => {
       }
       if (p === '/api/app/backup/file') {
         const name = String(u.searchParams.get('name') || '');
-        if (!BACKUP_FILE_RE.test(name)) return send(res, 400, { error: 'Неверное имя файла' });
+        if (!BACKUP_FILE_RE.test(name)) return send(res, 400, { error: T('s.top.11') });
         const file = path.join(backupDir(), name);
-        if (!fs.existsSync(file) || fs.statSync(file).size > 40e6) return send(res, 404, { error: 'Файл не найден' });
+        if (!fs.existsSync(file) || fs.statSync(file).size > 40e6) return send(res, 404, { error: T('s.top.12') });
         return send(res, 200, fs.readFileSync(file, 'utf8'), 'application/json; charset=utf-8');
       }
       if (p === '/api/app/backup/m3u' && req.method === 'POST') {
         const b = JSON.parse((await readBody(req, 45e6)) || '{}');
-        if (!Array.isArray(b.playlists) || !b.playlists.length) return send(res, 400, { error: 'Нет плейлистов для экспорта' });
+        if (!Array.isArray(b.playlists) || !b.playlists.length) return send(res, 400, { error: T('s.top.13') });
         return send(res, 200, m3uWrite(b.playlists));
       }
       if (p === '/api/app/backup/reveal' && req.method === 'POST') {
         const dir = backupDir();
-        if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', [dir], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log('проводник', e.message); } }
+        if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', [dir], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log(LT('l.top.4'), e.message); } }
         return send(res, 200, { ok: true, dir });
       }
       if (p === '/api/app/ytdlp/install' && req.method === 'POST') return send(res, 200, await ytdlpInstall());
@@ -1506,14 +1514,17 @@ const server = http.createServer(async (req, res) => {
       }
       if (p === '/api/app/fullscreen' && req.method === 'POST') {
         const b = JSON.parse((await readBody(req)) || '{}');
-        if (native) { try { native.win.setFullscreen(b.on ? native.wv.FullscreenType.Borderless : null); } catch (e) { log('полный экран', e.message); } }
+        if (native) { try { native.win.setFullscreen(b.on ? native.wv.FullscreenType.Borderless : null); } catch (e) { log(LT('l.top.5'), e.message); } }
         return send(res, 200, { ok: true, native: !!native });
       }
       if (p === '/api/app/mini' && req.method === 'POST') { openMini(); return send(res, 200, { ok: true, native: !!native }); }
       if (p === '/api/app/settings' && req.method === 'POST') {
         const b = JSON.parse((await readBody(req)) || '{}');
         if (typeof b.closeToTray === 'boolean' && config.closeToTray !== b.closeToTray) { config.closeToTray = b.closeToTray; writeJson(CONFIG_FILE, config); }
-        if ((b.lang === 'ru' || b.lang === 'en') && config.lang !== b.lang) { config.lang = b.lang; writeJson(CONFIG_FILE, config); }
+        if (b.lang === 'ru' || b.lang === 'en') {
+          if (config.lang !== b.lang) { config.lang = b.lang; writeJson(CONFIG_FILE, config); }
+          if (I18.setLang(b.lang)) { trayKey = ''; updateTray(); }   // меню трея сразу на новом языке
+        }
         if (typeof b.autoBackup === 'boolean' && (config.autoBackup !== false) !== b.autoBackup) { config.autoBackup = b.autoBackup; writeJson(CONFIG_FILE, config); }
         if (typeof b.updateCheck === 'boolean' && (config.updateCheck !== false) !== b.updateCheck) { config.updateCheck = b.updateCheck; writeJson(CONFIG_FILE, config); if (b.updateCheck) updateCheck(false); }
         if (typeof b.mediaKeys === 'boolean' && (config.mediaKeys !== false) !== b.mediaKeys) { config.mediaKeys = b.mediaKeys; writeJson(CONFIG_FILE, config); mediaKeys.starts = 0; mediaKeysApply(); }
@@ -1526,14 +1537,14 @@ const server = http.createServer(async (req, res) => {
         if (req.method === 'GET') { res.setHeader('X-Safe-Css', SAFE_CSS ? '1' : '0'); return send(res, 200, readStore()); }
         if (req.method !== 'POST') return send(res, 405, { error: 'method' });
         const patch = JSON.parse((await readBody(req)) || '{}');
-        if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return send(res, 400, { error: 'Некорректный запрос' });
+        if (!patch || typeof patch !== 'object' || Array.isArray(patch)) return send(res, 400, { error: T('s.top.14') });
         const store = readStore();
         for (const [k, v] of Object.entries(patch)) {
           if (!STORE_KEYS.has(k)) continue;
           if (v == null) delete store[k]; else store[k] = String(v);
         }
         const tmp = STORE_FILE + '.tmp';
-        try { fs.writeFileSync(tmp, JSON.stringify(store)); fs.renameSync(tmp, STORE_FILE); } catch (e) { log('настройки не сохранились', e); }
+        try { fs.writeFileSync(tmp, JSON.stringify(store)); fs.renameSync(tmp, STORE_FILE); } catch (e) { log(LT('l.top.6'), e); }
         return send(res, 200, { ok: true });
       }
       if (req.method !== 'POST') return send(res, 405, { error: 'method' });
@@ -1549,20 +1560,20 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/api/sc/likes') {
       const user = (u.searchParams.get('user') || '').trim();
-      if (!SC_USER_RE.test(user)) return send(res, 400, { error: 'Некорректный ник SoundCloud' });
+      if (!SC_USER_RE.test(user)) return send(res, 400, { error: T('s.top.15') });
       return send(res, 200, await scLikes(user, u.searchParams.get('force') === '1'));
     }
     if (p === '/api/search') {
       const src = u.searchParams.get('src');
       const q = String(u.searchParams.get('q') || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 120);
-      if (src !== 'sc' && src !== 'yt') return send(res, 400, { error: 'Неизвестный источник' });
-      if (!q) return send(res, 400, { error: 'Пустой запрос' });
+      if (src !== 'sc' && src !== 'yt') return send(res, 400, { error: T('s.top.16') });
+      if (!q) return send(res, 400, { error: T('s.top.17') });
       const t0 = Date.now();
       try {
         const tracks = await searchTracks(src, q);
-        log(`поиск ${src} «${q}»: ${tracks.length} за ${Date.now() - t0} мс`);
+        log(LT('l.top.7', { src: src, q: q, length: tracks.length, p4: Date.now() - t0 }));
         return send(res, 200, { tracks });
-      } catch (e) { log(`поиск ${src} «${q}»: ошибка за ${Date.now() - t0} мс:`, e.message); throw e; }
+      } catch (e) { log(LT('l.top.8', { src: src, q: q, p3: Date.now() - t0 }), e.message); throw e; }
     }
     if (p === '/api/yt/status') {
       const exe = ytdlpExe();
@@ -1573,12 +1584,12 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/api/yt/playlist') {
       const id = ytListId('https://www.youtube.com/playlist?list=' + encodeURIComponent(u.searchParams.get('list') || ''));
-      if (!id) return send(res, 400, { error: 'Не похоже на ссылку на плейлист YouTube' });
+      if (!id) return send(res, 400, { error: T('s.top.18') });
       return send(res, 200, await ytPlaylist(id, u.searchParams.get('force') === '1', u.searchParams.get('cookies') === '1'));
     }
     if (p === '/api/yt/parse') {
       const id = ytListId(u.searchParams.get('url'));
-      if (!id) return send(res, 400, { error: 'Нужна ссылка на плейлист вида youtube.com/playlist?list=… (в ней должен быть list=)' });
+      if (!id) return send(res, 400, { error: T('s.top.19') });
       return send(res, 200, { id });
     }
     if (p === '/api/yt/stream' || p === '/api/yt/audio') {
@@ -1600,7 +1611,7 @@ const server = http.createServer(async (req, res) => {
         album: (u.searchParams.get('album') || '').slice(0, 300),
         duration: Number(u.searchParams.get('duration')) || 0,
       };
-      if (!q.title) return send(res, 400, { error: 'Нет названия трека' });
+      if (!q.title) return send(res, 400, { error: T('s.top.20') });
       return send(res, 200, await lyrics(q, u.searchParams.get('refresh') === '1'));
     }
     if (p === '/api/lyrics/custom' && req.method === 'POST') {
@@ -1610,10 +1621,10 @@ const server = http.createServer(async (req, res) => {
         title: String(body.title || '').slice(0, 300),
         duration: Number(body.duration) || 0,
       };
-      if (!q.title) return send(res, 400, { error: 'Нет названия трека' });
+      if (!q.title) return send(res, 400, { error: T('s.top.21') });
       if (body.reset) { resetCustomLyrics(q); return send(res, 200, await lyrics(q, true)); }
       const text = String(body.text || '').replace(/^﻿/, '').replace(/\r\n?/g, '\n').trim();
-      if (!text) return send(res, 400, { error: 'Пустой текст' });
+      if (!text) return send(res, 400, { error: T('s.top.22') });
       return send(res, 200, saveCustomLyrics(q, text));
     }
     if (p === '/api/recs' && req.method === 'POST') {
@@ -1621,20 +1632,20 @@ const server = http.createServer(async (req, res) => {
       const seeds = (Array.isArray(body.seeds) ? body.seeds : []).slice(0, 20)
         .map((s) => ({ id: s.id ? String(s.id) : '', title: String(s.title || '').slice(0, 200), artist: String(s.artist || '').slice(0, 200) }))
         .filter((s) => s.id || s.title);
-      if (!seeds.length) return send(res, 400, { error: 'Нет треков для подбора' });
+      if (!seeds.length) return send(res, 400, { error: T('s.top.23') });
       return send(res, 200, await recommend(seeds));
     }
     if (p.startsWith('/api/')) return send(res, 404, { error: 'not found' });
   } catch (e) {
-    log('ошибка', p, e.message);
+    log(LT('l.top.9'), p, e.message);
     if (res.headersSent) return res.destroy();
-    if (e instanceof SyntaxError) return send(res, 400, { error: 'Некорректный запрос' });
+    if (e instanceof SyntaxError) return send(res, 400, { error: T('s.top.24') });
     // нет интернета или сайт молчит: вместо английского «fetch failed» говорим понятно
     const code = String((e.cause && e.cause.code) || e.code || '');
     if (e.name === 'TimeoutError' || e.name === 'AbortError' || /^(ENOTFOUND|EAI_AGAIN|ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENETUNREACH|EHOSTUNREACH|UND_ERR_)/.test(code) || e.message === 'fetch failed') {
-      return send(res, 504, { error: 'Нет связи с интернетом или сайт не отвечает. Проверь подключение и попробуй ещё раз' });
+      return send(res, 504, { error: T('s.top.25') });
     }
-    return send(res, e.status && e.status < 500 ? e.status : 500, { error: e.message || 'Ошибка' });
+    return send(res, e.status && e.status < 500 ? e.status : 500, { error: e.message || T('s.top.26') });
   }
 
   // статика; /callback — возврат после входа в Spotify
@@ -1651,10 +1662,10 @@ const server = http.createServer(async (req, res) => {
 
 server.on('error', async (e) => {
   if (e.code === 'EADDRINUSE') {
-    log(`порт ${PORT} занят другой программой`);
+    log(LT('l.top.10', { PORT: PORT }));
     process.exit(1);
   }
-  log('сервер упал', e);
+  log(LT('l.top.11'), e);
   process.exit(1);
 });
 
@@ -1662,33 +1673,40 @@ server.on('error', async (e) => {
 // перезапускаем программу (до двух раз), а если и это не помогло, открываем плеер в браузере.
 const RESTARTS = Number(process.env.SONARA_RESTARTS) || 0;
 function relaunch() {
-  log(`окно не появилось: перезапуск ${RESTARTS + 1} из 2`);
+  log(LT('l.relaunch.1', { p1: RESTARTS + 1 }));
   try {
     spawn(process.execPath, IS_EXE ? process.argv.slice(2) : process.argv.slice(1), { detached: true, stdio: 'ignore', env: { ...process.env, SONARA_RESTARTS: String(RESTARTS + 1) } }).unref();
-  } catch (e) { log('перезапуск не вышел', e); return false; }
+  } catch (e) { log(LT('l.relaunch.2'), e); return false; }
   shuttingDown = true;
   try { mediaKeys.stop(); } catch {}
   killKids();
   setTimeout(() => process.exit(0), 200);
   return true;
 }
+// сторож в отдельном процессе: если зависло всё приложение (сервер тоже), изнутри этого не заметить
+function spawnWatchdog() {
+  if (!IS_EXE && !process.env.SONARA_TEST_BLOCK) return;
+  try {
+    spawn(process.execPath, IS_EXE ? process.argv.slice(2) : process.argv.slice(1), { detached: true, stdio: 'ignore', windowsHide: true, env: { ...process.env, SONARA_WATCH_PID: String(process.pid) } }).unref();
+  } catch (e) { log('watchdog did not start', e.message); }
+}
 function windowGuard(isNative) {
   setTimeout(() => {
     if ((lastSeen && !process.env.SONARA_TEST_RELAUNCH) || shuttingDown) return;
-    log('окно не появилось за 10 секунд');
+    log(LT('l.windowGuard.1'));
     if ((isNative || process.env.SONARA_TEST_RELAUNCH) && RESTARTS < 2 && (IS_EXE || process.env.SONARA_TEST_RELAUNCH)) { if (relaunch()) return; }
     if (!isNative) { openWindow(); return; }
-    if (isNative && RESTARTS >= 2) { log('родное окно так и не открылось, открываю в браузере'); openWindow(); startWatchdog(); }
+    if (isNative && RESTARTS >= 2) { log(LT('l.windowGuard.2')); openWindow(); startWatchdog(); }
   }, process.env.SONARA_TEST_RELAUNCH ? 3000 : 10000).unref();
 }
 
 if (process.env.PLAYER_TEST) {
   module.exports = { geniusExtract, cleanTitle, splitArtists, norm, decodeEntities, redact, verNewer, verParts, readStore, writeJson };
 } else (async () => {
-  log(`старт v${VERSION}`, IS_EXE ? 'exe' : 'node', process.version);
+  log(LT('l.top.12', { VERSION: VERSION }), IS_EXE ? 'exe' : 'node', process.version);
   if (RESTARTS) await new Promise((r) => setTimeout(r, 1800));   // перезапуск после зависшего окна: ждём, пока старый процесс освободит порт
   if (await isAlreadyRunning()) {
-    log('плеер уже запущен, показываю его окно');
+    log(LT('l.top.13'));
     await new Promise((resolve) => {
       const req = http.request({ host: HOST, port: PORT, path: '/api/app/focus', method: 'POST', headers: { 'X-Player': '1' }, timeout: 2000 }, (r) => { r.resume(); r.on('end', resolve); });
       req.on('error', resolve);
@@ -1701,10 +1719,12 @@ if (process.env.PLAYER_TEST) {
   server.listen(PORT, HOST, () => {
     mediaKeysApply();
     setTimeout(() => updateCheck(false), 8000).unref();
-    log(`сервер: ${URL_APP}`);
+    log(LT('l.top.14', { URL_APP: URL_APP }));
+    // проверка сторожа: имитируем зависание всего приложения (только в тестах)
+    if (process.env.SONARA_TEST_BLOCK && !RESTARTS) { spawnWatchdog(); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 120000); }
     if (!IS_EXE && !process.env.PLAYER_NATIVE_TEST) return;
-    if (startNative()) { log('режим: своё окно'); windowGuard(true); return; }
-    log('режим: через браузер');
+    if (startNative()) { log(LT('l.top.15')); windowGuard(true); spawnWatchdog(); return; }
+    log(LT('l.top.16'));
     openWindow();
     startWatchdog();
     windowGuard(false);
