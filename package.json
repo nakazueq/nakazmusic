@@ -1,10 +1,15 @@
 {
   "name": "sonara",
-  "version": "3.5.0",
-  "description": "Sonara: Spotify и SoundCloud лайки в одном окне",
-  "repository": { "type": "git", "url": "git+https://github.com/nakazueq/Sonara.git" },
+  "version": "3.6.0",
+  "description": "Sonara: Spotify, SoundCloud and YouTube Music likes in one window",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nakazueq/Sonara.git"
+  },
   "homepage": "https://github.com/nakazueq/Sonara",
-  "bugs": { "url": "https://github.com/nakazueq/Sonara/issues" },
+  "bugs": {
+    "url": "https://github.com/nakazueq/Sonara/issues"
+  },
   "main": "server.js",
   "bin": "server.js",
   "scripts": {
@@ -28,6 +33,7 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@babel/parser": "^7.29.12",
     "@yao-pkg/pkg": "^6.24.0",
     "pe-library": "^2.0.1",
     "resedit": "^2.0.3",

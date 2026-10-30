@@ -1,0 +1,32 @@
+# Changelog
+
+## 3.6.0
+
+### Added
+- **Two interface languages: English and Russian.** The language follows Windows on first launch (Russian for Russian, Ukrainian and Belarusian systems, English otherwise) and can be changed in Settings → Appearance → Language. The switch applies immediately, without a restart, and is remembered. It covers the interface, the mini player, the tray menu, the Discord status text and the messages and errors from the program itself.
+- Correct plural forms and number, date and time formats for each language.
+- Tests that keep the dictionaries in step: both languages must have the same keys, with no empty values, matching placeholders and plural forms, and no Russian text hard-coded in the code.
+
+### Changed
+- All user-facing text moved out of the code into `public/locales/ru.js` and `public/locales/en.js`.
+- The program's own log lines are now always written in English, so the log can be read and shared whatever language the interface uses.
+- README is now in English with a Russian version in `README.ru.md`; the release archive contains both.
+- Build scripts print their messages in English.
+- A small watchdog process (the same Sonara.exe, visible for up to 25 seconds after launch) restarts the player if its window never opens, even when the whole program is stuck and cannot check on itself. It restarts at most twice.
+
+### Notes
+- The window title of the main window is just "Sonara"; the mini player title follows the language the next time the mini player is opened.
+
+## 3.5.0
+
+### Added
+- Library backup: likes and playlists of all sources in one JSON file, weekly automatic backups (the last 5 are kept), restore with strict file validation, playlists export to M3U.
+- Update check once a day against the latest GitHub release (can be turned off); it only offers to open the release page and never downloads anything.
+- Sleep timer: 15, 30, 45 and 60 minutes, custom minutes, until the end of the track, a fade-out over the last 30 seconds and a pause that leaves the player open. It also pauses Spotify through its app.
+- Hotkeys with remapping, and global media keys that work with the window minimized or in the tray.
+- YouTube Music as a source (through yt-dlp), global search across sources, gradient backgrounds including a gradient from the cover, themes with import and export, and custom CSS.
+
+### Changed
+- Global media keys now use a small native helper (`mkhelper.exe`) instead of a hidden PowerShell, which antivirus programs dislike. PowerShell remains only as a fallback.
+- The local server rejects requests with a foreign `Host` and cross-site requests; settings are written atomically; the log is rotated while the program runs and no longer contains tokens or cookies.
+- A window that fails to appear within 10 seconds is restarted automatically.

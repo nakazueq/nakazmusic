@@ -1,48 +1,66 @@
 # Sonara
 
-Музыкальный плеер для Windows: лайки Spotify, SoundCloud и YouTube Music в одном окне, тексты песен, мини-плеер, таймер сна, копии библиотеки.
+A music player for Windows that gathers your Spotify, SoundCloud and YouTube Music likes in one window. It has synced lyrics, a mini player, a sleep timer, library backups and a lot of ways to change how it looks.
 
-Репозиторий и релизы: https://github.com/nakazueq/Sonara
+Русская версия: [README.ru.md](README.ru.md)
 
-## Сборка, тесты и релиз
+Source and releases: https://github.com/nakazueq/Sonara
+
+## Settings
+
+Open **Settings** (bottom of the sidebar). The main places:
+
+- **Appearance**: **Language**, light/dark mode, accent color, background, and **Fine tuning…** for layouts, blocks, colors from the cover, gradients, themes and custom CSS.
+- **Accounts**: connect Spotify, SoundCloud and YouTube Music, add folders with music from your PC, and set up Discord status.
+- **Keys**: hotkeys for the player window, and the global media keys.
+- **Backups**: save and restore your library, export playlists to M3U.
+- **About**: update checks and where the log file lives.
+
+### Language
+
+Sonara speaks English and Russian. On first launch it follows the language of Windows: Russian if your system is Russian (Ukrainian and Belarusian also count), English otherwise. To change it, go to **Settings → Appearance → Language**. The change applies at once, with no restart: the interface, the tray menu and the messages from the program all switch. Your choice is remembered.
+
+## Build, test, release
 
 ```
 npm install
-npm test          # автотесты самого важного
-build.bat         # собирает Sonara.exe в папку выше
-release.bat       # собирает Sonara.exe и кладёт ../release/Sonara-<версия>-win-x64.zip
+npm test          # automated checks of the important parts
+build.bat         # builds Sonara.exe into the folder above
+release.bat       # builds Sonara.exe and packs ..\release\Sonara-<version>-win-x64.zip
 ```
 
-Релиз на GitHub: загрузите zip в новый релиз с тегом `v<версия>` (например `v3.5.1`). Программа берёт номер последней версии у `https://api.github.com/repos/nakazueq/Sonara/releases/latest`. Константа `UPDATE_REPO` лежит в одном месте, в начале блока «проверка обновлений» в `server.js`.
+To publish a release on GitHub, upload the zip to a new release tagged `v<version>` (for example `v3.6.1`). The app learns about new versions from `https://api.github.com/repos/nakazueq/Sonara/releases/latest`. The `UPDATE_REPO` constant lives in one place, at the start of the "update check" block in `server.js`.
 
-## Если антивирус ругается
+All text shown to the user lives in `public/locales/ru.js` and `public/locales/en.js`. `npm test` checks that both dictionaries have exactly the same keys and that no Russian text is hard-coded in the code. To add a language, add a dictionary file, register it in `public/locales/core.js` and add a button to the language switch.
 
-Sonara не подписана сертификатом, а `pkg`-сборки Node.js и маленькие неподписанные exe антивирусы иногда считают подозрительными (ложное срабатывание). Что именно в программе может это вызвать, и что с этим делать:
+## If your antivirus complains
 
-| Что | Зачем | Риск |
+Sonara isn't signed with a code-signing certificate, and antivirus programs sometimes flag `pkg`-built Node.js apps and small unsigned executables. These are false positives, but here is exactly what could trigger them, and what to do:
+
+| What | Why it's there | Risk |
 | --- | --- | --- |
-| `Sonara.exe` (упакованный Node.js через pkg) | сама программа | Ложные срабатывания на неподписанные pkg-сборки бывают у Defender, Kaspersky, Avast. |
-| `%LOCALAPPDATA%\MyPlayer\mkhelper.exe` | глобальные медиаклавиши (RegisterHotKey), 6 КБ, без сети | Низкий: обычный неподписанный exe с описанием и версией. Раньше для этого использовался скрытый PowerShell с `-EncodedCommand` и `Add-Type`, это куда подозрительнее; теперь он остаётся только запасным путём, если `mkhelper.exe` не запустился. |
-| `yt-dlp.exe` (скачивается кнопкой в настройках) | YouTube Music | Скачивается с официального релиза GitHub с проверкой SHA-256. |
-| Замена иконки и версии в exe | значок и свойства файла | Сама по себе безопасна, но правка ресурсов у неподписанного файла может понизить репутацию. |
+| `Sonara.exe` (Node.js packed with pkg) | the app itself | Unsigned pkg builds are sometimes flagged by Defender, Kaspersky and Avast. |
+| `%LOCALAPPDATA%\MyPlayer\mkhelper.exe` | global media keys (RegisterHotKey); 6 KB, no network access | Low: a plain unsigned exe with a description and version. This used to be a hidden PowerShell using `-EncodedCommand` and `Add-Type`, which looks far more suspicious. PowerShell is now only a fallback if `mkhelper.exe` fails to start. |
+| `yt-dlp.exe` (downloaded by a button in the settings) | YouTube Music | Downloaded from the official GitHub release and checked against its SHA-256. |
+| Icon and version info patched into the exe | the app icon and file properties | Harmless by itself, but patching resources in an unsigned file can lower its reputation. |
 
-Что добавить в исключения, если антивирус всё же мешает:
+If the antivirus gets in the way, add these to its exclusions:
 
-- папку со `Sonara.exe`;
-- папку `%LOCALAPPDATA%\MyPlayer` (там лежат настройки, лог, `mkhelper.exe`, `yt-dlp.exe`).
+- the folder that contains `Sonara.exe`;
+- `%LOCALAPPDATA%\MyPlayer` (settings, log, `mkhelper.exe`, `yt-dlp.exe`).
 
-Если медиаклавиши не нужны, их можно выключить в настройках («Клавиши»): помощник тогда вообще не запускается.
+If you don't need media keys, turn them off in **Settings → Keys**: the helper then doesn't start at all.
 
-Если файл заблокирован ещё до запуска, нужна подпись кода (сертификат Authenticode) и отправка файла в Microsoft на разбор ложного срабатывания: https://www.microsoft.com/en-us/wdsi/filesubmission
+If the file is blocked before it even runs, the real fix is code signing (an Authenticode certificate) plus a false-positive report to Microsoft: https://www.microsoft.com/en-us/wdsi/filesubmission
 
-## Конфиденциальность
+## Privacy
 
-Что программа делает с вашими данными, без умолчаний:
+What the program does with your data, plainly:
 
-- **Телеметрии нет.** Ни статистики использования, ни отчётов об ошибках, ни аналитики. Что вы слушаете, остаётся на компьютере (история прослушиваний лежит в `plays.jsonl` рядом с настройками).
-- **Проверка обновлений:** раз в сутки один запрос к GitHub за номером последнего релиза. В запросе только название и версия программы. Ничего не скачивается и не ставится, отключается в «О программе».
-- **Локальный сервер** слушает только `127.0.0.1`. С других компьютеров и со сторонних сайтов в браузере до него не достучаться (проверяются адрес и происхождение запроса).
-- **Cookies Brave** читаются только если вы сами включили это для YouTube Music: вход через Brave при подключении приватного плейлиста или лайков либо переключатель «Пробовать cookies Brave, если ролик не играет» (по умолчанию выключен). Их читает yt-dlp, программа их не хранит, не пересылает и не пишет в лог. Без опции браузер не трогается.
-- **Настройки, токены Spotify и ключи** хранятся только у вас: `%LOCALAPPDATA%\MyPlayer` (настройки, лог, кэш) и `Документы\Sonara` (копии библиотеки, темы, M3U). В лог токены и cookies не попадают, он ограничен примерно 1 МБ.
-- **Куда программа всё же обращается**, когда вы пользуетесь соответствующей функцией: Spotify, SoundCloud и YouTube (ваши лайки и звук); LRCLIB, Genius, NetEase и lyrics.ovh (названия треков и исполнителей для поиска текстов); сервера обложек этих сервисов; GitHub (проверка обновлений и, только по кнопке, скачивание yt-dlp с проверкой SHA-256). Discord получает название и исполнителя играющего трека, только если вы включили Discord в настройках и указали Application ID.
-- Копия библиотеки не содержит паролей и токенов: только названия, исполнители, ссылки и список подключённых источников.
+- **No telemetry.** No usage statistics, no crash reports, no analytics. What you listen to stays on your computer (the listening history is the `plays.jsonl` file next to your settings).
+- **Update check:** once a day it makes a single request to GitHub for the latest release number. The request carries only the app name and version. Nothing is downloaded or installed. You can turn it off in **About**.
+- **The local server** listens on `127.0.0.1` only. Other computers can't reach it, and neither can other websites open in your browser (the address and origin of every request are checked).
+- **Brave cookies** are read only if you turn that on yourself for YouTube Music: either by signing in through Brave when you connect a private playlist or your likes, or with the switch "Try Brave cookies if a video won't play" (off by default). yt-dlp does the reading; the program never stores the cookies, sends them anywhere or writes them to the log. Without that option your browser is not touched.
+- **Settings, Spotify tokens and keys** stay with you: `%LOCALAPPDATA%\MyPlayer` (settings, log, cache) and `Documents\Sonara` (library backups, themes, M3U). Tokens and cookies never end up in the log, which is capped at about 1 MB.
+- **Where the program does connect**, when you use the matching feature: Spotify, SoundCloud and YouTube (your likes and the audio); LRCLIB, Genius, NetEase and lyrics.ovh (track titles and artists, to look up lyrics); the cover-art servers of those services; and GitHub (the update check and, only when you press the button, downloading yt-dlp, verified by SHA-256). Discord receives the title and artist of the playing track only if you turned Discord on in the settings and entered an Application ID.
+- A library backup holds no passwords or tokens: only titles, artists, links and the list of connected sources.
