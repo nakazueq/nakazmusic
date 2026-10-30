@@ -178,8 +178,65 @@ const HEX_RE = /^#[0-9a-f]{6}$/i;
 const baseMode = () => (ui.mode === 'auto' ? (mq.matches ? 'dark' : 'light') : ui.mode);
 function currentMode() {
   if (!(ui.look.auto && autoNow) && HEX_RE.test(ui.look.bg || '')) return isLightColor(ui.look.bg) ? 'light' : 'dark';
+  if (gradActive()) return gradAnalyze(ui.grad, userOpVal()).mode;   // свой градиент: тема по его средней яркости
   return baseMode();   // цвета по обложке подстраиваются под выбранную светлую или тёмную тему, а не меняют её
 }
+
+/* ---------- подбор темы и контраста по яркости градиента ---------- */
+// самые «опасные» панели: у светлой темы сайдбар темнее, у тёмной светлее; текст темы поверх них
+const GRAD_PANEL = { light: { rgb: [236, 237, 241], text: [29, 29, 31] }, dark: { rgb: [36, 36, 40], text: [245, 245, 247] } };
+const rgbLum = (c) => {
+  const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
+};
+const rgbContrast = (a, b) => { const x = rgbLum(a), y = rgbLum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const hexToRgb3 = (h) => { const n = parseInt(h.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
+const userOpVal = () => 0.96 - (ui.alpha / 100) * 0.76;   // плотность панелей из ползунка «Прозрачность»
+// точки по градиенту с весами: у радиального внешние кольца занимают больше площади
+function gradSamples(g, n = 24) {
+  const st = g.stops.map((s) => ({ p: s.p / 100, c: hexToRgb3(s.c) }));
+  const at = (t) => {
+    if (t <= st[0].p) return st[0].c;
+    if (t >= st[st.length - 1].p) return st[st.length - 1].c;
+    for (let i = 0; i < st.length - 1; i++) if (t <= st[i + 1].p) {
+      const k = (t - st[i].p) / (st[i + 1].p - st[i].p || 1);
+      return st[i].c.map((v, j) => v + (st[i + 1].c[j] - v) * k);
+    }
+    return st[0].c;
+  };
+  const out = [];
+  for (let i = 0; i < n; i++) { const t = (i + 0.5) / n; out.push({ c: at(t), w: g.type === 'radial' ? t : 1 }); }
+  return out;
+}
+const gradCache = new Map();
+let gradLastMode = null;
+// средняя яркость градиента с учётом позиций точек -> светлая или тёмная тема; если на самых светлых или тёмных местах
+// текст читается хуже 4.5:1, панели делаем плотнее (но не больше 96%)
+function gradAnalyze(g, userOp) {
+  const key = gradCss(g) + '|' + userOp.toFixed(3);
+  const hit = gradCache.get(key);
+  if (hit) { gradLastMode = hit.mode; return hit; }
+  const S = gradSamples(g);
+  const wsum = S.reduce((a, s) => a + s.w, 0);
+  const avgLum = S.reduce((a, s) => a + s.w * rgbLum(s.c), 0) / wsum;
+  const avg = [0, 1, 2].map((j) => Math.round(S.reduce((a, s) => a + s.w * s.c[j], 0) / wsum));
+  const blend = (c, P, op) => { const a = Math.max(0.12, op * 0.82); return c.map((v, j) => v * (1 - a) + P.rgb[j] * a); };
+  const avgContrast = (mode) => rgbContrast(GRAD_PANEL[mode].text, blend(avg, GRAD_PANEL[mode], userOp));
+  const cl = avgContrast('light'), cd = avgContrast('dark');
+  let mode = cl >= cd ? 'light' : 'dark';
+  if (gradLastMode && Math.abs(cl - cd) < 0.3) mode = gradLastMode;   // у границы тема не должна мигать при перетаскивании
+  const worst = (op) => Math.min(...S.map((s) => rgbContrast(GRAD_PANEL[mode].text, blend(s.c, GRAD_PANEL[mode], op))));
+  let op = userOp, contrast = worst(op);
+  while (contrast < 4.5 && op < 0.96) { op = Math.min(0.96, op + 0.04); contrast = worst(op); }
+  const res = { mode, op, contrast, avgLum, avg, raised: op > userOp + 0.001 };
+  gradCache.set(key, res);
+  if (gradCache.size > 80) gradCache.delete(gradCache.keys().next().value);
+  gradLastMode = mode;
+  return res;
+}
+// подбор по градиенту действует, когда выбран фон «Градиент» и не включены свой цвет фона и подбор по обложке
+const gradActive = () => ui.wall === 'gradient' && !(ui.look.auto && autoNow) && !HEX_RE.test(ui.look.bg || '');
+const opValue = () => (gradActive() ? gradAnalyze(ui.grad, userOpVal()).op : userOpVal());
 const rgbOf = (hex) => `${parseInt(hex.slice(1, 3), 16)} ${parseInt(hex.slice(3, 5), 16)} ${parseInt(hex.slice(5, 7), 16)}`;
 function mixHex(a, b, t) {
   const p = (h, i) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
@@ -451,7 +508,7 @@ function applyUI() {
   r.dataset.side = ui.layout.side;
   r.style.setProperty('--accent', ui.accent);
   r.style.setProperty('--on-accent', isLightColor(ui.accent) ? '#1d1d1f' : '#ffffff');
-  r.style.setProperty('--op', (0.96 - (ui.alpha / 100) * 0.76).toFixed(3));
+  r.style.setProperty('--op', opValue().toFixed(3));
   r.style.setProperty('--blur', ui.blur + 'px');
   // сменили светлую/тёмную тему: палитру по обложке нужно собрать заново
   if (ui.look.auto && autoNow && autoNow.mode !== baseMode()) autoCover();
@@ -490,7 +547,7 @@ function liveFlush() {
   const r = document.documentElement;
   const mode = currentMode();
   if (r.dataset.theme !== mode) r.dataset.theme = mode;
-  const op = (0.96 - (ui.alpha / 100) * 0.76).toFixed(3);
+  const op = opValue().toFixed(3);
   if (r.style.getPropertyValue('--op') !== op) r.style.setProperty('--op', op);
   const blur = ui.blur + 'px';
   if (r.style.getPropertyValue('--blur') !== blur) r.style.setProperty('--blur', blur);
@@ -2810,6 +2867,12 @@ function gradBarRefresh() {
     h.style.setProperty('--c', h._stop.c);
     h.classList.toggle('on', h._stop === gradSel);
   }
+  const info = $('gr-info');
+  if (gradActive()) {
+    const a = gradAnalyze(ui.grad, userOpVal());
+    info.textContent = `Тема подобрана по яркости градиента: ${a.mode === 'dark' ? 'тёмная' : 'светлая'} · контраст текста ${a.contrast.toFixed(1)}:1${a.raised ? ' · панели плотнее для читаемости' : ''}`;
+  } else info.textContent = '';
+  info.hidden = !info.textContent;
   if (gradSel) {
     const col = $('gr-color'), pos = $('gr-pos');
     if (col.value !== gradSel.c) col.value = gradSel.c;
@@ -2977,13 +3040,18 @@ function validateTheme(o) {
     for (const k of Object.keys(obj)) if (!keys.includes(k)) return `Неизвестное поле «${where}${k}»`;
     return '';
   };
-  let e = only(o, ['mode', 'accent', 'wall', 'alpha', 'blur', 'look', 'layout', 'blocks'], '');
+  let e = only(o, ['mode', 'accent', 'wall', 'alpha', 'blur', 'grad', 'look', 'layout', 'blocks'], '');
   if (e) return { error: e };
   if ('mode' in o) { if (!['light', 'dark', 'auto'].includes(o.mode)) return { error: 'mode: ожидается light, dark или auto' }; out.mode = o.mode; }
   if ('accent' in o) { if (typeof o.accent !== 'string' || !HEX_RE.test(o.accent)) return { error: 'accent: ожидается цвет #rrggbb' }; out.accent = o.accent.toUpperCase(); }
   if ('wall' in o) { if (typeof o.wall !== 'string' || o.wall === 'custom' || !Object.prototype.hasOwnProperty.call(WALLS, o.wall)) return { error: 'wall: неизвестный фон' }; out.wall = o.wall; }
   if ('alpha' in o) { if (!isNum(o.alpha, 0, 100)) return { error: 'alpha: число от 0 до 100' }; out.alpha = Math.round(o.alpha); }
   if ('blur' in o) { if (!isNum(o.blur, 0, 80)) return { error: 'blur: число от 0 до 80' }; out.blur = Math.round(o.blur); }
+  if ('grad' in o) {
+    const v = validateGrad(o.grad);
+    if (v.error) return { error: 'grad: ' + v.error };
+    out.grad = v.grad;
+  } else if (out.wall === 'gradient') out.grad = normalizeGrad(null);   // старая тема с градиентом без самих точек: берём градиент по умолчанию
   if ('look' in o) {
     const L = o.look;
     if (!L || typeof L !== 'object' || Array.isArray(L)) return { error: 'look: ожидается объект' };
@@ -3031,6 +3099,24 @@ function validateTheme(o) {
   if (!Object.keys(out).length) return { error: 'В теме нет ни одной настройки оформления' };
   return { theme: out };
 }
+// градиент из файла: тип, угол 0..360, от 2 до 5 точек с hex-цветом и позицией 0..100, ничего другого
+function validateGrad(g) {
+  if (!g || typeof g !== 'object' || Array.isArray(g)) return { error: 'ожидается объект' };
+  for (const k of Object.keys(g)) if (!['type', 'angle', 'stops'].includes(k)) return { error: `неизвестное поле «${k}»` };
+  if (!GRAD_TYPES.includes(g.type)) return { error: 'type: linear, radial или conic' };
+  if (!isNum(g.angle, 0, 360)) return { error: 'angle: число от 0 до 360' };
+  if (!Array.isArray(g.stops) || g.stops.length < GRAD_MIN_STOPS || g.stops.length > GRAD_MAX_STOPS) return { error: `stops: от ${GRAD_MIN_STOPS} до ${GRAD_MAX_STOPS} точек` };
+  const stops = [];
+  for (const s of g.stops) {
+    if (!s || typeof s !== 'object' || Array.isArray(s)) return { error: 'stops: точка должна быть объектом' };
+    for (const k of Object.keys(s)) if (k !== 'c' && k !== 'p') return { error: `stops: неизвестное поле «${k}»` };
+    if (typeof s.c !== 'string' || !HEX_RE.test(s.c)) return { error: 'stops: цвет должен быть вида #rrggbb' };
+    if (!isNum(s.p, 0, 100)) return { error: 'stops: позиция от 0 до 100' };
+    stops.push({ c: s.c.toLowerCase(), p: Math.round(s.p) });
+  }
+  stops.sort((a, b) => a.p - b.p);
+  return { grad: { type: g.type, angle: Math.round(g.angle), stops } };
+}
 function currentTheme() {
   const L = ui.look;
   return {
@@ -3039,6 +3125,7 @@ function currentTheme() {
     wall: ui.wall === 'custom' ? 'mist' : ui.wall,   // свою картинку фона в тему не кладём
     alpha: ui.alpha,
     blur: ui.blur,
+    grad: gradClone(ui.grad),
     look: { bg: HEX_RE.test(L.bg || '') ? L.bg : null, text: HEX_RE.test(L.text || '') ? L.text : null, font: L.font, rs: L.rs, cover: L.cover, auto: !!L.auto, css: L.css || '', cssOn: L.cssOn !== false },
     layout: { mode: ui.layout.mode === 'full' ? 'normal' : ui.layout.mode, side: ui.layout.side },
     blocks: { order: ui.blocks.order.slice(), off: ui.blocks.off.slice() },
@@ -3047,7 +3134,8 @@ function currentTheme() {
 function applyTheme(t) {
   if (t.mode) ui.mode = t.mode;
   if (t.accent) ui.accent = t.accent;
-  if (t.wall) ui.wall = t.wall;
+  if (t.grad) { ui.grad = normalizeGrad(t.grad); gradSel = null; }
+  if (t.wall) setWall(t.wall);
   if (t.alpha != null) ui.alpha = t.alpha;
   if (t.blur != null) ui.blur = t.blur;
   if (t.look) Object.assign(ui.look, t.look);
@@ -3102,7 +3190,7 @@ function renderThemes() {
     d.className = 'lk-th' + (JSON.stringify(t.theme) === cur ? ' on' : '');
     d.dataset.id = t.id;
     d.innerHTML = '<span class="lk-th-dot"></span><button class="lk-th-name" title="Применить"></button><button class="x lk-th-b" data-act="rename" title="Переименовать"></button><button class="x lk-th-b" data-act="export" title="Экспортировать в файл"></button><button class="x lk-th-b" data-act="delete" title="Удалить"></button>';
-    d.querySelector('.lk-th-dot').style.background = t.theme.accent || 'var(--accent)';
+    d.querySelector('.lk-th-dot').style.background = t.theme.wall === 'gradient' && t.theme.grad ? gradCss(t.theme.grad) : t.theme.accent || 'var(--accent)';
     d.querySelector('.lk-th-name').textContent = t.name;
     d.querySelector('[data-act="rename"]').innerHTML = TH_ICONS.edit;
     d.querySelector('[data-act="export"]').innerHTML = TH_ICONS.out;
