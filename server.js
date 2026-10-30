@@ -1192,7 +1192,7 @@ async function searchTracks(src, q) {
 // Папка Документы\Sonara\backup; автокопии (файлы с -auto) храним последние 5, ручные не трогаем.
 // ---------- проверка обновлений ----------
 // Репозиторий GitHub с релизами задаётся ТОЛЬКО здесь, в формате «владелец/репозиторий».
-const UPDATE_REPO = 'OWNER/Sonara';
+const UPDATE_REPO = 'nakazueq/Sonara';
 const UPDATE_EVERY = 24 * 3600e3;
 const updateRepoOk = () => /^[\w.-]+\/[\w.-]+$/.test(UPDATE_REPO) && !/^OWNER\//.test(UPDATE_REPO);
 function verParts(v) {

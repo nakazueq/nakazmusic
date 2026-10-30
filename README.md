@@ -2,13 +2,18 @@
 
 Музыкальный плеер для Windows: лайки Spotify, SoundCloud и YouTube Music в одном окне, тексты песен, мини-плеер, таймер сна, копии библиотеки.
 
-## Сборка и тесты
+Репозиторий и релизы: https://github.com/nakazueq/Sonara
+
+## Сборка, тесты и релиз
 
 ```
 npm install
 npm test          # автотесты самого важного
-src\build.bat     # собирает Sonara.exe в папку выше
+build.bat         # собирает Sonara.exe в папку выше
+release.bat       # собирает Sonara.exe и кладёт ../release/Sonara-<версия>-win-x64.zip
 ```
+
+Релиз на GitHub: загрузите zip в новый релиз с тегом `v<версия>` (например `v3.5.1`). Программа берёт номер последней версии у `https://api.github.com/repos/nakazueq/Sonara/releases/latest`. Константа `UPDATE_REPO` лежит в одном месте, в начале блока «проверка обновлений» в `server.js`.
 
 ## Если антивирус ругается
 

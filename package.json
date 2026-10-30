@@ -2,11 +2,15 @@
   "name": "sonara",
   "version": "3.5.0",
   "description": "Sonara: Spotify и SoundCloud лайки в одном окне",
+  "repository": { "type": "git", "url": "git+https://github.com/nakazueq/Sonara.git" },
+  "homepage": "https://github.com/nakazueq/Sonara",
+  "bugs": { "url": "https://github.com/nakazueq/Sonara/issues" },
   "main": "server.js",
   "bin": "server.js",
   "scripts": {
     "start": "node server.js",
     "test": "node --test tests/",
+    "release": "node tools/release.mjs",
     "icon": "node tools/make-icon.mjs",
     "build": "node tools/build.mjs"
   },
