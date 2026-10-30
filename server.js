@@ -196,6 +196,14 @@ function regValue(args) {
     });
   });
 }
+// есть ли на компьютере приложение Spotify (обычное или из Microsoft Store): без него запускать нечего
+async function spotifyInstalled() {
+  if (!IS_WIN) return false;
+  if (exists(path.join(process.env.APPDATA || '', 'Spotify', 'Spotify.exe'))) return true;
+  if (await regValue(['HKCR\\spotify\\shell\\open\\command', '/ve'])) return true;
+  try { if (fs.readdirSync(path.join(process.env.LOCALAPPDATA || '', 'Microsoft', 'WindowsApps')).some((f) => /^spotify/i.test(f))) return true; } catch {}
+  return false;
+}
 const BROWSERS = {
   brave: { rel: 'BraveSoftware\\Brave-Browser\\Application\\brave.exe', exe: 'brave.exe' },
   chrome: { rel: 'Google\\Chrome\\Application\\chrome.exe', exe: 'chrome.exe' },
@@ -1607,6 +1615,7 @@ const server = http.createServer(async (req, res) => {
         if (typeof b.mediaKeys === 'boolean' && (config.mediaKeys !== false) !== b.mediaKeys) { config.mediaKeys = b.mediaKeys; writeJson(CONFIG_FILE, config); mediaKeys.starts = 0; mediaKeysApply(); }
         return send(res, 200, { ok: true });
       }
+      if (p === '/api/app/spotify-installed') return send(res, 200, { installed: await spotifyInstalled() });
       if (p === '/api/app/mediakeys') {
         return send(res, 200, { enabled: config.mediaKeys !== false, ...mediaKeys.status() });
       }

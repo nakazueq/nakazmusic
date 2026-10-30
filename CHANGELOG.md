@@ -10,6 +10,7 @@
 - Media keys helper, Discord status and the update check now start a few seconds *after* the interface has appeared instead of competing with the window for CPU during start-up.
 
 ### Added
+- **Clear Spotify Premium handling.** The Spotify card now says up front that playback needs Spotify Premium and the desktop app. After sign-in the account type is checked; a free account gets a yellow note, the Spotify app is never driven (no more "no active device" errors), and each Spotify track plays from YouTube or SoundCloud when the same track is found there, with a single notice per session. The search chip for Spotify explains "Playback needs Premium". With Premium, a missing or unstarted Spotify app now produces a plain explanation instead of an error. The README has new Requirements and Sources sections.
 - Start-up timing marks in the log (a line starting with `boot`) to see where start-up time goes.
 
 ### Notes

@@ -1081,3 +1081,8 @@ html.lk-drag:not(.lk-drag-blur) .wall { filter: none !important; }
 .folder .bk-restore-one:hover { background: var(--press); }
 /* очень узкое окно (режим через браузер): кнопки шапки переносятся, а не уезжают за край */
 @media (max-width: 520px) { .head-actions { flex-wrap: wrap; justify-content: flex-end; max-width: 100%; } }
+
+/* Spotify без Premium: жёлтое примечание в карточке */
+.sp-premium-note { margin: 0 0 10px; }
+.note-warn { margin: 0 0 10px; padding: 8px 12px; border-radius: calc(10px * var(--rs)); border-left: 3px solid #ffcc00; background: rgba(255, 204, 0, .16); font-size: 12.5px; font-weight: 500; line-height: 1.45; }
+.note-warn[hidden] { display: none; }

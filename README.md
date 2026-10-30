@@ -6,6 +6,20 @@ A music player for Windows that gathers your Spotify, SoundCloud and YouTube Mus
 
 Source and releases: https://github.com/nakazueq/Sonara
 
+## Requirements
+
+- Windows 10 or 11 (it uses the WebView2 runtime that comes with current Windows; if it is missing, Sonara opens in your browser instead).
+- **Spotify tracks need Spotify Premium and the Spotify desktop app.** Without Premium you can still connect your account and see your likes, and Sonara plays those tracks from YouTube or SoundCloud when it finds them.
+- YouTube Music needs `yt-dlp` (one button in **Settings → Accounts** downloads it); it works best with Node.js or Deno installed.
+- SoundCloud and music files from your PC need nothing extra.
+
+## Sources
+
+- **Spotify.** Playback of Spotify tracks requires Spotify Premium and the Spotify desktop app. After you connect, Sonara checks the account type. With a free account it shows a yellow note, never tries to control the Spotify app, and plays each Spotify track from YouTube or SoundCloud if it finds the same track there (you get a short notice once per session). With Premium, tracks play through the Spotify desktop app; if the app isn't installed or doesn't start, Sonara tells you so instead of showing an error.
+- **SoundCloud.** Your public likes, by username. Some tracks only offer a preview.
+- **YouTube Music.** Public playlists by link, and your likes through your Brave sign-in; audio comes through yt-dlp.
+- **This PC.** Folders with mp3, wav, flac, m4a and ogg files.
+
 ## Settings
 
 Open **Settings** (bottom of the sidebar). The main places:

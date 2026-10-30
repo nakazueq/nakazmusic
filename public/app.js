@@ -980,13 +980,23 @@ async function spMe() {
     if (me) {
       $('sp-state').dataset.name = me.display_name || me.id || '';
       spPremium = me.product ? me.product === 'premium' : null;
+      spFreeSync();
+      renderSearchChips();
       if (searchActive()) searchRefresh();
     }
   } catch {}
 }
+// у аккаунта без Premium Spotify играть нельзя: показываем жёлтое примечание, звук берём с YouTube или SoundCloud
+function spFreeSync() {
+  const el = $('sp-free-note');
+  el.textContent = T('a.sp.freenote');
+  el.hidden = !(LS.get('sp_token') && spPremium === false);
+}
+let spAltNoted = false;   // уведомление «играю с другого источника» показываем один раз за сессию
 function spLogout() {
   LS.del('sp_token'); LS.del('sp_lib');
   spPremium = null;
+  spFreeSync();
   state.lib.sp = [];
   if (sp.player) { try { sp.player.disconnect(); } catch {} }
   sp.player = null; sp.device = null; sp.ready = null;
@@ -1088,9 +1098,16 @@ function spcPick(list) {
     || ok.find((d) => d.type === 'Computer')
     || ok[0] || null;
 }
+let spInstalled = null;
+async function spAppInstalled() {
+  if (spInstalled === true) return true;
+  try { spInstalled = !!(await api('/api/app/spotify-installed', { headers: { 'X-Player': '1' } })).installed; } catch { spInstalled = true; }   // не смогли узнать: считаем, что есть
+  return spInstalled;
+}
 async function spcEnsureDevice(token) {
   let d = spcPick(await spcDevices());
   if (d) return d;
+  if (!(await spAppInstalled())) throw fatal(T('a.sp.noapp'));   // не установлено: запускать нечего, объясняем что делать
   toast(T('a.spcEnsureDevice.1'));
   appCmd('spotify-launch');
   for (let i = 0; i < 25; i++) {
@@ -1103,7 +1120,7 @@ async function spcEnsureDevice(token) {
       return d;
     }
   }
-  throw fatal(T('a.spcEnsureDevice.2'));
+  throw fatal(T('a.sp.notrunning'));
 }
 function spcQuery(q) { return spc.device ? `${q}${q.includes('?') ? '&' : '?'}device_id=${encodeURIComponent(spc.device)}` : q; }
 // служебные ошибки Spotify (ещё не загрузился, нет активного трека) не показываем
@@ -1442,12 +1459,28 @@ async function playTrack(t) {
   sp.last = { pos: 0, at: performance.now() };
   onTrackChanged();
   try {
-    if (t.src === 'sp') await spPlay(t, token);
+    if (t.src === 'sp') {
+      if (spPremium === false) throw noPremium();   // без Premium даже не пытаемся: иначе «no active device» и подобные ошибки
+      await spPlay(t, token);
+    }
     else if (t.src === 'local') await localPlay(t, token);
     else if (t.src === 'yt') await ytPlay(t, token);
     else await scPlay(t, token);
     if (token === state.token) state.fails = 0;
   } catch (e) {
+    // трек Spotify без Premium: тот же трек на YouTube или SoundCloud
+    if (token === state.token && t.src === 'sp' && spPremium === false) {
+      const alt = await findAltSources(t, ytStatus.installed ? ['yt', 'sc'] : ['sc']);
+      if (token !== state.token) return;
+      if (alt) {
+        const nxt = { ...t, src: alt.src, id: alt.id, uri: undefined, url: alt.url, duration: alt.duration || t.duration, alts: [], _altTried: true };
+        const qi = state.order[state.pos];
+        if (state.queue[qi] === t) state.queue[qi] = nxt;
+        if (!spAltNoted) { spAltNoted = true; toast(T('a.sp.altnote', { src: alt.src === 'yt' ? 'YouTube' : SRC_NAMES[alt.src] || alt.src }), 6000); }
+        return playTrack(nxt);
+      }
+      return playFailed(new Error(T('a.sp.noalt')), token);
+    }
     // у объединённого трека есть другие источники: пробуем следующий, например YouTube, если у Spotify нет Premium
     if (token === state.token && t.alts && t.alts.length) {
       const [alt, ...rest] = t.alts;
@@ -1473,12 +1506,18 @@ async function playTrack(t) {
   }
 }
 // тот же трек в другом источнике: для упавшего YouTube ищем на SoundCloud и принимаем только точное совпадение названия
-async function findAltSource(t) {
+const noPremium = () => Object.assign(new Error(T('a.sp.noalt')), { noPremium: true });
+// тот же трек на первом подходящем источнике из списка
+async function findAltSources(t, srcs) {
+  for (const src of srcs) { const alt = await findAltSource(t, src); if (alt) return alt; }
+  return null;
+}
+async function findAltSource(t, src = 'sc') {
   const ctl = new AbortController();
   const to = setTimeout(() => ctl.abort(), 10000);
   try {
     const q = `${String(t.artist || '').split(',')[0]} ${t.title}`.trim();
-    const j = await api('/api/search?src=sc&q=' + encodeURIComponent(q), { signal: ctl.signal });
+    const j = await api('/api/search?src=' + src + '&q=' + encodeURIComponent(q), { signal: ctl.signal });
     const [title, artist] = dupParts(t);
     return (j.tracks || []).find((x) => { const [xt, xa] = dupParts(x); return title && xt === title && artistsOverlap(artist, xa) && durOk(t.duration, x.duration); }) || null;
   } catch { return null; } finally { clearTimeout(to); }
@@ -2209,6 +2248,7 @@ function renderSearchChips() {
       else if (per.st === 'err') tag = '<b class="bad">!</b>';
     }
     let title = !avail ? (id === 'sp' ? T('a.renderSearchChips.1') : T('a.renderSearchChips.2')) : on ? T('a.renderSearchChips.3') : T('a.renderSearchChips.4');
+    if (id === 'sp' && avail && spPremium === false) title += '. ' + T('a.sp.chipnote');
     if (on && active && per.st === 'ok') title = T('a.renderSearchChips.5', { n: per.n, p2: (per.ms / 1000).toFixed(1) });
     else if (on && active && per.st === 'err') title = T('a.renderSearchChips.6', { msg: per.msg });
     return `<button type="button" class="gs-chip ${id}${on ? ' on' : ''}${avail ? '' : ' na'}" data-src="${id}" aria-pressed="${on}" title="${title}"><span>${name}</span>${tag}</button>`;
@@ -4633,7 +4673,7 @@ function relocalize() {
     if (accState[src].cls === 'ok' && n) accState[src] = { text: `${n} ${plural(n, trackForms())}`, cls: 'ok' };
   }
   syncAccounts();
-  renderYtLists(); renderFolders(); renderSearchChips();
+  renderYtLists(); renderFolders(); renderSearchChips(); spFreeSync();
   renderSidebarPlaylists();
   render();
   renderQueue(); lycRender(); lyRender();
