@@ -481,12 +481,25 @@ setInterval(() => sseSend('main', 'tick', { t: Date.now() }), 2000).unref();
 // ---------- глобальные медиаклавиши Windows ----------
 const MEDIA_CMD = { play: 'toggle', next: 'next', prev: 'prev', stop: 'pause' };
 let mediaKeyAt = 0;
+// готовый нативный помощник (assets/mkhelper.exe, его собирает tools/build.mjs); из exe-файла его нужно положить на диск, запустить из архива нельзя
+function mediaHelperPath() {
+  try {
+    const src = path.join(__dirname, 'assets', 'mkhelper.exe');
+    if (!fs.existsSync(src)) return '';
+    if (!IS_EXE) return src;
+    const buf = fs.readFileSync(src), dest = path.join(DATA_DIR, 'mkhelper.exe');
+    let same = false;
+    try { same = fs.readFileSync(dest).equals(buf); } catch {}
+    if (!same) { fs.writeFileSync(dest + '.part', buf); fs.renameSync(dest + '.part', dest); }
+    return dest;
+  } catch (e) { log('mkhelper.exe не подготовлен:', e.message); return ''; }
+}
 const mediaKeys = new MediaKeys((name) => {
   const cmd = MEDIA_CMD[name];
   if (!cmd || Date.now() - mediaKeyAt < 250) return;   // одно нажатие не должно сработать дважды
   mediaKeyAt = Date.now();
   sseSend('main', 'cmd', { cmd });
-}, log);
+}, log, mediaHelperPath());
 // клавиши занимаем, пока включена настройка и у плеера есть трек
 function mediaKeysApply() {
   if (config.mediaKeys === false) { mediaKeys.setActive(false); mediaKeys.stop(); return; }

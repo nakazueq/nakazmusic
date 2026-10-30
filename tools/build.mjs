@@ -68,7 +68,17 @@ function patch(basePath, icoPath, outPath) {
   writeFileSync(outPath, Buffer.from(exe.generate()));
 }
 
+// помощник медиаклавиш: обычный маленький exe из native/MediaKeys.cs (компилятор csc входит в Windows). Без него плеер откатится на PowerShell.
+function buildMediaHelper() {
+  const csc = ['Framework64', 'Framework'].map((f) => join(process.env.WINDIR || 'C:\\Windows', 'Microsoft.NET', f, 'v4.0.30319', 'csc.exe')).find(existsSync);
+  const out = join(root, 'assets', 'mkhelper.exe');
+  if (!csc) { console.warn('csc.exe не найден: медиаклавиши будут работать через PowerShell'); return; }
+  execFileSync(csc, ['/nologo', '/target:exe', '/optimize+', '/debug-', '/reference:System.Windows.Forms.dll', '/out:' + out, join(root, 'native', 'MediaKeys.cs'), join(root, 'native', 'AssemblyInfo.cs')], { stdio: 'inherit' });
+  console.log('помощник медиаклавиш: %s', out);
+}
+
 mkdirSync(buildDir, { recursive: true });
+buildMediaHelper();
 console.log('1/3 иконка из SVG');
 const ico = await makeIcons();
 

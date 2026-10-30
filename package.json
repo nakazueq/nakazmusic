@@ -14,6 +14,8 @@
     "assets": [
       "public/**/*",
       "assets/icon-256.rgba",
+      "assets/mkhelper.exe",
+      "native/*.cs",
       "node_modules/@webviewjs/webview/*.js",
       "node_modules/@webviewjs/webview-win32-x64-msvc/*.node",
       "node_modules/@webviewjs/webview-win32-x64-msvc/package.json",
