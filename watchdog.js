@@ -1,14 +1,14 @@
 'use strict';
-// Сторож окна: отдельный маленький процесс (тот же exe с SONARA_WATCH_PID). Иногда при старте окно WebView2 зависает так,
+// Сторож окна: отдельный маленький процесс (тот же exe с NAKAZMUSIC_WATCH_PID). Иногда при старте окно WebView2 зависает так,
 // что не работает и сам сервер плеера, поэтому проверять изнутри нельзя. Сторож ждёт, пока страница хоть раз обратится к серверу;
 // если за 25 секунд этого не случилось, закрывает зависший плеер (его окна WebView2 закрываются сами, без /T: иначе taskkill убил бы и сторожа) и запускает новый (до двух раз).
 const http = require('http');
 const { spawn, execFile } = require('child_process');
 
-const pid = Number(process.env.SONARA_WATCH_PID);
+const pid = Number(process.env.NAKAZMUSIC_WATCH_PID);
 const port = Number(process.env.PLAYER_PORT) || 3000;
-const restarts = Number(process.env.SONARA_RESTARTS) || 0;
-const LIMIT = Number(process.env.SONARA_WATCH_MS) || 25000;
+const restarts = Number(process.env.NAKAZMUSIC_RESTARTS) || 0;
+const LIMIT = Number(process.env.NAKAZMUSIC_WATCH_MS) || 25000;
 const started = Date.now();
 
 function ping(cb) {
@@ -26,8 +26,8 @@ function restart() {
   if (restarts >= 2) process.exit(0);   // два перезапуска не помогли: оставляем как есть, дальше решает человек
   execFile('taskkill', ['/F', '/PID', String(pid)], { windowsHide: true }, () => {
     setTimeout(() => {
-      const env = { ...process.env, SONARA_RESTARTS: String(restarts + 1) };
-      delete env.SONARA_WATCH_PID;
+      const env = { ...process.env, NAKAZMUSIC_RESTARTS: String(restarts + 1) };
+      delete env.NAKAZMUSIC_WATCH_PID;
       try { spawn(process.execPath, process.pkg ? process.argv.slice(2) : process.argv.slice(1), { detached: true, stdio: 'ignore', env }).unref(); } catch {}
       process.exit(0);
     }, 1500);

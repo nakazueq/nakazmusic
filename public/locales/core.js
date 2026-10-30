@@ -1,7 +1,7 @@
 /* Ядро локализации: общее для страницы и сервера (UMD). Словарь плоский: ключ -> строка или набор форм { one, few, many, other }. */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.SonaraI18nCore = factory();
+  else root.NakazmusicI18nCore = factory();
 })(typeof self !== 'undefined' ? self : this, function () {
   const LANGS = ['ru', 'en'];
   const LOCALE = { ru: 'ru-RU', en: 'en-US' };

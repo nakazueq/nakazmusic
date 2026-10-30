@@ -96,7 +96,7 @@ class DiscordPresence {
         instance: false,
       };
       if (/^https:\/\//.test(state.art || '')) {
-        activity.assets = { large_image: state.art, large_text: String(state.album || state.title || 'Sonara').slice(0, 120) };
+        activity.assets = { large_image: state.art, large_text: String(state.album || state.title || 'nakazmusic').slice(0, 120) };
       }
       if (/^https:\/\//.test(state.url || '')) {
         activity.buttons = [{ label: this.tr(state.src === 'sp' ? 's.discord.listensp' : state.src === 'yt' ? 's.discord.listenyt' : 's.discord.listensc'), url: state.url }];

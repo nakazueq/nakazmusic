@@ -1,5 +1,5 @@
 @echo off
-rem Sonara: builds Sonara.exe from scratch and packs ..\release\Sonara-<version>-win-x64.zip (+ .sha256)
+rem nakazmusic: builds nakazmusic.exe from scratch and packs ..\release\nakazmusic-<version>-win-x64.zip (+ .sha256)
 setlocal
 cd /d "%~dp0"
 call "%~dp0build.bat" || exit /b 1

@@ -7,7 +7,7 @@ const os = require('os');
 const path = require('path');
 
 // сервер пишет в папку данных: подменяем её на временную, настоящие настройки не трогаем
-const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sonara-test-'));
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'nakazmusic-test-'));
 process.env.LOCALAPPDATA = tmp;
 process.env.PLAYER_TEST = '1';
 const server = require('../server.js');
@@ -124,7 +124,7 @@ test('validateTheme принимает хорошую тему и отверга
 /* ---------- клиент: копия библиотеки ---------- */
 const BK_DEPS = ['isNum', 'BK_FORMAT', 'BK_MAX_BYTES', 'BK_ID_RE', 'BK_URL_HOSTS', 'BK_COVER_RE', 'bkClean', 'bkValidateTrack', 'validateBackup', 'bkToSlim'];
 const goodBackup = () => ({
-  format: 'sonara-backup', version: 1, createdAt: '2026-10-30T10:00:00.000Z', app: 'Sonara 3.5.0',
+  format: 'nakazmusic-backup', version: 1, createdAt: '2026-10-30T10:00:00.000Z', app: 'nakazmusic 3.5.0',
   likes: { sp: [{ src: 'sp', id: '4uLU6hMCjMI75M1A2tKUQC', title: 'A 🎵', artist: 'Б', uri: 'spotify:track:4uLU6hMCjMI75M1A2tKUQC', url: 'https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC', duration: 1000 }], yt: [{ src: 'yt', id: 'dQw4w9WgXcQ', title: 'T', artist: '' }] },
   playlists: [{ name: 'Мой', tracks: [{ src: 'sc', id: '123', title: 'x', artist: 'y', url: 'https://soundcloud.com/a/b' }] }],
 });
@@ -165,4 +165,12 @@ test('validateBackup не ломается на эмодзи, странных �
   const r = c.validateBackup(JSON.stringify(d));
   assert.ok(r.data, r.error);
   assert.ok(!/[\u0000-\u001f]/.test(r.data.likes.sp[0].title));
+});
+
+test('копии из прежних версий (формат sonara-backup) тоже принимаются, новые пишутся как nakazmusic-backup', () => {
+  const c = load(BK_DEPS);
+  const old = goodBackup(); old.format = 'sonara-backup';
+  assert.ok(c.validateBackup(JSON.stringify(old)).data, 'старый формат');
+  assert.ok(c.validateBackup(JSON.stringify(goodBackup())).data, 'новый формат');
+  assert.equal(c.BK_FORMAT, 'nakazmusic-backup');
 });

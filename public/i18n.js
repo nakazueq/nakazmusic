@@ -1,7 +1,7 @@
 /* Локализация страницы: T('ключ', { n: 5 }) возвращает строку на текущем языке; разметка с data-i18n и data-i18n-attr переводится сама.
    Язык: выбранный в настройках (localStorage 'lang', он же уезжает в store.json), иначе язык Windows/браузера: русский или английский. */
 (function () {
-  const core = window.SonaraI18nCore, dicts = window.SonaraLocales || {};
+  const core = window.NakazmusicI18nCore, dicts = window.NakazmusicLocales || {};
   let saved = '';
   try { saved = localStorage.getItem('lang') || ''; } catch {}
   const i18n = core.create(dicts, core.LANGS.includes(saved) ? saved : core.detect(navigator.languages || [navigator.language]));

@@ -1,8 +1,8 @@
 'use strict';
 // тот же exe в роли сторожа окна: сервер и интерфейс не поднимаем (см. watchdog.js)
-if (process.env.SONARA_WATCH_PID) { require('./watchdog.js'); return; }
-// Локальный сервер плеера «Sonara».
-// Работает как обычный node-скрипт (node server.js) и как собранный Sonara.exe.
+if (process.env.NAKAZMUSIC_WATCH_PID) { require('./watchdog.js'); return; }
+// Локальный сервер плеера «nakazmusic».
+// Работает как обычный node-скрипт (node server.js) и как собранный nakazmusic.exe.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -13,7 +13,7 @@ const { Library, readPicture, MIME: AUDIO_MIME } = require('./local');
 const { DiscordPresence } = require('./discord');
 const { MediaKeys } = require('./mediakeys');
 
-const APP_ID = 'sonara';
+const APP_ID = 'nakazmusic';
 const VERSION = require('./package.json').version;
 const PORT = Number(process.env.PLAYER_PORT) || 3000;
 const HOST = '127.0.0.1';
@@ -42,8 +42,8 @@ const LOG_FILE = path.join(DATA_DIR, 'player.log');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
 const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb', 'keys', 'lang']);
-// запуск с --safe-css (или SONARA_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
-const SAFE_CSS = process.argv.includes('--safe-css') || process.env.SONARA_SAFE_CSS === '1';
+// запуск с --safe-css (или NAKAZMUSIC_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
+const SAFE_CSS = process.argv.includes('--safe-css') || process.env.NAKAZMUSIC_SAFE_CSS === '1' || process.env.SONARA_SAFE_CSS === '1';
 const PLAYS_FILE = path.join(DATA_DIR, 'plays.jsonl');
 // история прослушиваний читается целиком: если разрослась, оставляем свежие записи
 try {
@@ -348,7 +348,7 @@ const escHtml = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<':
 function stubHtml() {
   const dark = config.theme !== 'light';
   const bg = dark ? '#1c1c1e' : '#f4f4f7', fg = dark ? '#f5f5f7' : '#1c1c1e', dim = dark ? '#8e8e93' : '#636366';
-  return '<!doctype html><meta charset="utf-8"><title>Sonara</title><style>html,body{margin:0;height:100%;overflow:hidden;background:' + bg + ';color:' + fg + ';font:14px "Segoe UI",system-ui,sans-serif}'
+  return '<!doctype html><meta charset="utf-8"><title>nakazmusic</title><style>html,body{margin:0;height:100%;overflow:hidden;background:' + bg + ';color:' + fg + ';font:14px "Segoe UI",system-ui,sans-serif}'
     + 'body{display:grid;place-items:center}.b{text-align:center}svg{width:72px;height:72px}p{margin:14px 0 18px;color:' + dim + ';font-weight:600}'
     + '.sp{width:18px;height:18px;margin:0 auto;border:2.4px solid transparent;border-top-color:' + fg + ';border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}</style>'
     + '<div class="b"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg>'
@@ -378,7 +378,7 @@ function startNative() {
     const b = config.winBounds;
     const okBounds = b && b.w >= 760 && b.h >= 560 && b.x > -100 && b.y > -50;
     const win = app.createBrowserWindow({
-      title: 'Sonara', logical: true,
+      title: 'nakazmusic', logical: true,
       width: okBounds ? b.w : 1180, height: okBounds ? b.h : 760,
       ...(okBounds ? { x: b.x, y: b.y } : {}),
       maximized: !!(b && b.max),
@@ -496,7 +496,7 @@ function setupTray() {
   if (!IS_WIN && !process.env.PLAYER_TRAY_TEST) return; // на Linux трею нужна системная библиотека
   try {
     const data = fs.readFileSync(path.join(__dirname, 'assets', 'icon-32.rgba'));
-    tray = native.app.createTrayIcon({ id: 'main', icon: { data, width: 32, height: 32 }, tooltip: 'Sonara', menu: trayMenu(), menuOnLeftClick: false, menuOnRightClick: true });
+    tray = native.app.createTrayIcon({ id: 'main', icon: { data, width: 32, height: 32 }, tooltip: 'nakazmusic', menu: trayMenu(), menuOnLeftClick: false, menuOnRightClick: true });
     tray.on('click', () => focusApp());
     tray.on('double-click', () => focusApp());
     log(LT('l.setupTray.1'));
@@ -506,7 +506,7 @@ let trayKey = '';
 function updateTray() {
   if (!tray) return;
   const s = nowState || {};
-  const tip = s.title ? `${s.title} — ${s.artist || ''}`.slice(0, 120) : 'Sonara';
+  const tip = s.title ? `${s.title} — ${s.artist || ''}`.slice(0, 120) : 'nakazmusic';
   const key = [tip, !!s.playing, !!mini, !!s.sleep].join('|');
   if (key === trayKey) return;
   trayKey = key;
@@ -786,7 +786,7 @@ try { fs.mkdirSync(LYR_DIR, { recursive: true }); } catch {}
 async function lrclib(p, params) {
   const u = new URL('https://lrclib.net/api' + p);
   for (const [k, v] of Object.entries(params)) if (v != null && v !== '') u.searchParams.set(k, v);
-  const r = await fetch(u, { headers: { 'User-Agent': `Sonara/${VERSION} (personal music player)` }, signal: AbortSignal.timeout(12000) });
+  const r = await fetch(u, { headers: { 'User-Agent': `nakazmusic/${VERSION} (personal music player)` }, signal: AbortSignal.timeout(12000) });
   if (r.status === 404) return null;
   if (!r.ok) throw new Error(T('s.lrclib.1', { status: r.status }));
   return r.json();
@@ -1068,9 +1068,9 @@ function resetCustomLyrics(q) {
 }
 
 // ---------- YouTube Music (через yt-dlp) ----------
-// yt-dlp.exe лежит рядом с Sonara.exe (при запуске из исходников на уровень выше папки src)
+// yt-dlp.exe лежит рядом с nakazmusic.exe (при запуске из исходников на уровень выше папки src)
 function ytdlpExe() {
-  const fromEnv = process.env.SONARA_YTDLP;
+  const fromEnv = process.env.NAKAZMUSIC_YTDLP || process.env.SONARA_YTDLP;
   if (fromEnv && exists(fromEnv)) return fromEnv;
   for (const d of [BASE_DIR, path.dirname(BASE_DIR)]) {
     const f = path.join(d, 'yt-dlp.exe');
@@ -1231,7 +1231,7 @@ async function ytAudio(req, res, id, useCookies) {
 }
 // скачивание yt-dlp.exe с официального релиза, с проверкой SHA-256 из файла сумм того же релиза
 async function ytdlpInstall() {
-  const gh = { headers: { 'User-Agent': 'Sonara', Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(30000) };
+  const gh = { headers: { 'User-Agent': 'nakazmusic', Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(30000) };
   const rel = await (await fetch('https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest', gh)).json();
   const assets = Array.isArray(rel.assets) ? rel.assets : [];
   const exeAsset = assets.find((a) => a.name === 'yt-dlp.exe'), sumAsset = assets.find((a) => a.name === 'SHA2-256SUMS');
@@ -1243,7 +1243,7 @@ async function ytdlpInstall() {
   let want = '';
   for (const l of sums.split(/\r?\n/)) { const m = l.trim().match(/^([0-9a-f]{64})\s+\*?(\S+)$/i); if (m && m[2] === 'yt-dlp.exe') want = m[1].toLowerCase(); }
   if (!want) throw ytFail(T('s.ytdlpInstall.2'), 502);
-  const r = await fetch(exeAsset.browser_download_url, { headers: { 'User-Agent': 'Sonara' }, signal: AbortSignal.timeout(5 * 60 * 1000) });
+  const r = await fetch(exeAsset.browser_download_url, { headers: { 'User-Agent': 'nakazmusic' }, signal: AbortSignal.timeout(5 * 60 * 1000) });
   if (!r.ok) throw ytFail(T('s.ytdlpInstall.3', { status: r.status }), 502);
   const buf = Buffer.from(await r.arrayBuffer());
   if (buf.length < 1e6 || buf.length > 90e6) throw ytFail(T('s.ytdlpInstall.4'), 502);
@@ -1282,10 +1282,10 @@ async function searchTracks(src, q) {
 
 // ---------- резервные копии библиотеки ----------
 // Лайки и плейлисты живут в окне плеера, поэтому JSON копии собирает страница, а сюда присылает на запись.
-// Папка Документы\Sonara\backup; автокопии (файлы с -auto) храним последние 5, ручные не трогаем.
+// Папка Документы\nakazmusic\backup; автокопии (файлы с -auto) храним последние 5, ручные не трогаем.
 // ---------- проверка обновлений ----------
 // Репозиторий GitHub с релизами задаётся ТОЛЬКО здесь, в формате «владелец/репозиторий».
-const UPDATE_REPO = 'nakazueq/Sonara';
+const UPDATE_REPO = 'nakazueq/nakazmusic';
 const UPDATE_EVERY = 24 * 3600e3;
 const updateRepoOk = () => /^[\w.-]+\/[\w.-]+$/.test(UPDATE_REPO) && !/^OWNER\//.test(UPDATE_REPO);
 function verParts(v) {
@@ -1305,7 +1305,7 @@ async function updateCheck(force) {
   if (!force && (config.updateCheck === false || Date.now() - (config.updateCheckAt || 0) < UPDATE_EVERY)) return;
   updateBusy = true;
   try {
-    const r = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`, { headers: { 'User-Agent': `Sonara/${VERSION}`, Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10000) });
+    const r = await fetch(`https://api.github.com/repos/${UPDATE_REPO}/releases/latest`, { headers: { 'User-Agent': `nakazmusic/${VERSION}`, Accept: 'application/vnd.github+json' }, signal: AbortSignal.timeout(10000) });
     if (!r.ok) throw new Error(T('s.updateCheck.1') + r.status);
     const j = await r.json();
     const tag = String(j.tag_name || '');
@@ -1326,9 +1326,15 @@ function updateStatus() {
 }
 
 const BACKUP_KEEP = 5;
-const BACKUP_FILE_RE = /^sonara-backup-\d{4}-\d{2}-\d{2}_\d{4}(-auto)?\.json$/;
+const BACKUP_FILE_RE = /^(?:nakazmusic|sonara)-backup-\d{4}-\d{2}-\d{2}_\d{4}(-auto)?\.json$/;   // копии прежних версий называются sonara-backup-…
+// папка в Документах: прежние версии писали в Документы\Sonara, переносим её на новое имя целиком, чтобы копии и темы не потерялись
+function docsRoot() {
+  const docs = path.join(require('os').homedir(), 'Documents'), now = path.join(docs, 'nakazmusic'), old = path.join(docs, 'Sonara');
+  try { if (!fs.existsSync(now) && fs.existsSync(old)) fs.renameSync(old, now); } catch {}
+  return fs.existsSync(now) || !fs.existsSync(old) ? now : old;
+}
 function backupDir(sub) {
-  let dir = path.join(require('os').homedir(), 'Documents', 'Sonara', 'backup');
+  let dir = path.join(docsRoot(), 'backup');
   try { fs.mkdirSync(dir, { recursive: true }); } catch { dir = path.join(DATA_DIR, 'backup'); fs.mkdirSync(dir, { recursive: true }); }
   if (sub) { dir = path.join(dir, sub); fs.mkdirSync(dir, { recursive: true }); }
   return dir;
@@ -1344,11 +1350,11 @@ function backupSave(json, auto) {
   if (typeof json !== 'string' || json.length > 40e6) throw ytFail(T('s.backupSave.1'), 413);
   let doc = null;
   try { doc = JSON.parse(json); } catch {}
-  if (!doc || doc.format !== 'sonara-backup') throw ytFail(T('s.backupSave.2'), 400);
+  if (!doc || (doc.format !== 'nakazmusic-backup' && doc.format !== 'sonara-backup')) throw ytFail(T('s.backupSave.2'), 400);
   const d = new Date(), p2 = (n) => String(n).padStart(2, '0');
   const stamp = `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}_${p2(d.getHours())}${p2(d.getMinutes())}`;
   const dir = backupDir();
-  const name = `sonara-backup-${stamp}${auto ? '-auto' : ''}.json`;
+  const name = `nakazmusic-backup-${stamp}${auto ? '-auto' : ''}.json`;
   fs.writeFileSync(path.join(dir, name), json);
   config.backupAt = Date.now();
   writeJson(CONFIG_FILE, config);
@@ -1544,19 +1550,19 @@ const server = http.createServer(async (req, res) => {
         return send(res, 200, { ok: true });
       }
       if (p === '/api/app/theme/export' && req.method === 'POST') {
-        // файл темы кладём в Документы\Sonara\themes и показываем в проводнике
+        // файл темы кладём в Документы\nakazmusic\themes и показываем в проводнике
         const b = JSON.parse((await readBody(req)) || '{}');
         const json = String(b.json || '');
         let doc = null;
         try { doc = JSON.parse(json); } catch {}
-        if (!doc || doc.format !== 'sonara-theme' || json.length > 300000) return send(res, 400, { error: T('s.top.9') });
+        if (!doc || (doc.format !== 'nakazmusic-theme' && doc.format !== 'sonara-theme') || json.length > 300000) return send(res, 400, { error: T('s.top.9') });
         const base = String(b.name || '').replace(/[^\p{L}\p{N} _.-]+/gu, '').trim().slice(0, 50) || 'theme';
-        let dir = path.join(require('os').homedir(), 'Documents', 'Sonara', 'themes');
+        let dir = path.join(docsRoot(), 'themes');
         try { fs.mkdirSync(dir, { recursive: true }); } catch { dir = path.join(DATA_DIR, 'themes'); fs.mkdirSync(dir, { recursive: true }); }
-        let file = path.join(dir, base + '.sonara-theme.json');
-        for (let i = 2; fs.existsSync(file) && i < 100; i++) file = path.join(dir, `${base} (${i}).sonara-theme.json`);
+        let file = path.join(dir, base + '.nakazmusic-theme.json');
+        for (let i = 2; fs.existsSync(file) && i < 100; i++) file = path.join(dir, `${base} (${i}).nakazmusic-theme.json`);
         fs.writeFileSync(file, json);
-        if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', ['/select,' + file], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log(LT('l.top.3'), e.message); } }
+        if (IS_WIN && process.env.NAKAZMUSIC_NO_REVEAL !== '1') { try { spawn('explorer.exe', ['/select,' + file], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log(LT('l.top.3'), e.message); } }
         return send(res, 200, { ok: true, path: file });
       }
       if (p === '/api/app/update/status') return send(res, 200, updateStatus());
@@ -1564,7 +1570,7 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/app/update/open' && req.method === 'POST') {
         const l = updateStatus().latest;
         if (!l) return send(res, 404, { error: T('s.top.10') });
-        if (process.env.SONARA_NO_REVEAL !== '1') openExternal(l.url);
+        if (process.env.NAKAZMUSIC_NO_REVEAL !== '1') openExternal(l.url);
         return send(res, 200, { ok: true, url: l.url });
       }
       if (p === '/api/app/backup/status') {
@@ -1588,7 +1594,7 @@ const server = http.createServer(async (req, res) => {
       }
       if (p === '/api/app/backup/reveal' && req.method === 'POST') {
         const dir = backupDir();
-        if (IS_WIN && process.env.SONARA_NO_REVEAL !== '1') { try { spawn('explorer.exe', [dir], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log(LT('l.top.4'), e.message); } }
+        if (IS_WIN && process.env.NAKAZMUSIC_NO_REVEAL !== '1') { try { spawn('explorer.exe', [dir], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { log(LT('l.top.4'), e.message); } }
         return send(res, 200, { ok: true, dir });
       }
       if (p === '/api/app/ytdlp/install' && req.method === 'POST') return send(res, 200, await ytdlpInstall());
@@ -1757,11 +1763,11 @@ server.on('error', async (e) => {
 
 // Иногда окно не открывается (WebView2 завис при старте). Если за 10 секунд страница не обратилась к серверу ни разу,
 // перезапускаем программу (до двух раз), а если и это не помогло, открываем плеер в браузере.
-const RESTARTS = Number(process.env.SONARA_RESTARTS) || 0;
+const RESTARTS = Number(process.env.NAKAZMUSIC_RESTARTS) || 0;
 function relaunch() {
   log(LT('l.relaunch.1', { p1: RESTARTS + 1 }));
   try {
-    spawn(process.execPath, IS_EXE ? process.argv.slice(2) : process.argv.slice(1), { detached: true, stdio: 'ignore', env: { ...process.env, SONARA_RESTARTS: String(RESTARTS + 1) } }).unref();
+    spawn(process.execPath, IS_EXE ? process.argv.slice(2) : process.argv.slice(1), { detached: true, stdio: 'ignore', env: { ...process.env, NAKAZMUSIC_RESTARTS: String(RESTARTS + 1) } }).unref();
   } catch (e) { log(LT('l.relaunch.2'), e); return false; }
   shuttingDown = true;
   try { mediaKeys.stop(); } catch {}
@@ -1771,19 +1777,19 @@ function relaunch() {
 }
 // сторож в отдельном процессе: если зависло всё приложение (сервер тоже), изнутри этого не заметить
 function spawnWatchdog() {
-  if (!IS_EXE && !process.env.SONARA_TEST_BLOCK) return;
+  if (!IS_EXE && !process.env.NAKAZMUSIC_TEST_BLOCK) return;
   try {
-    spawn(process.execPath, IS_EXE ? process.argv.slice(2) : process.argv.slice(1), { detached: true, stdio: 'ignore', windowsHide: true, env: { ...process.env, SONARA_WATCH_PID: String(process.pid) } }).unref();
+    spawn(process.execPath, IS_EXE ? process.argv.slice(2) : process.argv.slice(1), { detached: true, stdio: 'ignore', windowsHide: true, env: { ...process.env, NAKAZMUSIC_WATCH_PID: String(process.pid) } }).unref();
   } catch (e) { log('watchdog did not start', e.message); }
 }
 function windowGuard(isNative) {
   setTimeout(() => {
-    if ((lastSeen && !process.env.SONARA_TEST_RELAUNCH) || shuttingDown) return;
+    if ((lastSeen && !process.env.NAKAZMUSIC_TEST_RELAUNCH) || shuttingDown) return;
     log(LT('l.windowGuard.1'));
-    if ((isNative || process.env.SONARA_TEST_RELAUNCH) && RESTARTS < 2 && (IS_EXE || process.env.SONARA_TEST_RELAUNCH)) { if (relaunch()) return; }
+    if ((isNative || process.env.NAKAZMUSIC_TEST_RELAUNCH) && RESTARTS < 2 && (IS_EXE || process.env.NAKAZMUSIC_TEST_RELAUNCH)) { if (relaunch()) return; }
     if (!isNative) { openWindow(); return; }
     if (isNative && RESTARTS >= 2) { log(LT('l.windowGuard.2')); openWindow(); startWatchdog(); }
-  }, process.env.SONARA_TEST_RELAUNCH ? 3000 : 10000).unref();
+  }, process.env.NAKAZMUSIC_TEST_RELAUNCH ? 3000 : 10000).unref();
 }
 
 if (process.env.PLAYER_TEST) {
@@ -1808,7 +1814,7 @@ if (process.env.PLAYER_TEST) {
     setTimeout(startDeferred, 60000).unref();   // запасной срок, если страница так и не обратится к серверу
     log(LT('l.top.14', { URL_APP: URL_APP }));
     // проверка сторожа: имитируем зависание всего приложения (только в тестах)
-    if (process.env.SONARA_TEST_BLOCK && !RESTARTS) { spawnWatchdog(); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 120000); }
+    if (process.env.NAKAZMUSIC_TEST_BLOCK && !RESTARTS) { spawnWatchdog(); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 120000); }
     if (!IS_EXE && !process.env.PLAYER_NATIVE_TEST) return;
     if (startNative()) { log(LT('l.top.15')); windowGuard(true); spawnWatchdog(); return; }
     log(LT('l.top.16'));

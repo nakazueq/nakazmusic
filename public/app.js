@@ -1,5 +1,5 @@
 'use strict';
-/* ===== Sonara: лайки Spotify + SoundCloud в одном окне ===== */
+/* ===== nakazmusic: лайки Spotify + SoundCloud в одном окне ===== */
 const $ = (id) => document.getElementById(id);
 // Эти настройки дублируются в программу (%LOCALAPPDATA%\MyPlayer\store.json),
 // чтобы не вводить их заново после обновления или смены окна
@@ -1015,7 +1015,7 @@ function spInit() {
     const fail = (e) => { clearTimeout(timer); reject(e); };
     window.onSpotifyWebPlaybackSDKReady = () => {
       const p = new Spotify.Player({
-        name: 'Sonara',
+        name: 'nakazmusic',
         getOAuthToken: (cb) => spToken().then(cb, () => cb('')),
         volume: gain(),
       });
@@ -1673,7 +1673,7 @@ function updatePlayer() {
   document.body.classList.toggle('playing', state.playing);
   $('lyrics').classList.toggle('paused', !state.playing);
   lyKick();
-  document.title = t ? `${state.playing ? '▶ ' : ''}${t.title} · ${t.artist}` : 'Sonara';
+  document.title = t ? `${state.playing ? '▶ ' : ''}${t.title} · ${t.artist}` : 'nakazmusic';
   if (ms) { try { ms.playbackState = t ? (state.playing ? 'playing' : 'paused') : 'none'; } catch {} }
   updateProgress();
   publishState();
@@ -1778,7 +1778,7 @@ function viewTitle() {
   if (searchActive()) return T('a.viewTitle.1');
   if (state.view.startsWith('pl:')) { const p = curPl(); return p ? p.name : T('a.viewTitle.2'); }
   if (state.view === 'radio' && state.radio.seed) return T('a.viewTitle.3') + state.radio.seed.title;
-  return VIEW_TITLES[state.view] || 'Sonara';
+  return VIEW_TITLES[state.view] || 'nakazmusic';
 }
 function rebuildAll() {
   state.all = [...state.lib.sp, ...state.lib.sc, ...state.lib.yt, ...state.lib.local].sort((a, b) => (b.at || 0) - (a.at || 0));
@@ -3217,7 +3217,7 @@ function syncGradUI() {
 }
 
 /* ---------- темы: сохранение, экспорт, импорт ---------- */
-const THEME_FORMAT = 'sonara-theme';
+const THEME_FORMAT = 'nakazmusic-theme';
 const THEME_FILE_MAX = 200000;
 const THEMES_MAX = 40;
 const isNum = (v, lo, hi) => typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi;
@@ -3407,7 +3407,7 @@ function parseThemeFile(text) {
   let doc;
   try { doc = JSON.parse(text.replace(/^﻿/, '')); } catch { return { error: T('a.parseThemeFile.2') }; }
   if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return { error: T('a.parseThemeFile.3') };
-  if (doc.format !== THEME_FORMAT) return { error: T('a.parseThemeFile.4') };
+  if (doc.format !== THEME_FORMAT && doc.format !== 'sonara-theme') return { error: T('a.parseThemeFile.4') };   // файлы тем из прежних версий тоже принимаем
   if (doc.version !== 1) return { error: T('a.parseThemeFile.5') };
   for (const k of Object.keys(doc)) if (!['format', 'version', 'name', 'theme'].includes(k)) return { error: T('a.parseThemeFile.6', { k: k }) };
   if (typeof doc.name !== 'string' || !doc.name.trim() || doc.name.length > 80) return { error: T('a.parseThemeFile.7') };
@@ -3686,7 +3686,7 @@ async function openMiniPlayer() {
   const r = await appCmd('mini');
   let j = null;
   try { j = r && await r.json(); } catch {}
-  if (!j || !j.native) window.open('/mini', 'sonara-mini', 'popup,width=380,height=150');   // без родного окна открываем мини в отдельном окне браузера
+  if (!j || !j.native) window.open('/mini', 'nakazmusic-mini', 'popup,width=380,height=150');   // без родного окна открываем мини в отдельном окне браузера
 }
 // в полном экране сайдбар прячется за краем окна и выезжает при наведении на край или по Ctrl+F
 let peekTimer = 0;
@@ -3881,7 +3881,7 @@ setTimeout(updPoll, 14000);
 setInterval(updPoll, 6 * 3600e3);
 
 /* ===================== Копия библиотеки ===================== */
-const BK_FORMAT = 'sonara-backup';
+const BK_FORMAT = 'nakazmusic-backup';
 const BK_MAX_BYTES = 40e6;
 const BK_ID_RE = { sp: /^[A-Za-z0-9]{10,30}$/, sc: /^\d{1,20}$/, yt: /^[\w-]{11}$/, local: /^[\w-]{1,80}$/ };
 const BK_URL_HOSTS = new Set(['open.spotify.com', 'music.youtube.com', 'www.youtube.com', 'youtube.com', 'soundcloud.com', 'www.soundcloud.com']);
@@ -3907,7 +3907,7 @@ function bkTrackOut(t, src) {
 }
 function buildBackup() {
   const doc = {
-    format: BK_FORMAT, version: 1, createdAt: new Date().toISOString(), app: 'Sonara ' + (appInfo.version || ''),
+    format: BK_FORMAT, version: 1, createdAt: new Date().toISOString(), app: 'nakazmusic ' + (appInfo.version || ''),
     likes: { sp: state.lib.sp.map((t) => bkTrackOut(t, 'sp')), sc: state.lib.sc.map((t) => bkTrackOut(t, 'sc')), yt: state.lib.yt.map((t) => bkTrackOut(t, 'yt')) },
     playlists: playlists.map((p) => ({ name: p.name, tracks: p.tracks.filter((t) => BK_ID_RE[t.src] && t.id != null).map((t) => bkTrackOut(t)) })),
     connections: {},
@@ -3946,7 +3946,7 @@ function validateBackup(text) {
   if (text.length > BK_MAX_BYTES) return { error: T('a.validateBackup.1') };
   let d;
   try { d = JSON.parse(text.replace(/^﻿/, '')); } catch { return { error: T('a.validateBackup.2') }; }
-  if (!d || typeof d !== 'object' || Array.isArray(d) || d.format !== BK_FORMAT) return { error: T('a.validateBackup.3') };
+  if (!d || typeof d !== 'object' || Array.isArray(d) || (d.format !== BK_FORMAT && d.format !== 'sonara-backup')) return { error: T('a.validateBackup.3') };   // копии из прежних версий тоже принимаем
   if (d.version !== 1) return { error: T('a.validateBackup.4') };
   for (const k of Object.keys(d)) if (!['format', 'version', 'createdAt', 'app', 'likes', 'playlists', 'connections'].includes(k)) return { error: T('a.validateBackup.5', { k: k }) };
   if (typeof d.createdAt !== 'string' || !Number.isFinite(Date.parse(d.createdAt))) return { error: T('a.validateBackup.6') };

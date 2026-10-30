@@ -1,4 +1,4 @@
-// Сборка Sonara.exe: иконка из SVG -> pkg с подменой иконки и версии в базовом бинарнике
+// Сборка nakazmusic.exe: иконка из SVG -> pkg с подменой иконки и версии в базовом бинарнике
 import { execFileSync } from 'node:child_process';
 import { closeSync, existsSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, writeFileSync, writeSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -9,7 +9,7 @@ import { makeIcons } from './make-icon.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pkgJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const NAME = 'Sonara';
+const NAME = 'nakazmusic';
 const TARGET = 'node22-win-x64';
 const outExe = resolve(root, '..', NAME + '.exe');
 const buildDir = join(root, 'build');
@@ -43,7 +43,7 @@ function patch(basePath, icoPath, outPath) {
   const targets = groups.length ? groups.map((g) => [g.id, g.lang]) : [[1, 1033]];
   for (const [id, lang] of targets) ResEdit.Resource.IconGroupEntry.replaceIconsForResource(res.entries, id, lang, icons);
 
-  // информация о версии: имя Sonara, версия из package.json
+  // информация о версии: имя nakazmusic, версия из package.json
   const [maj, min = 0, pat = 0] = String(pkgJson.version).split('.').map((n) => parseInt(n, 10) || 0);
   const ver = `${maj}.${min}.${pat}.0`;
   const lang = 1033, codepage = 1200;

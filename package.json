@@ -1,14 +1,14 @@
 {
-  "name": "sonara",
-  "version": "3.6.1",
-  "description": "Sonara: Spotify, SoundCloud and YouTube Music likes in one window",
+  "name": "nakazmusic",
+  "version": "3.7.0",
+  "description": "nakazmusic: Spotify, SoundCloud and YouTube Music likes in one window",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nakazueq/Sonara.git"
+    "url": "git+https://github.com/nakazueq/nakazmusic.git"
   },
-  "homepage": "https://github.com/nakazueq/Sonara",
+  "homepage": "https://github.com/nakazueq/nakazmusic",
   "bugs": {
-    "url": "https://github.com/nakazueq/Sonara/issues"
+    "url": "https://github.com/nakazueq/nakazmusic/issues"
   },
   "main": "server.js",
   "bin": "server.js",
@@ -46,6 +46,6 @@
   "optionalDependencies": {
     "@webviewjs/webview-win32-x64-msvc": "^0.4.9"
   },
-  "productName": "Sonara",
+  "productName": "nakazmusic",
   "type": "commonjs"
 }

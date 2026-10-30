@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<title data-i18n="m.root.1">Sonara — мини</title>
+<title data-i18n="m.root.1">nakazmusic — мини</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -71,7 +71,7 @@
   <img class="cv" id="cv" alt="" data-webview-drag-region>
   <div class="meta" data-webview-drag-region>
     <div class="t" id="t" data-webview-drag-region data-i18n="m.t.1">Ничего не играет</div>
-    <div class="a" id="a" data-webview-drag-region>Sonara</div>
+    <div class="a" id="a" data-webview-drag-region>nakazmusic</div>
     <div class="ctrl" data-webview-drag-region>
       <button class="b" data-cmd="prev" title="Назад" data-i18n-attr="title=m.root.title.1"><svg viewBox="0 0 24 24"><path d="M20.5 7.2v9.6a.7.7 0 0 1-1.1.6L13 13v3.8a.7.7 0 0 1-1.1.6L5.2 12.6a.75.75 0 0 1 0-1.2l6.7-4.8a.7.7 0 0 1 1.1.6V11l6.4-4.4a.7.7 0 0 1 1.1.6z" fill="currentColor"/></svg></button>
       <button class="b play" data-cmd="toggle" title="Играть / пауза" id="play" data-i18n-attr="title=m.play.title.1"></button>
@@ -111,7 +111,7 @@ let st = { hasTrack: false, playing: false, time: 0, dur: 0, at: Date.now() };
 let lastArt = null;
 function render() {
   $('t').textContent = st.hasTrack ? st.title : T('m.t.1');
-  $('a').textContent = st.hasTrack ? st.artist : 'Sonara';
+  $('a').textContent = st.hasTrack ? st.artist : 'nakazmusic';
   if (st.art !== lastArt) {
     lastArt = st.art;
     if (st.art) { $('cv').src = st.art; $('bg').style.backgroundImage = `url("${st.art}")`; }

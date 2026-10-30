@@ -1,5 +1,5 @@
 @echo off
-rem Sonara: closes the player, rebuilds the exe and puts Sonara.exe one level up (next to the src folder)
+rem nakazmusic: closes the player, rebuilds the exe and puts nakazmusic.exe one level up (next to the src folder)
 setlocal
 cd /d "%~dp0"
 
@@ -13,6 +13,7 @@ if errorlevel 1 (
 )
 
 echo Closing the player...
+taskkill /f /im nakazmusic.exe >nul 2>&1
 taskkill /f /im Sonara.exe >nul 2>&1
 taskkill /f /im MyPlayer.exe >nul 2>&1
 
@@ -24,7 +25,7 @@ if not exist node_modules (
 node tools\build.mjs || goto :fail
 
 echo.
-echo Done: %~dp0..\Sonara.exe
+echo Done: %~dp0..\nakazmusic.exe
 exit /b 0
 
 :fail
