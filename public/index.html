@@ -359,6 +359,7 @@
       <div class="seg" id="tabs">
         <button data-tab="look" class="on">Оформление</button>
         <button data-tab="acc">Аккаунты</button>
+        <button data-tab="keys">Клавиши</button>
         <button data-tab="about">О программе</button>
       </div>
       <button class="x" id="close-settings" title="Закрыть">
@@ -485,6 +486,22 @@
           </ol>
         </details>
       </div>
+    </section>
+
+    <section data-pane="keys" hidden>
+      <h3>Сочетания в окне плеера</h3>
+      <div id="kb-list" class="kb-list"></div>
+      <div id="kb-msg" class="kb-msg" hidden></div>
+      <div class="kb-foot">
+        <button id="kb-reset" class="pill" type="button">Сбросить все</button>
+        <span class="muted">Нажми на сочетание и затем на новые клавиши. Esc отменяет. Пока ты печатаешь в поле, плеер клавиши не трогает.</span>
+      </div>
+      <h3>Медиаклавиши Windows</h3>
+      <div class="setrow flat">
+        <label for="kb-global">Глобальные медиаклавиши<small>Play/Pause, Следующий и Предыдущий работают при свёрнутом окне и в трее. Клавиши занимаются, только пока в плеере есть трек, иначе остаются другим программам</small></label>
+        <label class="switch"><input id="kb-global" type="checkbox" checked><span></span></label>
+      </div>
+      <div id="kb-global-state" class="kb-global-state"></div>
     </section>
 
     <section data-pane="about" hidden>

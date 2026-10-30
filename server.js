@@ -9,6 +9,7 @@ const { Readable } = require('stream');
 const { spawn, execFile } = require('child_process');
 const { Library, readPicture, MIME: AUDIO_MIME } = require('./local');
 const { DiscordPresence } = require('./discord');
+const { MediaKeys } = require('./mediakeys');
 
 const APP_ID = 'sonara';
 const VERSION = require('./package.json').version;
@@ -33,7 +34,7 @@ try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
 const LOG_FILE = path.join(DATA_DIR, 'player.log');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const STORE_FILE = path.join(DATA_DIR, 'store.json');
-const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb']);
+const STORE_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb', 'keys']);
 // запуск с --safe-css (или SONARA_SAFE_CSS=1) отключает свой CSS, если он сломал интерфейс
 const SAFE_CSS = process.argv.includes('--safe-css') || process.env.SONARA_SAFE_CSS === '1';
 const PLAYS_FILE = path.join(DATA_DIR, 'plays.jsonl');
@@ -205,6 +206,7 @@ async function shutdown(reason) {
   shuttingDown = true;
   log('выход:', reason);
   try { saveBounds(); saveMiniPos(); } catch {}
+  try { mediaKeys.stop(); } catch {}
   await pauseSpotifyOnExit();
   try { if (native) native.app.exit(); } catch {}
   process.exit(0);
@@ -428,6 +430,22 @@ function sseSend(role, event, data) {
   for (const c of sseClients) if (!role || c.role === role) { try { c.res.write(msg); } catch {} }
 }
 setInterval(() => sseSend('main', 'tick', { t: Date.now() }), 2000).unref();
+
+// ---------- глобальные медиаклавиши Windows ----------
+const MEDIA_CMD = { play: 'toggle', next: 'next', prev: 'prev', stop: 'pause' };
+let mediaKeyAt = 0;
+const mediaKeys = new MediaKeys((name) => {
+  const cmd = MEDIA_CMD[name];
+  if (!cmd || Date.now() - mediaKeyAt < 250) return;   // одно нажатие не должно сработать дважды
+  mediaKeyAt = Date.now();
+  sseSend('main', 'cmd', { cmd });
+}, log);
+// клавиши занимаем, пока включена настройка и у плеера есть трек
+function mediaKeysApply() {
+  if (config.mediaKeys === false) { mediaKeys.setActive(false); mediaKeys.stop(); return; }
+  mediaKeys.start();
+  mediaKeys.setActive(!!(nowState && nowState.hasTrack));
+}
 
 // ---------- SoundCloud (api-v2, без ключей разработчика) ----------
 const SC_API = 'https://api-v2.soundcloud.com';
@@ -1255,6 +1273,7 @@ const server = http.createServer(async (req, res) => {
         discord.update(nowState);
         sseSend('mini', 'state', nowState);
         updateTray();
+        mediaKeysApply();
         return send(res, 200, { ok: true });
       }
       if (p === '/api/app/cmd' && req.method === 'POST') {
@@ -1296,7 +1315,11 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/app/settings' && req.method === 'POST') {
         const b = JSON.parse((await readBody(req)) || '{}');
         if (typeof b.closeToTray === 'boolean' && config.closeToTray !== b.closeToTray) { config.closeToTray = b.closeToTray; writeJson(CONFIG_FILE, config); }
+        if (typeof b.mediaKeys === 'boolean' && (config.mediaKeys !== false) !== b.mediaKeys) { config.mediaKeys = b.mediaKeys; writeJson(CONFIG_FILE, config); mediaKeys.starts = 0; mediaKeysApply(); }
         return send(res, 200, { ok: true });
+      }
+      if (p === '/api/app/mediakeys') {
+        return send(res, 200, { enabled: config.mediaKeys !== false, ...mediaKeys.status() });
       }
       if (p === '/api/app/store') {
         if (req.method === 'GET') { res.setHeader('X-Safe-Css', SAFE_CSS ? '1' : '0'); return send(res, 200, readJson(STORE_FILE, {})); }
@@ -1442,6 +1465,7 @@ if (process.env.PLAYER_TEST) {
     return;
   }
   server.listen(PORT, HOST, () => {
+    mediaKeysApply();
     log(`сервер: ${URL_APP}`);
     if (!IS_EXE && !process.env.PLAYER_NATIVE_TEST) return;
     if (startNative()) { log('режим: своё окно'); return; }

@@ -3,7 +3,7 @@
 const $ = (id) => document.getElementById(id);
 // Эти настройки дублируются в программу (%LOCALAPPDATA%\MyPlayer\store.json),
 // чтобы не вводить их заново после обновления или смены окна
-const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb']);
+const SYNC_KEYS = new Set(['sp_client_id', 'sp_token', 'sc_user', 'ui', 'volume', 'shuffle', 'repeat', 'wallImg', 'playlists', 'themes', 'yt_lists', 'search_src', 'yt_cookie_fb', 'keys']);
 const storeQueue = {};
 let storeTimer = 0;
 function storeSync(k, v) {
@@ -1637,6 +1637,7 @@ async function connectEvents() {
     if (d.cmd === 'toggle') togglePlay();
     else if (d.cmd === 'next') next(false);
     else if (d.cmd === 'prev') prev();
+    else if (d.cmd === 'pause') { if (state.playing) engPause(); }
     else if (d.cmd === 'seek') seek(Number(d.value) || 0);
     else if (d.cmd === 'volume') setVolume(Number(d.value));
     else if (d.cmd === 'lyrics') setLyrics(true);
@@ -2740,6 +2741,7 @@ $('dc-on').addEventListener('change', saveDiscord);
 function openSettings(tab = 'look') { $('settings').hidden = false; setTab(tab); syncSettingsUI(); syncAccounts(); }
 function closeSettings() { $('settings').hidden = true; }
 function setTab(tab) {
+  if (tab === 'keys') { renderKeys(); renderMediaKeysStatus(); }
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
   document.querySelectorAll('.sheet section').forEach((s) => { s.hidden = s.dataset.pane !== tab; });
 }
@@ -2804,6 +2806,7 @@ function buildSettings() {
   $('opt-tray').addEventListener('change', (e) => { ui.tray = e.target.checked; saveUI(); appCmd('settings', { closeToTray: ui.tray }); });
   $('wall-file').addEventListener('change', (e) => { const f = e.target.files && e.target.files[0]; if (f) onWallFile(f); e.target.value = ''; });
   buildLook();
+  buildKeys();
 }
 function buildWalls() {
   const wBox = $('walls');
@@ -3761,6 +3764,164 @@ seekEl.addEventListener('input', () => {
 seekEl.addEventListener('change', () => { state.seeking = false; seek((seekEl.value / 1000) * state.dur); });
 document.addEventListener('click', () => { if (sp.player) sp.player.activateElement().catch(() => {}); }, { capture: true });
 
+/* ===================== Горячие клавиши ===================== */
+// Сочетание записываем как «Ctrl+Alt+Shift+Meta+<e.code>»: e.code не зависит от раскладки, русская М тоже KeyM.
+function comboOf(e) {
+  const m = [];
+  if (e.ctrlKey) m.push('Ctrl');
+  if (e.altKey) m.push('Alt');
+  if (e.shiftKey) m.push('Shift');
+  if (e.metaKey) m.push('Meta');
+  return [...m, e.code].join('+');
+}
+const isModifierCode = (c) => /^(Control|Shift|Alt|Meta|OS)(Left|Right)?$/.test(c);
+const KEY_NAMES = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Space: 'Пробел', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/', Backslash: '\\', PageUp: 'PgUp', PageDown: 'PgDn' };
+function comboLabel(c) {
+  if (!c) return '—';
+  return c.split('+').map((p) => KEY_NAMES[p] || p.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad/, 'Num ')).join(' + ');
+}
+// действия: def это сочетание по умолчанию; inInput: работает даже в поле ввода; repeat: можно держать нажатой
+const focusSearch = () => { setLyrics(false); const gs = $('gs-input'); if (gs.offsetParent) { gs.focus(); gs.select(); return; } peekSide(true); $('search').focus(); $('search').select(); };
+const KEY_ACTIONS = [
+  { id: 'toggle', name: 'Пауза / играть', def: 'Space', run: () => togglePlay() },
+  { id: 'seekBack', name: 'Назад на 5 секунд', def: 'ArrowLeft', repeat: true, run: () => seek(lyNow() - 5000) },
+  { id: 'seekFwd', name: 'Вперёд на 5 секунд', def: 'ArrowRight', repeat: true, run: () => seek(lyNow() + 5000) },
+  { id: 'prev', name: 'Предыдущий трек', def: 'Ctrl+ArrowLeft', run: () => prev() },
+  { id: 'next', name: 'Следующий трек', def: 'Ctrl+ArrowRight', run: () => next(false) },
+  { id: 'volUp', name: 'Громче', def: 'ArrowUp', repeat: true, run: () => setVolume(state.volume + 5) },
+  { id: 'volDown', name: 'Тише', def: 'ArrowDown', repeat: true, run: () => setVolume(state.volume - 5) },
+  { id: 'mute', name: 'Выключить звук', def: 'KeyM', run: () => setVolume(state.volume > 0 ? 0 : state.lastVolume || 70) },
+  { id: 'lyrics', name: 'Текст песни', def: 'KeyL', run: () => toggleLyrics() },
+  { id: 'fullscreen', name: 'Полный экран', def: 'F11', inInput: true, run: () => toggleFull() },
+  { id: 'search', name: 'Поиск', def: 'Ctrl+KeyF', inInput: true, run: focusSearch },
+];
+// эти сочетания занять нельзя: на них держится сам плеер или система
+const KEY_RESERVED = {
+  Escape: 'Esc закрывает окна и выходит из полного экрана',
+  Tab: 'Tab переключает фокус по интерфейсу',
+  'Shift+Tab': 'Shift+Tab переключает фокус по интерфейсу',
+  Enter: 'Enter нажимает кнопки',
+  'Ctrl+Shift+KeyK': 'Ctrl+Shift+K отключает свой CSS, если он сломал интерфейс',
+  'Alt+F4': 'Alt+F4 закрывает окно Windows',
+  F5: 'F5 перезагружает страницу',
+  'Ctrl+KeyR': 'Ctrl+R перезагружает страницу',
+};
+const KEY_SYSTEM_WARN = { 'Ctrl+KeyC': 'копирование', 'Ctrl+KeyV': 'вставка', 'Ctrl+KeyX': 'вырезание', 'Ctrl+KeyA': 'выделить всё', 'Ctrl+KeyZ': 'отмена', 'Ctrl+KeyW': 'закрытие вкладки' };
+const KEY_COMBO_RE = /^((Ctrl|Alt|Shift|Meta)\+)*[A-Za-z0-9]+$/;
+let keymap = {};
+let keyCapture = null;
+let keyPending = null;
+function loadKeymap() {
+  const saved = LS.json('keys', {});
+  keymap = {};
+  for (const a of KEY_ACTIONS) {
+    const v = saved && typeof saved === 'object' ? saved[a.id] : undefined;
+    keymap[a.id] = typeof v === 'string' && (v === '' || KEY_COMBO_RE.test(v)) ? v : a.def;   // '' значит «не назначено»
+  }
+}
+function saveKeymap() {
+  const diff = {};
+  for (const a of KEY_ACTIONS) if (keymap[a.id] !== a.def) diff[a.id] = keymap[a.id];
+  LS.set('keys', JSON.stringify(diff));
+}
+loadKeymap();
+function keyMsg(html, bad) {
+  const el = $('kb-msg');
+  el.innerHTML = html || '';
+  el.hidden = !html;
+  el.classList.toggle('bad', !!bad);
+}
+function keyAssign(id, combo) {
+  const act = KEY_ACTIONS.find((a) => a.id === id);
+  if (KEY_RESERVED[combo]) { keyMsg(`Это сочетание занять нельзя: ${KEY_RESERVED[combo]}.`, true); return; }
+  const other = KEY_ACTIONS.find((a) => a.id !== id && keymap[a.id] === combo);
+  if (other) {
+    keyPending = { id, combo, other: other.id };
+    keyMsg(`Сочетание «${escapeHtml(comboLabel(combo))}» уже назначено на «${escapeHtml(other.name)}». <button class="pill" id="kb-steal" type="button">Забрать себе</button> <button class="pill" id="kb-cancel" type="button">Отмена</button>`, true);
+    return;
+  }
+  keymap[id] = combo;
+  saveKeymap();
+  const sys = KEY_SYSTEM_WARN[combo];
+  keyMsg(sys ? `Сохранено. Внимание: в полях ввода ${escapeHtml(comboLabel(combo))} это ещё и ${sys}, поэтому там плеер его не трогает.` : `«${escapeHtml(act.name)}»: ${escapeHtml(comboLabel(combo))}`, false);
+  renderKeys();
+}
+function keyCancelCapture() { keyCapture = null; renderKeys(); }
+// запись нового сочетания идёт в фазе перехвата, чтобы остальные обработчики клавиш её не увидели
+window.addEventListener('keydown', (e) => {
+  if (!keyCapture) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (isModifierCode(e.code)) return;
+  const id = keyCapture.id;
+  if (e.code === 'Escape') { keyCancelCapture(); keyMsg('Отменено'); return; }
+  keyCapture = null;
+  keyPending = null;
+  keyAssign(id, comboOf(e));
+  renderKeys();
+}, true);
+function renderKeys() {
+  const box = $('kb-list');
+  if (!box) return;
+  box.replaceChildren(...KEY_ACTIONS.map((a) => {
+    const d = document.createElement('div');
+    d.className = 'kb-row';
+    d.innerHTML = '<span class="kb-name"></span><button class="kb-key" type="button"></button><button class="x kb-btn" data-act="reset" type="button" title="По умолчанию">&#8634;</button><button class="x kb-btn" data-act="clear" type="button" title="Убрать сочетание">&times;</button>';
+    d.dataset.id = a.id;
+    d.querySelector('.kb-name').textContent = a.name;
+    const k = d.querySelector('.kb-key');
+    const rec = keyCapture && keyCapture.id === a.id;
+    k.textContent = rec ? 'Нажми сочетание…' : comboLabel(keymap[a.id]);
+    k.classList.toggle('rec', !!rec);
+    k.classList.toggle('empty', !keymap[a.id]);
+    d.querySelector('[data-act="reset"]').hidden = keymap[a.id] === a.def;
+    d.querySelector('[data-act="clear"]').hidden = !keymap[a.id];
+    return d;
+  }));
+}
+async function renderMediaKeysStatus() {
+  const el = $('kb-global-state');
+  try {
+    const s = await api('/api/app/mediakeys', { headers: { 'X-Player': '1' } });
+    $('kb-global').checked = !!s.enabled;
+    const names = { play: 'Play/Pause', next: 'Следующий', prev: 'Предыдущий', stop: 'Стоп' };
+    const bad = Object.entries(s.keys || {}).filter(([, ok]) => !ok).map(([k]) => names[k]);
+    el.textContent = !s.enabled ? 'Выключены'
+      : !s.running ? 'Помощник запускается…'
+      : bad.length ? `Заняты другой программой: ${bad.join(', ')}. Остальное работает`
+      : s.active ? 'Работают: Play/Pause, Следующий, Предыдущий, Стоп' : 'Включены, заработают, когда заиграет трек';
+    el.classList.toggle('bad', !!bad.length);
+  } catch { el.textContent = 'Недоступно в этом режиме'; }
+}
+function buildKeys() {
+  $('kb-list').addEventListener('click', (e) => {
+    const row = e.target.closest('.kb-row');
+    if (!row) return;
+    const id = row.dataset.id, a = KEY_ACTIONS.find((x) => x.id === id);
+    const act = e.target.closest('[data-act]');
+    if (act && act.dataset.act === 'reset') { keymap[id] = a.def; saveKeymap(); keyMsg(''); renderKeys(); return; }
+    if (act && act.dataset.act === 'clear') { keymap[id] = ''; saveKeymap(); keyMsg(''); renderKeys(); return; }
+    if (e.target.closest('.kb-key')) { keyMsg(''); keyPending = null; keyCapture = { id }; renderKeys(); }
+  });
+  $('kb-msg').addEventListener('click', (e) => {
+    if (e.target.id === 'kb-steal' && keyPending) {
+      const { id, combo, other } = keyPending;
+      keymap[other] = '';
+      keymap[id] = combo;
+      keyPending = null;
+      saveKeymap();
+      keyMsg('Сочетание перенесено', false);
+      renderKeys();
+    } else if (e.target.id === 'kb-cancel') { keyPending = null; keyMsg(''); renderKeys(); }
+  });
+  $('kb-reset').addEventListener('click', () => { keymap = Object.fromEntries(KEY_ACTIONS.map((a) => [a.id, a.def])); keyPending = null; saveKeymap(); keyMsg('Все сочетания возвращены', false); renderKeys(); });
+  $('kb-global').addEventListener('change', (e) => { appCmd('settings', { mediaKeys: e.target.checked }); setTimeout(renderMediaKeysStatus, 1500); });
+  // пока окно клавиш закрыто, запись отменяем, чтобы не перехватывать нажатия зря
+  $('settings').addEventListener('mousedown', (e) => { if (keyCapture && !e.target.closest('.kb-key')) keyCancelCapture(); });
+  renderKeys();
+  renderMediaKeysStatus();
+}
+
 document.addEventListener('keydown', (e) => {
   const typing = e.target.matches('input:not([type=range]):not([type=checkbox]), textarea');
   if (e.key === 'Escape' && ctxOpen) { closeMenu(); return; }
@@ -3768,16 +3929,12 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !$('settings').hidden) { closeSettings(); return; }
   if (e.key === 'Escape' && lyOpen && !$('ly-dlg').hidden) { $('ly-dlg').hidden = true; return; }
   if (e.key === 'Escape' && lyOpen) { setLyrics(false); return; }
-  if (e.key === 'F11') { e.preventDefault(); toggleFull(); return; }
   if (e.key === 'Escape' && ui.layout.mode === 'full' && !typing) { toggleFull(); return; }
-  if ((e.ctrlKey || e.metaKey) && e.code === 'KeyF') { e.preventDefault(); setLyrics(false); const gs = $('gs-input'); if (gs.offsetParent) { gs.focus(); gs.select(); return; } peekSide(true); $('search').focus(); $('search').select(); return; }
-  if (typing) return;
-  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
-  else if (e.code === 'KeyL' && !e.ctrlKey && !e.altKey && !e.metaKey) { e.preventDefault(); toggleLyrics(); }
-  else if (e.ctrlKey && e.code === 'ArrowRight') { e.preventDefault(); next(false); }
-  else if (e.ctrlKey && e.code === 'ArrowLeft') { e.preventDefault(); prev(); }
-  else if (e.ctrlKey && e.code === 'ArrowUp') { e.preventDefault(); setVolume(state.volume + 5); }
-  else if (e.ctrlKey && e.code === 'ArrowDown') { e.preventDefault(); setVolume(state.volume - 5); }
+  // всё остальное идёт по карте сочетаний; пока человек печатает, перехватываем только то, что помечено inInput
+  const act = keyCapture ? null : KEY_ACTIONS.find((a) => keymap[a.id] === comboOf(e));
+  if (!act || (typing && !act.inInput) || (e.repeat && !act.repeat)) return;
+  e.preventDefault();
+  act.run();
 });
 
 /* ===================== Текст песни ===================== */
