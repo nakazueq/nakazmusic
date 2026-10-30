@@ -24,19 +24,23 @@ public class Splash : Form {
     t.Tick += delegate { angle = (angle + 9) % 360; Invalidate(new Rectangle(ClientSize.Width / 2 - 14, 168, 28, 28)); };
     t.Start();
   }
+  static GraphicsPath RoundRect(float x, float y, float w, float h, float r) {
+    GraphicsPath p = new GraphicsPath(); float d = r * 2;
+    p.AddArc(x, y, d, d, 180, 90); p.AddArc(x + w - d, y, d, d, 270, 90); p.AddArc(x + w - d, y + h - d, d, d, 0, 90); p.AddArc(x, y + h - d, d, d, 90, 90); p.CloseFigure();
+    return p;
+  }
   protected override void OnPaint(PaintEventArgs e) {
     Graphics g = e.Graphics;
     g.SmoothingMode = SmoothingMode.AntiAlias;
     Color fg = dark ? Color.FromArgb(245, 245, 247) : Color.FromArgb(28, 28, 30);
     Color dim = dark ? Color.FromArgb(142, 142, 147) : Color.FromArgb(99, 99, 102);
-    // логотип: нота из icon.svg (сетка 24x24, масштаб 3)
-    float s = 3f, ox = ClientSize.Width / 2f - 12f * s, oy = 34f;
-    using (Pen p = new Pen(fg, 2f * s) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
-    using (Brush b = new SolidBrush(fg)) {
-      g.DrawLines(p, new PointF[] { new PointF(ox + 9 * s, oy + 17.5f * s), new PointF(ox + 9 * s, oy + 6.6f * s), new PointF(ox + 19 * s, oy + 4.2f * s), new PointF(ox + 19 * s, oy + 15.1f * s) });
-      g.FillEllipse(b, ox + (6.6f - 2.6f) * s, oy + (17.6f - 2.6f) * s, 5.2f * s, 5.2f * s);
-      g.FillEllipse(b, ox + (16.6f - 2.6f) * s, oy + (15.1f - 2.6f) * s, 5.2f * s, 5.2f * s);
-    }
+    // логотип: иконка приложения (сетка 100x100, масштаб 0.76), светлая плитка с буквой N и розовой точкой
+    float k = 0.76f, ox = ClientSize.Width / 2f - 50f * k, oy = 30f;
+    using (GraphicsPath tile = RoundRect(ox, oy, 100f * k, 100f * k, 24f * k))
+    using (Brush tb = new SolidBrush(Color.FromArgb(245, 240, 232))) g.FillPath(tb, tile);
+    using (Pen p = new Pen(Color.FromArgb(23, 20, 31), 10f * k) { StartCap = LineCap.Round, EndCap = LineCap.Round, LineJoin = LineJoin.Round })
+      g.DrawLines(p, new PointF[] { new PointF(ox + 32 * k, oy + 72 * k), new PointF(ox + 32 * k, oy + 34 * k), new PointF(ox + 64 * k, oy + 72 * k), new PointF(ox + 64 * k, oy + 34 * k) });
+    using (Brush pb = new SolidBrush(Color.FromArgb(236, 72, 153))) g.FillEllipse(pb, ox + 70 * k, oy + 18 * k, 14f * k, 14f * k);
     using (Font f = new Font("Segoe UI Semibold", 11f))
     using (Brush b = new SolidBrush(dim)) {
       SizeF sz = g.MeasureString(text, f);

@@ -5,18 +5,18 @@ Versions before 3.7.0 were released under the name Sonara.
 ## 3.7.0
 
 ### Changed
-- **The project is now called nakazmusic** (it was Sonara). The program file is `nakazmusic.exe`, the release archive is `nakazmusic-<version>-win-x64.zip`, and the name is updated in the window titles, tray, start-up screen, Discord status, the Spotify device list, the exe's file properties and both languages of the interface.
+- **The project is now called nakazmusic** (it was Sonara). The program file is `nakazmusic.exe`, the release archive is `nakazmusic-<version>-win-x64.zip`, and the new name is used in the exe's file properties, the window titles (main window and mini player), the tray, the start-up screen, the Discord status, the Spotify device list, both languages of the interface and the READMEs.
+- **New icon**: a cream tile with a dark "N" and a pink dot. It is used for the exe, the window and the tray, for `splash.exe` and `mkhelper.exe`, for the logo in the sidebar, in About and on the start-up screens, and as the page icon.
 - The GitHub repository moved to https://github.com/nakazueq/nakazmusic (the old Sonara address still redirects in a browser).
 - Library backups and exported themes are now named `nakazmusic-backup-…` and `….nakazmusic-theme.json`.
 - Environment variables that start with `SONARA_` are now `NAKAZMUSIC_` (the old `SONARA_SAFE_CSS` and `SONARA_YTDLP` still work).
 
 ### Kept on purpose
-- The data folder `%LOCALAPPDATA%MyPlayer` keeps its name, so settings, cache and your sign-ins carry over untouched.
-- Backups and themes from earlier versions are still accepted and listed. The `DocumentsSonara` folder is renamed to `Documents
-akazmusic` automatically on first use.
+- The data folder `%LOCALAPPDATA%\MyPlayer` keeps its name, so settings, cache and your sign-ins carry over untouched.
+- Backups and themes still go to `Documents\Sonara`, where the earlier versions put them, so nothing has to be moved and no second folder appears. Backup and theme files from earlier versions (`sonara-backup-…`, `sonara-theme`) are still read and listed.
 
 ### Notes
-- Releases 3.6.x check for updates at the old address. GitHub redirects the request, but those versions reject the answer, so they will not show the "new version" banner. Install 3.7.0 manually once; from then on update checks work.
+- Releases 3.6.x check for updates at the old address. GitHub redirects that request, but those versions reject the answer, so they will not show the "new version" banner. Install 3.7.0 manually once; from then on update checks work.
 
 ## 3.6.1
 

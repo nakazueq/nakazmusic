@@ -349,9 +349,9 @@ function stubHtml() {
   const dark = config.theme !== 'light';
   const bg = dark ? '#1c1c1e' : '#f4f4f7', fg = dark ? '#f5f5f7' : '#1c1c1e', dim = dark ? '#8e8e93' : '#636366';
   return '<!doctype html><meta charset="utf-8"><title>nakazmusic</title><style>html,body{margin:0;height:100%;overflow:hidden;background:' + bg + ';color:' + fg + ';font:14px "Segoe UI",system-ui,sans-serif}'
-    + 'body{display:grid;place-items:center}.b{text-align:center}svg{width:72px;height:72px}p{margin:14px 0 18px;color:' + dim + ';font-weight:600}'
+    + 'body{display:grid;place-items:center}.b{text-align:center}svg{width:72px;height:72px;display:block;margin:0 auto}p{margin:14px 0 18px;color:' + dim + ';font-weight:600}'
     + '.sp{width:18px;height:18px;margin:0 auto;border:2.4px solid transparent;border-top-color:' + fg + ';border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}</style>'
-    + '<div class="b"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg>'
+    + '<div class="b"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="24" fill="#f5f0e8"/><path d="M32 72V34L64 72V34" fill="none" stroke="#17141f" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="77" cy="25" r="7" fill="#ec4899"/></svg>'
     + '<p>' + escHtml(T('s.starting')) + '</p><div class="sp"></div></div>'
     + '<script>(function(){var u=' + JSON.stringify(URL_APP) + ',busy=false;function go(){location.replace(u+"/")}'
     + 'function tick(){if(busy)return;busy=true;var c=new AbortController(),to=setTimeout(function(){c.abort()},1500);'
@@ -1327,11 +1327,9 @@ function updateStatus() {
 
 const BACKUP_KEEP = 5;
 const BACKUP_FILE_RE = /^(?:nakazmusic|sonara)-backup-\d{4}-\d{2}-\d{2}_\d{4}(-auto)?\.json$/;   // копии прежних версий называются sonara-backup-…
-// папка в Документах: прежние версии писали в Документы\Sonara, переносим её на новое имя целиком, чтобы копии и темы не потерялись
+// Папка в Документах для копий и тем остаётся прежней, Документы\Sonara: там уже лежат копии и темы прежних версий, второй папки не создаём
 function docsRoot() {
-  const docs = path.join(require('os').homedir(), 'Documents'), now = path.join(docs, 'nakazmusic'), old = path.join(docs, 'Sonara');
-  try { if (!fs.existsSync(now) && fs.existsSync(old)) fs.renameSync(old, now); } catch {}
-  return fs.existsSync(now) || !fs.existsSync(old) ? now : old;
+  return path.join(require('os').homedir(), 'Documents', 'Sonara');
 }
 function backupDir(sub) {
   let dir = path.join(docsRoot(), 'backup');

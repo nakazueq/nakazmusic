@@ -15,7 +15,7 @@
   html[data-theme="dark"] { background: #1c1c1e; }
   #boot { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; background: #f4f4f7; color: #1c1c1e; transition: opacity .2s; }
   html[data-theme="dark"] #boot { background: #1c1c1e; color: #f5f5f7; }
-  #boot svg { width: 72px; height: 72px; }
+  #boot svg { width: 72px; height: 72px; display: block; margin: 0 auto; }
   #boot i { display: block; width: 18px; height: 18px; margin: 18px auto 0; border: 2.4px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: boot-spin .8s linear infinite; }
   @keyframes boot-spin { to { transform: rotate(360deg); } }
 </style>
@@ -52,13 +52,13 @@
 </script>
 </head>
 <body>
-<div id="boot" aria-hidden="true"><div><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg><i></i></div></div>
+<div id="boot" aria-hidden="true"><div><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="24" fill="#f5f0e8"/><path d="M32 72V34L64 72V34" fill="none" stroke="#17141f" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="77" cy="25" r="7" fill="#ec4899"/></svg><i></i></div></div>
 <div id="wall" class="wall"></div>
 
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="brand">
-      <div class="brand-icon"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg></div>
+      <div class="logo"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="24" fill="#f5f0e8"/><path d="M32 72V34L64 72V34" fill="none" stroke="#17141f" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="77" cy="25" r="7" fill="#ec4899"/></svg></div>
       <span class="lbl">nakazmusic</span>
     </div>
 
@@ -576,7 +576,7 @@
 
     <section data-pane="about" hidden>
       <div class="about">
-        <div class="brand-icon big"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg></div>
+        <div class="logo big"><svg viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="24" fill="#f5f0e8"/><path d="M32 72V34L64 72V34" fill="none" stroke="#17141f" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><circle cx="77" cy="25" r="7" fill="#ec4899"/></svg></div>
         <div><b>nakazmusic</b> <span id="ver" class="muted"></span><div class="muted" data-i18n="h.settings.51">Лайки Spotify и SoundCloud в одном окне</div></div>
       </div>
       <h3 data-i18n="h.settings.52">Обновления</h3>

@@ -69,22 +69,22 @@ function patch(basePath, icoPath, outPath) {
 }
 
 // помощник медиаклавиш: обычный маленький exe из native/MediaKeys.cs (компилятор csc входит в Windows). Без него плеер откатится на PowerShell.
-function buildMediaHelper() {
+function buildMediaHelper(ico) {
   const csc = ['Framework64', 'Framework'].map((f) => join(process.env.WINDIR || 'C:\\Windows', 'Microsoft.NET', f, 'v4.0.30319', 'csc.exe')).find(existsSync);
   const out = join(root, 'assets', 'mkhelper.exe');
   if (!csc) { console.warn('csc.exe not found: media keys will work through PowerShell'); return; }
-  execFileSync(csc, ['/nologo', '/target:exe', '/optimize+', '/debug-', '/reference:System.Windows.Forms.dll', '/out:' + out, join(root, 'native', 'MediaKeys.cs'), join(root, 'native', 'AssemblyInfo.cs')], { stdio: 'inherit' });
+  execFileSync(csc, ['/nologo', '/target:exe', '/optimize+', '/debug-', '/reference:System.Windows.Forms.dll', '/win32icon:' + ico, '/out:' + out, join(root, 'native', 'MediaKeys.cs'), join(root, 'native', 'AssemblyInfo.cs')], { stdio: 'inherit' });
   console.log('media keys helper: %s', out);
   // заставка запуска (WinForms, без WebView2): показывается, пока окно плеера создаётся
   const splash = join(root, 'assets', 'splash.exe');
-  execFileSync(csc, ['/nologo', '/target:winexe', '/optimize+', '/debug-', '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/out:' + splash, join(root, 'native', 'Splash.cs'), join(root, 'native', 'SplashInfo.cs')], { stdio: 'inherit' });
+  execFileSync(csc, ['/nologo', '/target:winexe', '/optimize+', '/debug-', '/reference:System.Windows.Forms.dll', '/reference:System.Drawing.dll', '/win32icon:' + ico, '/out:' + splash, join(root, 'native', 'Splash.cs'), join(root, 'native', 'SplashInfo.cs')], { stdio: 'inherit' });
   console.log('startup splash: %s', splash);
 }
 
 mkdirSync(buildDir, { recursive: true });
-buildMediaHelper();
 console.log('1/3 icon from SVG');
 const ico = await makeIcons();
+buildMediaHelper(ico);
 
 console.log('2/3 icon and version %s into the base binary', pkgJson.version);
 const patched = join(buildDir, 'node-base-win-x64.exe');
