@@ -898,6 +898,7 @@
     "l.top.14": "сервер: {URL_APP}",
     "l.top.15": "режим: своё окно",
     "l.top.16": "режим: через браузер",
+    "s.starting": "Запускаю…",
     "s.discord.off": "выключено",
     "s.discord.needid": "нужен Application ID",
     "s.discord.notrunning": "Discord не запущен",

@@ -4646,6 +4646,14 @@ function relocalize() {
 document.addEventListener('langchange', () => { try { relocalize(); } catch (e) { console.warn('language switch', e); } });
 
 /* ===================== Старт ===================== */
+// экран запуска из index.html убираем, когда интерфейс собран (или через 6 секунд, что бы ни случилось)
+function hideBoot() {
+  const el = document.getElementById('boot');
+  if (!el) return;
+  el.style.opacity = '0';
+  setTimeout(() => el.remove(), 250);
+}
+setTimeout(hideBoot, 6000);
 (async function init() {
   $('redirect-uri').textContent = REDIRECT_URI;
   $('sp-client').value = LS.get('sp_client_id');
@@ -4690,4 +4698,5 @@ document.addEventListener('langchange', () => { try { relocalize(); } catch (e) 
   if (ytLists.length) ytLoadAll(false);
   loadLocal(false);
   loadDiscord();
+  hideBoot();
 })();

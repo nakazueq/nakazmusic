@@ -898,6 +898,7 @@
     "l.top.14": "server: {URL_APP}",
     "l.top.15": "mode: own window",
     "l.top.16": "mode: through a browser",
+    "s.starting": "Starting…",
     "s.discord.off": "off",
     "s.discord.needid": "an Application ID is needed",
     "s.discord.notrunning": "Discord is not running",

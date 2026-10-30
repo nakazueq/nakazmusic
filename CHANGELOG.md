@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.6.1
+
+### Fixed
+- **No more empty white window on start.** Creating the WebView2 window can take from several seconds up to half a minute on a cold start (the whole program is busy during that time, which is also why the window used to stay white). Now:
+  - a tiny separate start-up screen (`splash.exe`: logo, "Starting…" / "Запускаю…" and a spinner) appears within a fraction of a second and closes as soon as the player window is ready;
+  - the player window stays hidden until it already contains a dark placeholder page that needs no server, polls the server every 300 ms and switches to the interface the moment the server answers;
+  - the interface page itself starts with the same logo screen until it is built, and its web font no longer blocks the first paint if the network is slow.
+- Media keys helper, Discord status and the update check now start a few seconds *after* the interface has appeared instead of competing with the window for CPU during start-up.
+
+### Added
+- Start-up timing marks in the log (a line starting with `boot`) to see where start-up time goes.
+
+### Notes
+- The time WebView2 itself needs to create the window is outside the program's control; on a heavily loaded PC it can still be several seconds, but the start-up screen is visible during it.
+
 ## 3.6.0
 
 ### Added

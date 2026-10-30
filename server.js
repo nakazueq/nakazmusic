@@ -29,6 +29,11 @@ if (IS_EXE) {
   }
   process.emitWarning = (w) => { try { log(LT('l.emitWarning.1'), String((w && w.message) || w)); } catch {} };
 }
+// метки запуска: сколько мс прошло с старта процесса (в логе строки «boot …»), чтобы видеть, что тормозит окно
+const BOOT = Date.now() - Math.round(process.uptime() * 1000);
+const boots = [];
+function mark(step) { boots.push(`${step}=${Date.now() - BOOT}`); }
+mark('node-up');
 const PUB = path.join(__dirname, 'public');
 const BASE_DIR = IS_EXE ? path.dirname(process.execPath) : __dirname;
 const DATA_DIR = path.join(process.env.LOCALAPPDATA || process.env.APPDATA || BASE_DIR, 'MyPlayer');
@@ -85,7 +90,7 @@ function trackKid(child) {
   if (child && child.pid) { liveKids.add(child); child.on('exit', () => liveKids.delete(child)); }
   return child;
 }
-function killKids() { for (const c of liveKids) { try { c.kill(); } catch {} } liveKids.clear(); }
+function killKids() { try { if (splash) splash.kill(); } catch {} for (const c of liveKids) { try { c.kill(); } catch {} } liveKids.clear(); }
 process.on('exit', killKids);
 // настройки страницы: если файл повреждён (не JSON, не объект), откладываем его в сторону и начинаем с чистого, а не падаем
 function readStore() {
@@ -107,8 +112,9 @@ const I18 = i18nCore.create({ ru: require('./public/locales/ru.js'), en: require
   config.lang || i18nCore.detect([process.env.LC_ALL, process.env.LANG, (() => { try { return Intl.DateTimeFormat().resolvedOptions().locale; } catch { return ''; } })()]));
 const T = (key, params) => I18.t(key, params);
 const LT = (key, params) => I18.t(key, params, 'en');   // для лога: всегда английский, чтобы его можно было читать и присылать
+mark('i18n-ready');
 const discord = new DiscordPresence(log, T);
-discord.configure(config.discordOn, config.discordId);
+// подключение к Discord откладываем: см. startDeferred()
 const localLib = new Library(path.join(DATA_DIR, 'local-cache.json'));
 const localFolders = () => (Array.isArray(config.localFolders) ? config.localFolders : []);
 function localScan() { const t = localLib.scan(localFolders()); log(LT('l.localScan.1', { length: t.length })); return t; }
@@ -251,9 +257,19 @@ function isAlreadyRunning() {
 // ---------- выключение, когда окно закрыто (режим через браузер) ----------
 const startedAt = Date.now();
 let lastSeen = 0;
+// всё, что не нужно для показа окна, запускаем через несколько секунд после появления интерфейса
+let deferredDone = false;
+function startDeferred() {
+  if (deferredDone) return;
+  deferredDone = true;
+  mark('deferred-start');
+  mediaKeysApply();
+  discord.configure(config.discordOn, config.discordId);
+  setTimeout(() => updateCheck(false), 5000).unref();
+}
 let byeTimer = null;
 let watchdog = null;
-function touch() { lastSeen = Date.now(); if (byeTimer) { clearTimeout(byeTimer); byeTimer = null; } }
+function touch() { if (!lastSeen) { mark('first-request'); log('boot ' + boots.join(' ')); setTimeout(startDeferred, 3000).unref(); } lastSeen = Date.now(); if (byeTimer) { clearTimeout(byeTimer); byeTimer = null; } }
 let shuttingDown = false;
 async function shutdown(reason) {
   if (shuttingDown) return;
@@ -296,19 +312,61 @@ function launchSpotifyApp() {
   if (native) { setTimeout(focusApp, 3500); setTimeout(focusApp, 7000); }
 }
 
+// ---------- заставка запуска ----------
+// WebView2 создаётся долго (на холодном старте до десятков секунд), и всё это время сама программа занята. Поэтому заставка это
+// отдельный крошечный процесс (assets/splash.exe, без WebView2): он появляется сразу и закрывается, когда окно плеера готово.
+let splash = null;
+function splashStart() {
+  if (!IS_EXE || !IS_WIN || process.env.PLAYER_BROWSER === '1' || config.browserMode) return;
+  const exe = assetExe('splash.exe');
+  if (!exe) return;
+  try {
+    splash = spawn(exe, [T('s.starting'), config.theme === 'light' ? 'light' : 'dark'], { stdio: ['pipe', 'ignore', 'ignore'], windowsHide: false });
+    splash.on('error', () => { splash = null; });
+    splash.on('exit', () => { splash = null; });
+    splash.stdin.on('error', () => {});
+    mark('splash');
+  } catch (e) { splash = null; log('splash did not start', e.message); }
+}
+function splashClose() {
+  const sp = splash;
+  splash = null;
+  if (!sp) return;
+  try { sp.stdin.write('close\n'); sp.stdin.end(); } catch {}
+  setTimeout(() => { try { sp.kill(); } catch {} }, 1500).unref();
+}
+// заглушка внутри окна: встроенная страница без запросов к API; раз в 300 мс проверяет сервер и сразу переходит на интерфейс
+const escHtml = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+function stubHtml() {
+  const dark = config.theme !== 'light';
+  const bg = dark ? '#1c1c1e' : '#f4f4f7', fg = dark ? '#f5f5f7' : '#1c1c1e', dim = dark ? '#8e8e93' : '#636366';
+  return '<!doctype html><meta charset="utf-8"><title>Sonara</title><style>html,body{margin:0;height:100%;overflow:hidden;background:' + bg + ';color:' + fg + ';font:14px "Segoe UI",system-ui,sans-serif}'
+    + 'body{display:grid;place-items:center}.b{text-align:center}svg{width:72px;height:72px}p{margin:14px 0 18px;color:' + dim + ';font-weight:600}'
+    + '.sp{width:18px;height:18px;margin:0 auto;border:2.4px solid transparent;border-top-color:' + fg + ';border-radius:50%;animation:r .8s linear infinite}@keyframes r{to{transform:rotate(360deg)}}</style>'
+    + '<div class="b"><svg viewBox="0 0 24 24"><path d="M9 17.5V6.6l10-2.4v10.9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.6" cy="17.6" r="2.6" fill="currentColor"/><circle cx="16.6" cy="15.1" r="2.6" fill="currentColor"/></svg>'
+    + '<p>' + escHtml(T('s.starting')) + '</p><div class="sp"></div></div>'
+    + '<script>(function(){var u=' + JSON.stringify(URL_APP) + ',busy=false;function go(){location.replace(u+"/")}'
+    + 'function tick(){if(busy)return;busy=true;var c=new AbortController(),to=setTimeout(function(){c.abort()},1500);'
+    + 'fetch(u+"/locales/core.js?"+Date.now(),{mode:"no-cors",cache:"no-store",signal:c.signal}).then(function(){clearTimeout(to);go()}).catch(function(){clearTimeout(to);busy=false})}'
+    + 'setInterval(tick,300);tick()})()</script>';
+}
+
 // ---------- родное окно Windows (WebView2), без браузера ----------
 let native = null;
 function startNative() {
   if ((!IS_WIN && !process.env.PLAYER_NATIVE_TEST) || process.env.PLAYER_BROWSER === '1' || config.browserMode) return false;
   let wv;
-  try { wv = require('@webviewjs/webview'); }
+  mark('native-start');
+  try { wv = require('@webviewjs/webview'); mark('webview-module'); }
   catch (e) { log(LT('l.startNative.1'), e); return false; }
   try {
     let ver = '';
     try { ver = wv.getWebviewVersion(); } catch (e) { log(LT('l.startNative.2'), e.message); return false; }
     if (!ver) { log(LT('l.startNative.3')); return false; }
+    mark('webview2-version');
     log('WebView2', ver);
     const app = new wv.Application();
+    mark('application');
     const b = config.winBounds;
     const okBounds = b && b.w >= 760 && b.h >= 560 && b.x > -100 && b.y > -50;
     const win = app.createBrowserWindow({
@@ -317,21 +375,35 @@ function startNative() {
       ...(okBounds ? { x: b.x, y: b.y } : {}),
       maximized: !!(b && b.max),
       focused: true, resizable: true,
+      visible: false,   // показываем, когда внутри уже тёмная заглушка: белого окна пользователь не видит
     });
     try { win.setMinSize(760, 560, true); } catch {}
     if (!okBounds) { try { win.center(); } catch {} }
+    mark('window');
     setIcons(win);
     try { win.setTheme(config.theme === 'dark' ? wv.Theme.Dark : wv.Theme.Light); } catch {}
     const ctx = app.createWebContext({ dataDirectory: path.join(DATA_DIR, 'WebView2') });
     const view = win.createWebview({
-      url: URL_APP,
+      html: stubHtml(),
       webContext: ctx,
       enableDevtools: false,
       autoplay: true,
       hotkeysZoom: false,
       newWindowHandler: (e) => { if (e && e.url) openExternal(e.url); return false; },
     });
+    mark('webview-created');
+    try { view.setBackgroundColor(...(config.theme === 'light' ? [244, 244, 247, 255] : [28, 28, 30, 255])); } catch {}
     native = { app, win, view, wv, ctx };
+    let shown = false;
+    const showMain = () => {
+      if (shown) return;
+      shown = true;
+      mark('window-shown');
+      try { win.setVisible(true); win.focus(); } catch (e) { log(LT('l.focusApp.1'), e.message); }
+      splashClose();
+    };
+    try { view.on('page-load-finished', showMain); } catch {}
+    setTimeout(showMain, 1500).unref();   // запасной вариант, если событие загрузки не пришло
     // крестик: прячем в трей, музыка играет дальше (если трей включён и создался)
     win.on('close', (e) => {
       if (tray && config.closeToTray !== false) { e.preventDefault(); hideMain(); }
@@ -340,7 +412,10 @@ function startNative() {
     app.on('application-close-requested', () => shutdown(T('s.startNative.1')));
     app.on('custom-menu-click', (e) => { const id = e && e.customMenuEvent && e.customMenuEvent.id; if (id) onTrayMenu(id); });
     app.run({ interval: 16 });
+    mark('app-run');
     setupTray();
+    mark('tray');
+    setImmediate(() => { mark('loop-resumed'); log('boot ' + boots.join(' ')); });
     return true;
   } catch (e) {
     log(LT('l.startNative.4'), e);
@@ -490,26 +565,28 @@ setInterval(() => sseSend('main', 'tick', { t: Date.now() }), 2000).unref();
 const MEDIA_CMD = { play: 'toggle', next: 'next', prev: 'prev', stop: 'pause' };
 let mediaKeyAt = 0;
 // готовый нативный помощник (assets/mkhelper.exe, его собирает tools/build.mjs); из exe-файла его нужно положить на диск, запустить из архива нельзя
-function mediaHelperPath() {
+function assetExe(name) {
   try {
-    const src = path.join(__dirname, 'assets', 'mkhelper.exe');
+    const src = path.join(__dirname, 'assets', name);
     if (!fs.existsSync(src)) return '';
     if (!IS_EXE) return src;
-    const buf = fs.readFileSync(src), dest = path.join(DATA_DIR, 'mkhelper.exe');
+    const buf = fs.readFileSync(src), dest = path.join(DATA_DIR, name);
     let same = false;
     try { same = fs.readFileSync(dest).equals(buf); } catch {}
     if (!same) { fs.writeFileSync(dest + '.part', buf); fs.renameSync(dest + '.part', dest); }
     return dest;
-  } catch (e) { log(LT('l.mediaHelperPath.1'), e.message); return ''; }
+  } catch (e) { log(LT('l.mediaHelperPath.1'), name, e.message); return ''; }
 }
+const mediaHelperPath = () => assetExe('mkhelper.exe');
 const mediaKeys = new MediaKeys((name) => {
   const cmd = MEDIA_CMD[name];
   if (!cmd || Date.now() - mediaKeyAt < 250) return;   // одно нажатие не должно сработать дважды
   mediaKeyAt = Date.now();
   sseSend('main', 'cmd', { cmd });
-}, log, mediaHelperPath());
+}, log, '');   // путь к помощнику подставляем при первом запуске клавиш (mediaKeysApply), чтобы не тратить время на старте
 // клавиши занимаем, пока включена настройка и у плеера есть трек
 function mediaKeysApply() {
+  if (!mediaKeys.helperExe) mediaKeys.helperExe = mediaHelperPath();
   if (config.mediaKeys === false) { mediaKeys.setActive(false); mediaKeys.stop(); return; }
   mediaKeys.start();
   mediaKeys.setActive(!!(nowState && nowState.hasTrack));
@@ -1716,9 +1793,10 @@ if (process.env.PLAYER_TEST) {
     setTimeout(() => process.exit(0), 300);
     return;
   }
+  splashStart();
   server.listen(PORT, HOST, () => {
-    mediaKeysApply();
-    setTimeout(() => updateCheck(false), 8000).unref();
+    mark('listening');
+    setTimeout(startDeferred, 60000).unref();   // запасной срок, если страница так и не обратится к серверу
     log(LT('l.top.14', { URL_APP: URL_APP }));
     // проверка сторожа: имитируем зависание всего приложения (только в тестах)
     if (process.env.SONARA_TEST_BLOCK && !RESTARTS) { spawnWatchdog(); Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 120000); }
